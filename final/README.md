@@ -13,7 +13,7 @@ VAS 2.5.2, the Vibecoding Agent System, is a local-first static HTML toolkit for
 - Public release hub exposing the VAS Design Studio entry point.
 - Design Studio for editing theme tokens and prompt presets.
 - Client Form and NAS Client Form packages for JSON-based intake.
-- Agent rules, taste-skill references, docs, scripts, and tests kept with the release candidate.
+- Agent rules, taste-skill references, docs, scripts, and tests kept with the public package.
 - Clean-copy oriented release layout that excludes caches, backups, runtime dependencies, and sensitive-file candidates.
 
 ## Quick Start
@@ -45,7 +45,7 @@ cd tests
 npm run test:browser
 ```
 
-`node_modules/` is intentionally not bundled in this release candidate. Browser tests require dependencies to be installed locally or referenced from a prepared test environment.
+`node_modules/` is intentionally not bundled in this public package. Browser tests require dependencies to be installed locally or referenced from a prepared test environment.
 
 ## Folder Structure
 
@@ -101,7 +101,7 @@ The Client Form and NAS Client Form are static JSON intake forms. They do not up
 
 ## Release Boundary
 
-This folder is a public release candidate. Public GitHub upload, NAS upload, external distribution, and archive creation require separate project-owner approval.
+This package has been published to the public GitHub repository. NAS upload, external distribution package creation, and archive creation still require separate project-owner approval.
 
 ---
 
@@ -152,7 +152,7 @@ cd tests
 npm run test:browser
 ```
 
-이 release 후보에는 `node_modules/`가 포함되지 않습니다. 브라우저 테스트는 로컬 의존성 설치 또는 준비된 테스트 환경 참조가 필요합니다.
+이 public package에는 `node_modules/`가 포함되지 않습니다. 브라우저 테스트는 로컬 의존성 설치 또는 준비된 테스트 환경 참조가 필요합니다.
 
 ## 폴더 구조
 
@@ -208,4 +208,4 @@ Client Form과 NAS Client Form은 정적 JSON 신청서입니다. 서버로 데�
 
 ## Release 경계
 
-이 폴더는 public release 후보입니다. public GitHub 업로드, NAS 업로드, 외부 배포, 압축 파일 생성은 별도 프로젝트 소유자 승인이 필요합니다.
+이 패키지는 public GitHub 저장소에 업로드된 상태입니다. NAS 업로드, 외부 배포 패키지 생성, 압축 파일 생성은 여전히 별도 프로젝트 소유자 승인이 필요합니다.

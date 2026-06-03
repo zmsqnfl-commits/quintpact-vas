@@ -1,6 +1,6 @@
 # RELEASE MANIFEST
 
-## Candidate
+## Public Package
 
 ```text
 VAS-2.5.2-public-release-TASK-037-20260603
@@ -61,9 +61,9 @@ credentials/
 - Support template cards are not exposed on the public release hub.
 - Client Form and NAS Client Form files remain included.
 
-## Not Performed
+## Release Status
 
-- No public GitHub upload.
+- Public GitHub upload completed: https://github.com/zmsqnfl-commits/quintpact-vas
 - No NAS upload.
-- No external distribution.
+- No external distribution package creation.
 - No archive file creation.
