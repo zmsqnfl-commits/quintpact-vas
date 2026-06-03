@@ -1,0 +1,61 @@
+# ========================================
+# .gitignore — 에이전트 팀 프로젝트 템플릿
+# /setup-from-application 실행 시 프로젝트에 맞게 커스터마이징됩니다.
+# ========================================
+
+# 임시 작업 파일 (에이전트 작업 중간 산출물)
+.temp data/
+.vas_backups/
+scripts/.vas_backups/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / 에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 환경 변수 / 시크릿 (ABAC sensitive_data_guard 대상)
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# 테스트 리포트
+htmlcov/
+.coverage
+.coverage.*
+coverage/
+*.lcov
+test-results/
+playwright-report/
+
+# 빌드 산출물
+*.log
+
+# 외부 도구 / 설치 파일 (대용량 바이너리)
+tools/

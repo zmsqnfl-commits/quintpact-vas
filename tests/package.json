@@ -1,0 +1,13 @@
+{
+  "name": "vas-2-5-2",
+  "version": "2.5.2",
+  "private": true,
+  "scripts": {
+    "test:browser": "playwright test browser-smoke.spec.js design-preview-token.spec.js",
+    "test:design-preview": "playwright test design-preview-token.spec.js",
+    "test:python": "python test_client_form.py && python test_html_syntax.py && python test_integrity_10loop.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0"
+  }
+}

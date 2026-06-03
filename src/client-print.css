@@ -1,0 +1,18 @@
+/* =========================================
+   client-print.css
+   인쇄(Print) 모드 전용 스타일
+   ========================================= */
+
+@media print {
+    body { background: #fff; }
+    .lang-toggle { display: none; }
+    .hero-section { background: #fff; color: #000; padding: 0; height: auto; position: static; border-bottom: 4px solid #000; margin-bottom: 40px; }
+    .hero-title h1 { color: #000; font-size: 40px; margin-bottom: 10px; }
+    .hero-title p { color: #333; }
+    .progress-indicator { display: none; }
+    .form-section { width: 100%; padding: 0; }
+    .step { display: block !important; opacity: 1 !important; transform: none !important; margin-bottom: 60px; page-break-inside: avoid; }
+    .nav-btns, .done-screen, .no-print { display: none !important; }
+    input[type="text"], textarea { border-bottom: 1px solid #ccc; font-size: 16px; padding: 8px 0; }
+    .block .bl-content, .v-block .vl-content { border: 1px solid #ccc; padding: 12px; font-size: 14px; background: #fff !important; color: #000 !important; box-shadow: none !important; transform: none !important; }
+}

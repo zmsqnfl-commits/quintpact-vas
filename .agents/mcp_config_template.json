@@ -1,0 +1,54 @@
+{
+  "_comment": "MCP(Model Context Protocol) 서버 설정 템플릿. /setup-from-application 시 프로젝트에 맞게 커스터마이징됩니다.",
+  "_usage": "이 파일을 ~/.gemini/antigravity/mcp_config.json 으로 복사하여 사용하세요.",
+
+  "servers": {
+    "filesystem": {
+      "_comment": "로컬 파일시스템 접근 도구",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-filesystem", "--root", "./"],
+      "enabled": false
+    },
+    "database": {
+      "_comment": "데이터베이스 연동 (BigQuery, Spanner, PostgreSQL 등)",
+      "command": "npx",
+      "args": ["-y", "@google-cloud/mcp-toolbox"],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}"
+      },
+      "enabled": false
+    },
+    "git": {
+      "_comment": "Git 작업 자동화",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-git"],
+      "enabled": false
+    },
+    "web_search": {
+      "_comment": "웹 검색 도구",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-web-search"],
+      "env": {
+        "SEARCH_API_KEY": "${SEARCH_API_KEY}"
+      },
+      "enabled": false
+    },
+    "figma": {
+      "_comment": "Figma 디자인 파일 양방향 동기화 (Designer 에이전트 전용)",
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-figma"],
+      "env": {
+        "FIGMA_ACCESS_TOKEN": "${FIGMA_ACCESS_TOKEN}",
+        "FIGMA_TEAM_ID": "${FIGMA_TEAM_ID}"
+      },
+      "enabled": false
+    }
+  },
+
+  "_setup_guide": {
+    "step_1": "필요한 서버의 enabled를 true로 변경",
+    "step_2": "환경 변수(${...})를 실제 값으로 대체",
+    "step_3": "파일을 ~/.gemini/antigravity/mcp_config.json 에 복사",
+    "step_4": "Antigravity 재시작 후 Agent Manager에서 MCP 연결 확인"
+  }
+}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAS 2.5.2 — Hybrid Design Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+<link rel="stylesheet" href="design-controller.css">
+
+</head>
+<body>
+<div class="app">
+  
+  <div class="controls" id="controlsPanel">
+    <div class="header">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <a href="vas-hub.html" class="back-link">← 허브로 돌아가기</a>
+        <button class="btn btn-primary" onclick="undoTheme()" style="padding: 4px 12px; font-size: 12px; height: 28px;">↶ Undo</button>
+      </div>
+      <h1>VAS 디자인 스튜디오</h1>
+      <p>VAS 하이브리드 코어 & 글로벌 Top-Tier 테마</p>
+    </div>
+
+    <!-- 프리셋 (Top Tier Styles) 동적 렌더링 컨테이너 -->
+    <div class="group" id="preset-container">
+      <!-- JS에서 카테고리별로 렌더링됨 -->
+    </div>
+
+    <!-- 통합된 프롬프트 아틀리에 영역 -->
+    <div class="group">
+      <h3>AI 에이전트 시스템 프롬프트</h3>
+      <div class="field">
+        <label>Taste Profile</label>
+        <select id="tasteProfileMode" onchange="setTasteProfileMode(this.value)">
+          <option value="auto">프리셋 기준 자동</option>
+        </select>
+      </div>
+      <textarea id="aiPrompt" class="prompt-box" readonly></textarea>
+      <button class="btn btn-primary" onclick="copyAgentPrompt()" style="width: 100%;">프롬프트 복사 (에이전트에게 전달)</button>
+    </div>
+
+    <!-- 세부 토큰 조정 (기존 컨트롤러 기능) -->
+    <div class="group">
+      <h3>세부 토큰 제어 (Manual Override)</h3>
+      
+      <!-- 타이포그래피 -->
+      <div class="field">
+        <label>폰트 패밀리</label>
+        <select id="fontFamily" onchange="update()">
+          <option value="'Pretendard', sans-serif">Pretendard (한글 권장)</option>
+          <option value="'Pretendard', 'Geist', sans-serif">Pretendard + Geist</option>
+          <option value="'Pretendard', 'Geist Mono', sans-serif">Pretendard + Geist Mono</option>
+          <option value="'Geist Mono', 'Pretendard', monospace">Geist Mono</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>기준 크기 (Base Size) <span id="fsVal">16px</span></label>
+        <input type="range" id="fontSize" min="12" max="24" value="16" step="1" oninput="update()">
+      </div>
+      <div class="field">
+        <label>자간 (Letter Spacing) <span id="lsVal">-0.04em</span></label>
+        <input type="range" id="letterSpacing" min="-0.1" max="0.2" value="-0.04" step="0.01" oninput="update()">
+      </div>
+      
+      <!-- 형태 및 모션 -->
+      <div class="field">
+        <label>기준 여백 (Padding) <span id="padVal">24px</span></label>
+        <input type="range" id="padding" min="12" max="64" value="24" step="4" oninput="update()">
+      </div>
+      <div class="field">
+        <label>둥글기 (Border Radius) <span id="radVal">0px</span></label>
+        <input type="range" id="radius" min="0" max="40" value="0" step="2" oninput="update()">
+      </div>
+      <div class="field">
+        <label>테두리 두께 (Border) <span id="borderVal">2px</span></label>
+        <input type="range" id="borderWidth" min="0" max="8" value="2" step="1" oninput="update()">
+      </div>
+      <div class="field">
+        <label>그림자 강도 (Shadow) <span id="shadowVal">0px</span></label>
+        <input type="range" id="shadow" min="0" max="80" value="0" step="4" oninput="update()">
+      </div>
+      <div class="field">
+        <label>모션 속도 (Transition) <span id="speedVal">0.2s</span></label>
+        <input type="range" id="speed" min="0.1" max="1.0" value="0.2" step="0.1" oninput="update()">
+      </div>
+
+      <!-- 색상 -->
+      <div class="color-grid">
+        <div class="color-item"><label>Primary (주색)</label><input type="color" id="colorPrimary" value="#111111" oninput="update()"></div>
+        <div class="color-item"><label>Background (배경)</label><input type="color" id="colorBg" value="#f4f4f4" oninput="update()"></div>
+        <div class="color-item"><label>Surface (카드 배경)</label><input type="color" id="colorSurface" value="#ffffff" oninput="update()"></div>
+        <div class="color-item"><label>Text (글자색)</label><input type="color" id="colorText" value="#111111" oninput="update()"></div>
+        <div class="color-item"><label>Border (테두리색)</label><input type="color" id="colorBorder" value="#111111" oninput="update()"></div>
+        <div class="color-item"><label>Success (성공)</label><input type="color" id="colorSuccess" value="#10b981" oninput="update()"></div>
+      </div>
+    </div>
+
+    <!-- 액션 -->
+    <div class="group">
+      <h3>토큰 추출 (Code Export)</h3>
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="showExport('json')">포맷 추출 (JSON/CSS)</button>
+        <button class="btn btn-secondary" onclick="downloadJSON()">토큰 다운로드</button>
+      </div>
+      <div class="drag-zone" id="dragZone" onclick="triggerFileInput()">
+        <p>JSON 파일을 드롭하거나 클릭하여 로드</p>
+        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileSelect(event)">
+      </div>
+      <div class="token-output" id="tokenOutput">
+        <div class="export-tabs">
+          <button class="tab-btn active" onclick="switchFormat('json', this)">JSON</button>
+          <button class="tab-btn" onclick="switchFormat('css', this)">CSS</button>
+          <button class="tab-btn" onclick="switchFormat('tailwind', this)">Tailwind</button>
+        </div>
+        <pre id="tokenPre"></pre>
+        <button class="btn btn-secondary" style="width:100%; padding:10px; font-size:11px;" onclick="copyOutput()">코드 복사</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 좌우 패널 크기 조절용 스플리터 -->
+  <div class="resizer" id="resizer"></div>
+
+  <!-- Preview -->
+  <div class="preview">
+    <p class="preview-label">실시간 복합 컴포넌트 프리뷰</p>
+    
+    <div class="adv-preview" id="advPreview">
+      
+      <!-- Hero -->
+      <div class="p-hero">
+        <h2>Design System Core<br><span style="font-size: 0.6em; font-weight: 700; opacity: 0.8; letter-spacing: inherit;">디자인 시스템 코어</span></h2>
+        <p>This advanced live preview demonstrates how your industry-standard tokens behave across complex UI structures in real-time.<br><span style="opacity: 0.8; letter-spacing: inherit;">이 고급 실시간 프리뷰는 산업 표준 토큰이 복잡한 UI 구조에서 어떻게 동작하는지 보여줍니다.</span></p>
+        <button class="p-btn">Get Started / 시작하기</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="p-grid">
+        <div class="p-stat-card">
+          <span class="label">Total Users (전체 사용자)</span>
+          <div class="value">24,592</div>
+          <div class="trend">+12.5%</div>
+        </div>
+        <div class="p-stat-card">
+          <span class="label">Revenue (매출액)</span>
+          <div class="value">$124K</div>
+          <div class="trend">+8.2%</div>
+        </div>
+        <div class="p-stat-card">
+          <span class="label">Bounce Rate (이탈률)</span>
+          <div class="value">42.1%</div>
+          <div class="trend" style="color:var(--text-muted)">-1.1%</div>
+        </div>
+      </div>
+
+      <!-- Profile Form -->
+      <div class="p-profile">
+        <div class="p-avatar"></div>
+        <div class="p-profile-info">
+          <h3>Architect Agent <span style="font-size: 0.7em; font-weight: normal; opacity: 0.6;">(아키텍트 에이전트)</span></h3>
+          <p>System structural planning and token management. <br><span style="opacity: 0.8;">시스템 구조 기획 및 토큰 관리.</span></p>
+          <input type="text" class="p-input" placeholder="Enter system prompt... (시스템 프롬프트 입력)">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="design-presets.js"></script>
+<script src="design-taste-pack.js"></script>
+<script src="design-profile-control.js"></script>
+<script src="design-controller.js"></script>
+<div class="toast" id="dc-toast"></div>
+</body>
+</html>
+
