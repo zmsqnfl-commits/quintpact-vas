@@ -15,7 +15,7 @@ const requiredSections = [
   '[CONFLICT POLICY]',
   '[OUTPUT CONTRACT]'
 ];
-const requiredPreviewPresets = ['linear', 'github', 'neobrutal', 'stripe', 'notion', 'carbon'];
+const requiredPreviewPresets = ['awwwards', 'linear', 'github', 'neobrutal', 'stripe', 'notion', 'carbon'];
 
 test('design preview reflects preset tokens', async ({ page }) => {
   const errors = [];
@@ -78,6 +78,121 @@ test('design preview reflects preset tokens', async ({ page }) => {
   expect(result.unsupportedFonts).toEqual([]);
   expect(result.tokenIssues).toEqual([]);
   expect(result.promptIssues).toEqual([]);
+});
+
+test('fresh installs use the Awwwards editorial baseline across studio and hub', async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+  const studio = await page.evaluate(() => ({
+    preset: localStorage.getItem('vasCurrentPreset'),
+    prompt: document.getElementById('aiPrompt').value,
+    active: document.querySelector('.btn-preset.active')?.dataset.preset
+  }));
+  expect(studio.preset).toBe('awwwards');
+  expect(studio.active).toBe('awwwards');
+  expect(studio.prompt).toContain('Preset: awwwards');
+  expect(studio.prompt).toContain('Taste Profile: Editorial Motion');
+
+  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+  const hub = await page.evaluate(() => {
+    const rootStyle = getComputedStyle(document.documentElement);
+    const headingSize = parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize);
+    return {
+      preset: document.documentElement.dataset.preset,
+      background: getComputedStyle(document.body).backgroundColor,
+      motion: rootStyle.getPropertyValue('--motion').trim(),
+      radius: rootStyle.getPropertyValue('--radius').trim(),
+      headingSize
+    };
+  });
+  expect(hub.preset).toBe('awwwards');
+  expect(hub.background).toBe('rgb(232, 232, 229)');
+  expect(hub.motion).toBe('0.5s');
+  expect(hub.radius).toBe('0px');
+  expect(hub.headingSize).toBeLessThanOrEqual(70);
+});
+
+test('existing Neo-Brutalism and custom tokens stay intact', async ({ page }) => {
+  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('vasCurrentPreset', 'neobrutal');
+    localStorage.setItem('vasThemeTokens', JSON.stringify({
+      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif",
+      fontSize: 16, letterSpacing: -0.05, padding: 24, radius: 0, borderWidth: 2, shadow: 0, speed: 0.1,
+      colors: {
+        primary: '#000000', background: '#f0f0f0', surface: '#ffcc00',
+        text: '#000000', border: '#000000', success: '#10b981'
+      }
+    }));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const preservedNeo = await page.evaluate(() => ({
+    preset: localStorage.getItem('vasCurrentPreset'),
+    tokens: JSON.parse(localStorage.getItem('vasThemeTokens'))
+  }));
+  expect(preservedNeo.preset).toBe('neobrutal');
+  expect(preservedNeo.tokens.colors.surface).toBe('#ffcc00');
+
+  const custom = await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('vasCurrentPreset', 'neobrutal');
+    const tokens = VASStorage.getDefaultTheme();
+    tokens.colors.primary = '#123456';
+    localStorage.setItem('vasThemeTokens', JSON.stringify(tokens));
+    return true;
+  });
+  expect(custom).toBe(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const preserved = await page.evaluate(() => ({
+    preset: localStorage.getItem('vasCurrentPreset'),
+    tokens: JSON.parse(localStorage.getItem('vasThemeTokens'))
+  }));
+  expect(preserved.preset).toBe('neobrutal');
+  expect(preserved.tokens.colors.primary).toBe('#123456');
+});
+
+test('studio preset tokens travel to the hub through the navigation bridge', async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+  const encoded = await page.evaluate(() => {
+    applyPreset('linear');
+    return VASThemeState.encodeNavigationState(VASThemeState.get());
+  });
+  await page.goto(`${hubUrl}#vas=${encoded}`, { waitUntil: 'domcontentloaded' });
+  const result = await page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement);
+    return {
+      preset: document.documentElement.dataset.preset,
+      background: getComputedStyle(document.body).backgroundColor,
+      primary: style.getPropertyValue('--primary').trim(),
+      accent: style.getPropertyValue('--editorial-accent').trim(),
+      padding: style.getPropertyValue('--space').trim(),
+      radius: style.getPropertyValue('--radius').trim(),
+      shadow: style.getPropertyValue('--shadow-size').trim(),
+      motion: style.getPropertyValue('--motion').trim()
+    };
+  });
+  expect(result).toEqual({
+    preset: 'linear', background: 'rgb(11, 12, 15)', primary: '#6f7db8', accent: '#6f7db8',
+    padding: '24px', radius: '8px', shadow: '20px', motion: '0.2s'
+  });
+
+  const largeTypeState = await page.evaluate(() => {
+    const tokens = VASStorage.getDefaultTheme();
+    tokens.fontSize = 24;
+    return VASThemeState.encodeNavigationState({ v: 1, preset: 'custom', tokens });
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${hubUrl}#vas=${largeTypeState}`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const typeScale = await page.evaluate(() => ({
+    body: parseFloat(getComputedStyle(document.body).fontSize),
+    hero: parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize),
+    action: parseFloat(getComputedStyle(document.querySelector('.start-copy strong')).fontSize),
+    tool: parseFloat(getComputedStyle(document.querySelector('.tool-list strong')).fontSize),
+    dialogButton: parseFloat(getComputedStyle(document.querySelector('.dialog-actions button')).fontSize)
+  }));
+  expect(typeScale).toEqual({ body: 24, hero: 70, action: 28, tool: 18, dialogButton: 18 });
 });
 
 test('taste profile manual override updates prompt and can return to auto', async ({ page }) => {

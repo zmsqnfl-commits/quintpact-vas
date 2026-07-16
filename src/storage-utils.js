@@ -102,18 +102,18 @@
       fsH3: '24px',
       fsBody: '16px',
       fsSm: '12.8px',
-      letterSpacing: -0.05,
-      padding: 24,
+      letterSpacing: -0.04,
+      padding: 40,
       radius: 0,
-      borderWidth: 2,
+      borderWidth: 1,
       shadow: 0,
-      speed: 0.1,
+      speed: 0.5,
       colors: {
-        primary: '#000000',
-        background: '#f0f0f0',
-        surface: '#ffcc00',
-        text: '#000000',
-        border: '#000000',
+        primary: '#111111',
+        background: '#e8e8e5',
+        surface: '#e8e8e5',
+        text: '#111111',
+        border: '#111111',
         success: '#10b981'
       }
     };

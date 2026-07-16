@@ -1,8 +1,68 @@
 (function () {
   'use strict';
 
-  VASThemeState.init();
+  const themeState = VASThemeState.init();
+  const root = document.documentElement;
+
+  function alphaColor(hex, alpha) {
+    const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+    if (!match) return hex;
+    return 'rgb(' + [match[1], match[2], match[3]].map(function (part) {
+      return parseInt(part, 16);
+    }).join(' ') + ' / ' + alpha + ')';
+  }
+
+  root.style.setProperty('--bg', themeState.tokens.colors.background);
+  root.style.setProperty('--surface', themeState.tokens.colors.surface);
+  root.style.setProperty('--text', themeState.tokens.colors.text);
+  root.style.setProperty('--border', themeState.tokens.colors.border);
+  root.style.setProperty('--primary', themeState.tokens.colors.primary);
+  root.style.setProperty('--line', alphaColor(themeState.tokens.colors.border, '28%'));
+  root.style.setProperty('--editorial-accent', themeState.preset === 'awwwards' ? '#9b6808' : themeState.tokens.colors.primary);
+  root.style.setProperty('--font-sans', themeState.tokens.fontFamily);
+  root.style.setProperty('--font-size', themeState.tokens.fontSize + 'px');
+  root.style.setProperty('--tracking', themeState.tokens.letterSpacing + 'em');
+  root.style.setProperty('--space', themeState.tokens.padding + 'px');
+  root.style.setProperty('--rule-width', themeState.tokens.borderWidth + 'px');
+  root.style.setProperty('--shadow-size', themeState.tokens.shadow + 'px');
+  root.style.setProperty('--shadow-offset', (themeState.tokens.shadow / 3) + 'px');
+  root.style.setProperty('--motion', Math.max(0.1, themeState.tokens.speed) + 's');
+  root.style.setProperty('--radius', themeState.tokens.radius + 'px');
+  const typeScale = themeState.tokens.fontSize / 16;
+  [
+    ['--type-brand', 18, 16, 22], ['--type-brand-mobile', 17, 15, 20],
+    ['--type-status', 12, 11, 16], ['--type-ui', 13, 12, 18],
+    ['--type-hero', 70, 52, 70], ['--type-hero-tablet', 56, 48, 60], ['--type-hero-mobile', 44, 40, 46],
+    ['--type-copy', 17, 14, 20], ['--type-copy-mobile', 15, 14, 18], ['--type-micro', 11, 10, 14],
+    ['--type-index', 20, 17, 26], ['--type-index-mobile', 18, 16, 22],
+    ['--type-action', 22, 18, 28], ['--type-action-mobile', 18, 17, 22], ['--type-action-narrow', 17, 16, 20],
+    ['--type-small', 12, 11, 15], ['--type-section', 18, 16, 22], ['--type-tool', 14, 13, 18],
+    ['--type-project', 15, 13, 20], ['--type-dialog', 25, 22, 36], ['--type-dialog-mobile', 22, 20, 30]
+  ].forEach(function (entry) {
+    root.style.setProperty(entry[0], Math.min(entry[3], Math.max(entry[2], entry[1] * typeScale)) + 'px');
+  });
+  root.dataset.preset = themeState.preset;
   VASThemeState.decorateLinks(document);
+
+  function initReveals() {
+    const items = Array.from(document.querySelectorAll('[data-reveal]'));
+    const reducedMotion = globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      items.forEach(function (item) { item.classList.add('is-visible'); });
+      return;
+    }
+    root.classList.add('motion-ready');
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -8% 0px' });
+    items.forEach(function (item) { observer.observe(item); });
+  }
+
+  initReveals();
 
   const runtimeStatus = document.getElementById('runtimeStatus');
   const runtimeConnected = VASRuntime.isAvailable();

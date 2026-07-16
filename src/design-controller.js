@@ -1,5 +1,5 @@
 let currentFormat = 'json';
-let currentPreset = 'neobrutal';
+let currentPreset = 'awwwards';
 let isHydrating = false;
 
 // 즐겨찾기 상태 (localStorage 기반)

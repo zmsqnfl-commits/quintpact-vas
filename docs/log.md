@@ -3,6 +3,17 @@
 이 문서는 에이전트 시스템이 스스로 유지보수하는 **작업 이력 및 교훈 기록장**입니다.
 작업과 검증이 완료될 때마다 가장 최상단에 새 내역과 교훈을 덧붙입니다.
 
+## 2026-07-16 Awwwards Editorial 디자인 기준 복구
+
+- **분류:** `[디자인 시스템/사용성/호환성]`
+- **수행 내용:**
+  1. 새 환경의 기본값을 `awwwards / Editorial Motion`으로 통일하고 기존 저장 테마는 그대로 보존.
+  2. 허브를 warm gray, 58/42 비대칭 분할, 열린 divider rail, 절제된 0.5초 reveal 구조로 재구성.
+  3. 색상·폰트·크기·자간·간격·테두리·그림자·모션 토큰과 URL 상태 브리지를 허브에 연결.
+  4. Pytest 수집 시 호환 래퍼가 실행되던 부작용을 제거하고 Python·브라우저·배포 검증을 완료.
+- **교훈/특이사항:**
+  - 내장 디자인 스튜디오가 단일 기준이며, 허브가 별도 하드코딩 스타일로 우회하지 않도록 상태 전달 테스트를 유지해야 함.
+
 ## 2026-07-16 VAS 2.6.0 릴리즈 재검증
 
 - **분류:** `[릴리즈/개인정보/실사용 검증]`
@@ -305,7 +316,7 @@
 - **수행 내용:**
   1. 브라우저 보안 정책으로 인한 `.bat` 파일 직접 실행 불가 문제를 해결하기 위해, 외부 의존성(npm) 없는 Node.js 내장 모듈 기반의 초경량 로컬 서버(`server.js`) 구축.
   2. `Run-VAS-System.bat`이 서버를 구동하고 브라우저를 띄우는 방식으로 부트스트랩 시퀀스 변경.
-  3. `as-hub.html` 내에 로컬 서버 API(`/api/open-design/launch`)와 연동하여 버튼 원클릭으로 Open Design 설치 확인 및 자동 실행/설치를 수행하도록 기능 개편.
+  3. `vas-hub.html` 내에 로컬 서버 API(`/api/open-design/launch`)와 연동하여 버튼 원클릭으로 Open Design 설치 확인 및 자동 실행/설치를 수행하도록 기능 개편.
   4. 모달 창 대신 직관적인 토스트(Toast) 알림 UI로 진행 상태(확인 중, 설치 시작, 실행 완료) 표시.
 - **교훈/특이사항:**
   - `file://` 프로토콜 한계를 극복하기 위해선 가벼운 로컬 데몬(서버) 레이어가 필수적임. Node.js 내장 모듈만 활용하여 의존성 없는 로컬 환경을 보장하면서도 강력한 시스템 권한 앱 실행 제어가 가능해짐.
@@ -314,7 +325,7 @@
 
 - **분류:** `[UX 버그 픽스]`
 - **수행 내용:**
-  1. `as-hub.html` 모달의 "실행 시도" 버튼이 `window.open('scripts/Run-Open-Design.bat')`을 호출하여 브라우저가 bat 파일을 텍스트로 표시하던 문제 수정.
+  1. `vas-hub.html` 모달의 "실행 시도" 버튼이 `window.open('scripts/Run-Open-Design.bat')`을 호출하여 브라우저가 bat 파일을 텍스트로 표시하던 문제 수정.
   2. 모달을 스텝 가이드 형태로 전환: ① 파일 탐색기에서 프로젝트 폴더 열기 → ② bat 파일 더블클릭 안내.
   3. "실행 시도" 버튼을 "📋 경로 복사" 버튼으로 변경하여 실용적 UX 제공.
   4. 스텝 넘버 UI 스타일(네오브루탈리즘 컬러 뱃지) 추가.
@@ -384,8 +395,8 @@
 
 - **분류:** `[이식성 및 폰트 세이프가드 보강]`
 - **수행 내용:**
-  1. **시스템 폰트 폴백 스택 주입:** `client-style.css`, `design-controller.css`, `as-hub.html`에서 오직 웹 CDN 폰트(`Pretendard`, `Geist Mono` 등)에만 기대던 설계를 탈피. 인터넷 연결 유무나 컴퓨터 OS 이관 여부에 영향받지 않도록 `system-ui`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `ui-monospace`, `SFMono-Regular` 등 OS 안전 시스템 폰트 스택을 대거 보강.
-  2. **동적 테마 패치 복원력 고도화:** `as-hub.html` 및 `client-application-init.js` 내부의 `localStorage` 기반 테마 복원 스크립트를 정비하여, 프리셋 전환이나 토큰 덮어쓰기 시에도 이중으로 시스템 폴백이 상속되도록 예외 처리.
+  1. **시스템 폰트 폴백 스택 주입:** `client-style.css`, `design-controller.css`, `vas-hub.html`에서 오직 웹 CDN 폰트(`Pretendard`, `Geist Mono` 등)에만 기대던 설계를 탈피. 인터넷 연결 유무나 컴퓨터 OS 이관 여부에 영향받지 않도록 `system-ui`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `ui-monospace`, `SFMono-Regular` 등 OS 안전 시스템 폰트 스택을 대거 보강.
+  2. **동적 테마 패치 복원력 고도화:** `vas-hub.html` 및 `client-application-init.js` 내부의 `localStorage` 기반 테마 복원 스크립트를 정비하여, 프리셋 전환이나 토큰 덮어쓰기 시에도 이중으로 시스템 폴백이 상속되도록 예외 처리.
   3. **한글 깨짐 주석 정비:** UTF-8 한글 깨짐이 존재하던 `client-application-init.js` 상단의 주석을 바르게 교정.
   4. **Final-Centric 동기화 및 무결성 검증:** 루트의 변경 사항을 `final/` 내 4개 파일에 완벽 복사 미러링하고, 131개 시나리오 통합 무결성 테스트 100% PASS 확인 완료.
 - **교훈/특이사항:**
@@ -418,7 +429,7 @@
 
 - **분류:** `[구조 최적화 + 테스트 아키텍처 고도화]`
 - **수행 내용:**
-  1. **루트 간소화:** 루트 경로를 `README.md`, `Run-VAS-System.bat`, `as-hub.html` 3대 핵심 파일로 압축 및 격리하여 비기술자의 복잡도 장벽 완화.
+  1. **루트 간소화:** 루트 경로를 `README.md`, `Run-VAS-System.bat`, `vas-hub.html` 3대 핵심 파일로 압축 및 격리하여 비기술자의 복잡도 장벽 완화.
   2. **논리적 서브폴더 구성:** 핵심 코드는 `src/`, 백업 스크립트는 `scripts/`, 가이드는 `docs/` 및 `.agents/`로 이관.
   3. **자가 검증 테스트 실행기 구축:** `test_html_syntax.py`, `test_client_form.py` 등을 `pytest` 없이 파이썬 기본 인터프리터로 직접 실행하는 Direct Python Runner 탑재.
   4. **한글 자간 동기화 패치:** 자간 슬라이더 조절 시 프리뷰 한글이 반응하지 않는 현상 수정을 위해 `--p-ls` 변수 바인딩 적용.
@@ -450,30 +461,13 @@
 
 ---
 
-## ⚠️ 에이전트 행동 금지사항 (2026-05-19 등록 — 반드시 숙지)
+## 2026-05-19 레거시 행동 규칙 (VAS 2.6.0에서 폐기)
 
-> 사용자가 같은 말을 두 번 하지 않도록, 다음 규칙을 작업 전 반드시 체크한다.
+> 아래 시기의 색상 고정, 허브 격리, `final/` 미러 중심 규칙은 현재 지침이 아닙니다. 현행 기준은 `docs/INSTRUCTIONS.md`, `docs/design-system.md`, `docs/HANDOFF.md`입니다.
 
-### 파일 조작
-- **PowerShell `Set-Content`로 한글 파일 절대 금지.** 이중 개행 및 깨짐 방지를 위해 Python `open(..., encoding='utf-8')` 사용.
-- **색상 교체 범위 주의:** `as-hub.html`과 `client-application.html`은 개별 디자인 시스템으로 격리.
-- **파일 추가 전 존재 여부 확인:** 루트에 없는 파일 허브 링크 시 404 발생 주의.
-
-### 디자인 변경
-- **허브(`as-hub.html`) 디자인 확정 상태 임의 변경 금지:**
-  - 카드 모서리 `border-radius: 0` 유지
-  - 카드 텍스트 호버 시 펴지는 애니메이션 유지
-  - 카드 배경색 design=yellow, prompt=blue 고정
-- **CSS 우선순위:** hover 및 transform 계열 규칙 설계 시 구체적 선택자 간섭 차단.
-- **TASTE-RULES 적용:** Anti-Center Bias 기반 비대칭 앵커링 유지.
-
-### 워크플로우 및 컨텍스트 압축 (Log Condensation)
-- **Final-Centric:** `final/` 폴더 파일은 확인 없이 루트 복사 금지.
-- **로그 자동 압축 (Log Condensation):** 작업 완료 시 이전 오래된 로그를 3~4줄 이내로 Pruning/Merge하여 토큰 낭비 방지.
-
-### 테스트 기본 규칙
-- **경량화 규칙:** 평소 개발 시 반복 스트레스 테스트 대신 단일 무결성 검사(`python tests/test_integrity.py`)만 실행.
-- **스트레스 테스트 제한:** `run_10x_stress.py` 등은 사용자의 명시적 요청이 있을 때만 최종 구동.
+- 작업 원본은 `src/`, `docs/`, `scripts/`, `tests/`이며 배포물은 스크립트로 생성합니다.
+- 화면은 디자인 스튜디오 토큰과 상태 브리지를 사용하고 임의의 고정 색상으로 분리하지 않습니다.
+- 단일 검증은 평소 실행하며 10회 스트레스 검사는 사용자가 명시한 경우에만 실행합니다.
 
 ---
 

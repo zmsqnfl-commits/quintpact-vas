@@ -6,6 +6,11 @@ import sys
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(BASE, 'tests', 'test_integrity.py')
 
-print('[NOTICE] test_integrity_10loop.py는 호환 래퍼입니다. test_integrity.py를 실행합니다.')
-result = subprocess.run([sys.executable, SCRIPT], cwd=BASE)
-sys.exit(result.returncode)
+def main():
+    print('[NOTICE] test_integrity_10loop.py는 호환 래퍼입니다. test_integrity.py를 실행합니다.')
+    result = subprocess.run([sys.executable, SCRIPT], cwd=BASE)
+    return result.returncode
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -31,7 +31,7 @@
   }
 
   function getCurrentPresetKey() {
-    return VASStorage.readText('vasCurrentPreset', 'neobrutal');
+    return VASStorage.readText('vasCurrentPreset', 'awwwards');
   }
 
   function refreshAgentPrompt() {

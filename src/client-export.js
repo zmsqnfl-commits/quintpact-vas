@@ -21,7 +21,7 @@ function collectApplicationData(form, files) {
         schemaVersion: 1,
         appVersion: window.VASConfig ? window.VASConfig.version : '2.6.0',
         exportedAt: new Date().toISOString(),
-        preset: themeState ? themeState.preset : VASStorage.readText('vasCurrentPreset', 'neobrutal'),
+        preset: themeState ? themeState.preset : VASStorage.readText('vasCurrentPreset', 'awwwards'),
         themeTokens: themeState ? themeState.tokens : VASStorage.getDefaultTheme(),
         language: window.currentLang || 'ko'
     };

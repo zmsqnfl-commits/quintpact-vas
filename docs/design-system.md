@@ -11,6 +11,7 @@ Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/desi
 
 - **비개발자 권장 흐름:** `Run-VAS-System.bat` 실행 → VAS 허브 → 디자인 스튜디오 → 프리셋/토큰 조정 → JSON/CSS/Tailwind 추출.
 - **디자인 스튜디오 위치:** `src/design-controller.html`
+- **신규 기본값:** `awwwards` 프리셋과 `Editorial Motion` Taste Profile을 사용합니다.
 - 사용자(팀 리드)가 특정 디자인 시스템, 토큰 JSON, 또는 산출물을 제공하면 해당 파일을 최상위 시각 명세로 간주합니다.
 - 임의의 보라색/형광색 템플릿(Slop) 그라디언트나 촌스러운 중앙 정렬은 원천 차단됩니다.
 
@@ -37,3 +38,9 @@ Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/desi
 - **비대칭성 (Asymmetry):** 뻔한 3단 횡렬 배치, 무조건적인 텍스트 가운데 정렬 금지.
 - **음수 공간 (Negative Space):** 빽빽한 컨테이너(Card) 남용 금지. 선(Divider)과 여백만으로 데이터를 그룹화하여 공기처럼 가벼운 레이아웃 지향.
 - **Radius 및 Border:** 프리셋에서 주어진 토큰(예: IBM Carbon의 경우 0px, Google M3의 경우 16px)을 완벽하게 따라야 합니다.
+
+## 5. 기본값과 호환성
+
+- 새 저장소는 `awwwards`로 시작합니다.
+- 기존 저장소의 색상·간격·프리셋은 자동 전환하지 않습니다.
+- 허브와 연결 화면은 `VASThemeState`의 토큰을 사용하고, URL 상태 브리지로 선택값을 이어갑니다.

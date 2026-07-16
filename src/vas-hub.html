@@ -10,7 +10,7 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="vas-hub.html" data-vas-link><span class="brand-mark">V</span><span>VAS 2.6</span></a>
+      <a class="brand" href="vas-hub.html" data-vas-link>VAS 2.6</a>
       <div class="header-actions">
         <span class="runtime-status" id="runtimeStatus" aria-live="polite">연결 확인 중</span>
         <a class="history-link" href="memory-center.html" data-vas-link aria-label="내 사용 기록">
@@ -23,31 +23,32 @@
 
   <main class="hub-shell">
     <div class="hub-panel">
-      <section class="hero">
+      <section class="hero" data-reveal>
         <div class="hero-copy">
-          <h1>무엇을 도와드릴까요?</h1>
+          <h1><span>무엇을</span> <span>도와드릴까요?</span></h1>
           <p>새 프로젝트를 시작하거나 기존 프로그램을 안전하게 가져오세요.</p>
+          <span class="hero-signature" aria-hidden="true">VAS / 2.6</span>
         </div>
 
         <h2 id="startTitle" class="sr-only">프로젝트 시작</h2>
         <div class="start-grid" aria-labelledby="startTitle">
           <a class="start-card new" href="client-application.html" data-vas-link data-track="project.new">
-            <span class="action-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M12 12v6M9 15h6"/></svg></span>
+            <span class="action-index" aria-hidden="true">01</span>
             <span class="start-copy"><strong>새 프로젝트 만들기</strong><small>요구사항을 정리하고 새 작업 공간을 준비합니다.</small></span>
             <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
           <a class="start-card import" href="project-import.html" data-vas-link data-track="project.import">
-            <span class="action-icon icon-yellow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h5"/></svg></span>
+            <span class="action-index" aria-hidden="true">02</span>
             <span class="start-copy"><strong>기존 프로그램 가져오기</strong><small>원본은 그대로 두고 안전한 복사본으로 시작합니다.</small></span>
             <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
         </div>
       </section>
 
-      <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle">
+      <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle" data-reveal>
         <div class="onboarding-heading">
           <h2 id="onboardingTitle">처음 사용하는 순서</h2>
-          <button type="button" id="dismissOnboarding">안내 숨기기</button>
+          <button type="button" id="dismissOnboarding">숨기기</button>
         </div>
         <ol>
           <li><strong>1</strong><span><b>시작 방식 선택</b><small>새 프로젝트 또는 기존 프로그램을 선택합니다.</small></span></li>
@@ -56,8 +57,8 @@
         </ol>
       </section>
 
-      <section class="tools-section" aria-labelledby="toolsTitle">
-        <div class="section-heading"><h2 id="toolsTitle">작업 도구</h2></div>
+      <section class="tools-section" aria-labelledby="toolsTitle" data-reveal>
+        <div class="section-heading"><h2 id="toolsTitle">도구 바로가기</h2></div>
         <div class="tool-list">
           <a href="design-controller.html" data-vas-link data-track="tool.design">
             <span class="tool-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4-1 10-10-3-3L5 16zM13 8l3 3M15 4l2-2 3 3-2 2"/></svg></span>
@@ -74,14 +75,14 @@
         </div>
       </section>
 
-      <section class="projects-section" aria-labelledby="projectsTitle">
+      <section class="projects-section" aria-labelledby="projectsTitle" data-reveal>
         <div class="section-heading"><h2 id="projectsTitle">내 프로젝트</h2><button type="button" id="refreshProjects">새로고침</button></div>
         <div id="projectList" class="project-list">
           <div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><strong>아직 프로젝트가 없습니다.</strong><span>새 프로젝트를 만들거나 기존 프로그램을 가져와 시작하세요.</span></div>
         </div>
       </section>
 
-      <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" hidden>
+      <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" data-reveal hidden>
         <span class="recommendation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span>
         <div><h2 id="recommendationTitle">다음 작업 추천</h2><p id="recommendationCopy"></p></div>
         <a id="recommendationLink" href="knowledge-search.html" data-vas-link>추천 작업 열기<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>

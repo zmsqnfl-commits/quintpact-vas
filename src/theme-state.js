@@ -8,13 +8,14 @@
   const HASH_KEY = 'vas';
   const HASH_LIMIT = 4096;
   const STATE_VERSION = 1;
+  const DEFAULT_PRESET = 'awwwards';
   let currentState = null;
 
   function normalizePreset(value) {
     if (value === 'custom') return value;
     return typeof value === 'string' && /^[a-z0-9-]{1,32}$/i.test(value)
       ? value.toLowerCase()
-      : 'neobrutal';
+      : DEFAULT_PRESET;
   }
 
   function normalizeTasteMode(value) {
@@ -71,7 +72,7 @@
     const tokens = VASStorage.readJson('vasThemeTokens', null, VASStorage.isTheme);
     if (!tokens) return null;
     return normalizeState({
-      preset: VASStorage.readText('vasCurrentPreset', 'neobrutal'),
+      preset: VASStorage.readText('vasCurrentPreset', DEFAULT_PRESET),
       tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
       tokens
     });
@@ -86,7 +87,9 @@
   }
 
   function init() {
-    currentState = normalizeState(readHashState() || readStoredState() || {});
+    const navigationState = readHashState();
+    const storedState = navigationState ? null : readStoredState();
+    currentState = normalizeState(navigationState || storedState || {});
     persist(currentState);
     return get();
   }
