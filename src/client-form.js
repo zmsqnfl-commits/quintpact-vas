@@ -11,8 +11,10 @@ const total = 5;
 /* 언어 전환 */
 function setLang(lang) {
     currentLang = lang;
-    document.getElementById('btn-ko').classList.toggle('active', lang === 'ko');
-    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    const koButton = document.getElementById('btn-ko');
+    const enButton = document.getElementById('btn-en');
+    if (koButton) koButton.classList.toggle('active', lang === 'ko');
+    if (enButton) enButton.classList.toggle('active', lang === 'en');
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');

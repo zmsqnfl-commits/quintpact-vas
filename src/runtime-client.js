@@ -58,6 +58,24 @@
     return data;
   }
 
+  async function download(path, options) {
+    if (!isAvailable()) throw new Error('VAS 로컬 런타임에 연결되지 않았습니다.');
+    const init = Object.assign({}, options || {});
+    init.headers = Object.assign({}, init.headers || {}, { 'X-VAS-Token': getToken() });
+    if (init.body && typeof init.body !== 'string') {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(init.body);
+    }
+    const response = await global.fetch(path, init);
+    if (!response.ok) {
+      const text = await response.text();
+      let message = text;
+      try { const data = JSON.parse(text); message = data.error || data.message || text; } catch (error) { }
+      throw new Error(message || '다운로드 실패: ' + response.status);
+    }
+    return response.blob();
+  }
+
   function heartbeat() {
     if (!isAvailable()) return;
     request('/api/heartbeat', { method: 'POST' }).catch(function () {});
@@ -67,5 +85,5 @@
   heartbeat();
   preserveTokenInLinks();
 
-  global.VASRuntime = Object.freeze({ isAvailable, request, getToken, preserveTokenInLinks });
+  global.VASRuntime = Object.freeze({ isAvailable, request, download, getToken, preserveTokenInLinks });
 })(window);

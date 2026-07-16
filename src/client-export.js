@@ -19,7 +19,7 @@ function collectApplicationData(form, files) {
     const themeState = window.VASThemeState ? window.VASThemeState.get() : null;
     data._meta = {
         schemaVersion: 1,
-        appVersion: window.VASConfig ? window.VASConfig.version : '2.6.0',
+        appVersion: window.VASConfig ? window.VASConfig.version : '2.6.1',
         exportedAt: new Date().toISOString(),
         preset: themeState ? themeState.preset : VASStorage.readText('vasCurrentPreset', 'awwwards'),
         themeTokens: themeState ? themeState.tokens : VASStorage.getDefaultTheme(),
@@ -62,11 +62,17 @@ async function createWorkspaceProject() {
         const result = await VASRuntime.request('/api/projects/create', {
             method: 'POST', body: { name: data.project_name || '', brief: data }
         });
+        const project = result && result.project;
+        if (!project || !project.projectId) throw new Error('생성된 프로젝트 연결 정보를 받지 못했습니다.');
+        VASProjectContext.set(project);
         status.textContent = currentLang === 'ko'
-            ? '작업공간을 만들었습니다. 허브의 내 프로젝트에서 열 수 있습니다.'
+            ? '작업공간을 만들었습니다. 이제 디자인을 정하면 RAG가 이 프로젝트에 연결됩니다.'
             : 'Workspace created. Open it from My Projects in the hub.';
         button.hidden = true;
         document.getElementById('createdProjectNext').hidden = false;
+        VASProjectContext.decorateLinks(document.getElementById('createdProjectNext').parentNode);
+        if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
+        if (window.VASProjectRail) VASProjectRail.init().catch(function () {});
         if (window.VASClientDraft) window.VASClientDraft.clear();
         if (window.VASPersonalization) {
             window.VASPersonalization.record({

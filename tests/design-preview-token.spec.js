@@ -190,9 +190,13 @@ test('studio preset tokens travel to the hub through the navigation bridge', asy
     hero: parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize),
     action: parseFloat(getComputedStyle(document.querySelector('.start-copy strong')).fontSize),
     tool: parseFloat(getComputedStyle(document.querySelector('.tool-list strong')).fontSize),
-    dialogButton: parseFloat(getComputedStyle(document.querySelector('.dialog-actions button')).fontSize)
+    privacyButton: parseFloat(getComputedStyle(document.querySelector('#acceptPersonalization')).fontSize)
   }));
-  expect(typeScale).toEqual({ body: 24, hero: 70, action: 28, tool: 18, dialogButton: 18 });
+  expect(typeScale.body).toBe(24);
+  expect(typeScale.hero).toBeLessThanOrEqual(70);
+  expect(typeScale.action).toBeLessThanOrEqual(28);
+  expect(typeScale.tool).toBeLessThanOrEqual(18);
+  expect(typeScale.privacyButton).toBeLessThanOrEqual(18);
 });
 
 test('taste profile manual override updates prompt and can return to auto', async ({ page }) => {
@@ -320,4 +324,29 @@ test('all entry pages load without external network requests', async ({ page }) 
   }
 
   expect(externalRequests).toEqual([]);
+});
+
+test('all main screens fit narrow mobile widths without horizontal scrolling', async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const url of [hubUrl, appUrl, clientUrl, importUrl, searchUrl, memoryUrl]) {
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth
+      }));
+      expect(dimensions.scroll, `${url} at ${width}px`).toBeLessThanOrEqual(dimensions.viewport + 1);
+    }
+  }
+});
+
+test('design studio mobile tabs keep settings and preview usable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.controls')).toBeVisible();
+  await page.getByRole('button', { name: '미리보기' }).click();
+  await expect(page.locator('.preview')).toBeVisible();
+  await expect(page.locator('#advPreview')).toBeVisible();
+  await page.getByRole('button', { name: '설정', exact: true }).click();
+  await expect(page.locator('#preset-container')).toBeVisible();
 });

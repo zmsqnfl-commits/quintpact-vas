@@ -13,7 +13,7 @@ from vas_project_import import MigrationError, MigrationManager
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="VAS 2.6.0 기존 프로그램 가져오기")
+    parser = argparse.ArgumentParser(description="VAS 2.6.1 기존 프로그램 가져오기")
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent),
                         help="VAS 루트 경로")
     parser.add_argument("--large-file-mb", type=int, default=50,

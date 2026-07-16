@@ -13,14 +13,11 @@
   root.style.setProperty('--border', v.colors.border);
   root.style.setProperty('--border-dark', v.colors.text);
 
-  const shadow = v.shadow > 0
-    ? '0 ' + (v.shadow / 2) + 'px ' + v.shadow + 'px rgba(0,0,0,0.15)'
-    : (v.radius === 0 ? '4px 4px 0 var(--border-dark)' : 'none');
+  root.style.setProperty('--form-motion', v.speed + 's');
+  root.style.setProperty('--selection-radius', v.radius + 'px');
   const style = document.createElement('style');
   style.textContent = [
     'body{font-family:' + v.fontFamily + ';font-size:' + v.fontSize + 'px;letter-spacing:' + v.letterSpacing + 'em}',
-    '.block .bl-content,.v-block .vl-content{border-radius:' + v.radius + 'px;padding:' + v.padding + 'px;border:' + v.borderWidth + 'px solid var(--border);transition:' + v.speed + 's}',
-    '.block input:checked+.bl-content,.v-block input:checked+.vl-content{background:var(--text-main);color:var(--bg-color);border-color:var(--text-main);box-shadow:' + shadow + ';transform:translate(-3px,-3px)}',
     '.hero-section{background:var(--text-main);color:var(--bg-color)}',
     '.hero-meta,.back-link,.hero-title p,.progress-indicator{color:var(--bg-color)}',
     '.drag-drop-zone{background:var(--bg-color);border-color:var(--border)}'

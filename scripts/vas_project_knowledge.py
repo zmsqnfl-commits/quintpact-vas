@@ -28,7 +28,7 @@ EXCLUDED_DIRS = {
 }
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 SECRET_BASENAMES = {
-    ".env", "credentials.json", "id_ed25519", "id_rsa", "secrets.json",
+    ".env", "brief.json", "credentials.json", "id_ed25519", "id_rsa", "secrets.json",
     "service-account.json",
 }
 SENSITIVE_NAME = re.compile(

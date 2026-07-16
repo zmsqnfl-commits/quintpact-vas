@@ -1,12 +1,10 @@
 let currentFormat = 'json';
 let currentPreset = 'awwwards';
 let isHydrating = false;
-
 // 즐겨찾기 상태 (localStorage 기반)
 let favorites = VASStorage.readJson('vasFavorites', [], function (value) {
   return Array.isArray(value) && value.every(function (key) { return typeof key === 'string' && PRESETS[key]; });
 });
-
 function toggleFavorite(presetKey, event) {
   event.stopPropagation();
   const idx = favorites.indexOf(presetKey);
@@ -18,56 +16,48 @@ function toggleFavorite(presetKey, event) {
   VASStorage.writeJson('vasFavorites', favorites);
   renderPresets();
 }
-
 function renderPresets() {
   const container = document.getElementById('preset-container');
-  container.innerHTML = ''; // Clear
-
-  // 1. 즐겨찾기 그룹 렌더링 (옵션)
-  if (favorites.length > 0) {
-    let html = `<h3>⭐ 즐겨찾기</h3><div class="preset-grid" style="margin-bottom: 20px;">`;
-    favorites.forEach(key => {
-      if(PRESETS[key]) {
-        // 첫 글자 대문자화 (간단히 표시용)
-        let nameDisplay = key.charAt(0).toUpperCase() + key.slice(1);
-        html += `<button class="btn-preset" data-preset="${key}" onclick="applyPreset('${key}', this)">
-                   ${nameDisplay}
-                   <span class="fav-icon active" onclick="toggleFavorite('${key}', event)">★</span>
-                 </button>`;
-      }
+  container.innerHTML = '<h2 id="presetTitle">프리셋</h2>';
+  function addGroup(label, keys) {
+    const heading = document.createElement('h3');
+    heading.textContent = label;
+    const grid = document.createElement('div');
+    grid.className = 'preset-grid';
+    keys.forEach(function (key) {
+      if (!PRESETS[key]) return;
+      const row = document.createElement('div');
+      row.className = 'preset-row';
+      const presetButton = document.createElement('button');
+      presetButton.type = 'button';
+      presetButton.className = 'btn-preset';
+      presetButton.dataset.preset = key;
+      presetButton.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      presetButton.addEventListener('click', function () { applyPreset(key, presetButton); });
+      const favoriteButton = document.createElement('button');
+      favoriteButton.type = 'button';
+      favoriteButton.className = 'favorite-toggle';
+      favoriteButton.setAttribute('aria-label', presetButton.textContent + ' 즐겨찾기');
+      favoriteButton.setAttribute('aria-pressed', String(favorites.includes(key)));
+      favoriteButton.textContent = favorites.includes(key) ? '−' : '+';
+      favoriteButton.addEventListener('click', function (event) { toggleFavorite(key, event); });
+      row.append(presetButton, favoriteButton);
+      grid.append(row);
     });
-    html += `</div>`;
-    container.innerHTML += html;
+    container.append(heading, grid);
   }
-
-  // 2. 카테고리별 렌더링
-  Object.keys(PRESET_CATEGORIES).forEach(catKey => {
-    const cat = PRESET_CATEGORIES[catKey];
-    let html = `<h3>${cat.label}</h3><div class="preset-grid" style="margin-bottom: 20px;">`;
-
-    cat.presets.forEach(key => {
-      let isFav = favorites.includes(key);
-      let nameDisplay = key.charAt(0).toUpperCase() + key.slice(1);
-      html += `<button class="btn-preset" data-preset="${key}" onclick="applyPreset('${key}', this)">
-                 ${nameDisplay}
-                 <span class="fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${key}', event)">
-                   ${isFav ? '★' : '☆'}
-                 </span>
-               </button>`;
-    });
-
-    html += `</div>`;
-    container.innerHTML += html;
+  if (favorites.length) addGroup('즐겨찾기', favorites);
+  Object.keys(PRESET_CATEGORIES).forEach(function (key) {
+    const category = PRESET_CATEGORIES[key];
+    addGroup(category.label, category.presets);
   });
   syncActivePreset(currentPreset);
 }
-
 function syncActivePreset(name) {
   document.querySelectorAll('.btn-preset').forEach(function (button) {
     button.classList.toggle('active', name !== 'custom' && button.dataset.preset === name);
   });
 }
-
 function setControlsFromTokens(value) {
   const v = VASStorage.normalizeTheme(value);
   document.getElementById('colorBg').value = v.colors.background;
@@ -85,7 +75,6 @@ function setControlsFromTokens(value) {
   document.getElementById('fontFamily').value = v.fontFamily;
   document.getElementById('fontSize').value = v.fontSize;
 }
-
 function refreshDesignPrompt() {
   const preset = PRESETS[currentPreset];
   const values = getValues();
@@ -95,9 +84,7 @@ function refreshDesignPrompt() {
     ? window.composeAgentPrompt(currentPreset, promptPreset)
     : promptPreset.prompt;
 }
-
 window.refreshDesignPrompt = refreshDesignPrompt;
-
 function applyPreset(name, element) {
   const p = PRESETS[name];
   if (!p) return;
@@ -115,7 +102,6 @@ function applyPreset(name, element) {
   document.getElementById('speed').value = p.speed;
   document.getElementById('letterSpacing').value = p.ls;
   document.getElementById('fontFamily').value = p.font;
-
   // Set the AI System Prompt
   refreshDesignPrompt();
   update(false, name);
@@ -125,7 +111,6 @@ function applyPreset(name, element) {
     });
   }
 }
-
 function getValues() {
   const fs = +document.getElementById('fontSize').value;
   return {
@@ -152,13 +137,11 @@ function getValues() {
     }
   };
 }
-
 function update(skipHistory = false, presetOverride) {
   if (presetOverride) currentPreset = presetOverride;
   else if (!isHydrating) currentPreset = 'custom';
   const v = VASStorage.normalizeTheme(getValues());
   const f = document.getElementById('advPreview');
-
   document.getElementById('fsVal').textContent = v.fontSize + 'px';
   document.getElementById('lsVal').textContent = v.letterSpacing.toFixed(2) + 'em';
   document.getElementById('padVal').textContent = v.padding + 'px';
@@ -166,7 +149,6 @@ function update(skipHistory = false, presetOverride) {
   document.getElementById('borderVal').textContent = v.borderWidth + 'px';
   document.getElementById('shadowVal').textContent = v.shadow + 'px';
   document.getElementById('speedVal').textContent = v.speed.toFixed(2) + 's';
-
   // Set CSS Vars for Preview Component
   f.style.setProperty('--p-font', v.fontFamily);
   f.style.setProperty('--p-fs-hero', v.fsHero);
@@ -178,14 +160,12 @@ function update(skipHistory = false, presetOverride) {
   f.style.setProperty('--p-pad', v.padding + 'px');
   f.style.setProperty('--p-radius', v.radius + 'px');
   f.style.setProperty('--p-border-width', v.borderWidth + 'px');
-
   // Custom shadow logic for NeoBrutalism
   if(v.colors.border === '#000000' && v.borderWidth >= 3 && v.shadow === 0 && v.radius === 0) {
      f.style.setProperty('--p-shadow', '6px 6px 0px #000');
   } else {
      f.style.setProperty('--p-shadow', v.shadow > 0 ? `0 ${v.shadow/2}px ${v.shadow}px rgba(0,0,0,0.15)` : 'none');
   }
-
   f.style.setProperty('--p-speed', v.speed + 's');
   f.style.setProperty('--p-primary', v.colors.primary);
   f.style.setProperty('--p-bg', v.colors.background);
@@ -193,24 +173,19 @@ function update(skipHistory = false, presetOverride) {
   f.style.setProperty('--p-text', v.colors.text);
   f.style.setProperty('--p-border-color', v.colors.border);
   f.style.setProperty('--p-success', v.colors.success);
-
   document.querySelector('.preview').style.background = v.colors.background;
-
   const state = VASThemeState.commit({
     preset: currentPreset,
     tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
     tokens: v
   });
-
   if(!skipHistory) saveHistory(state);
   syncActivePreset(currentPreset);
   refreshDesignPrompt();
-
   if(document.getElementById('tokenOutput').classList.contains('show')) {
     renderOutput();
   }
 }
-
 // ========================
 // Undo History Logic (#9)
 // ========================
@@ -221,11 +196,9 @@ function normalizeHistoryEntry(value) {
   }
   return null;
 }
-
 let tokenHistory = VASStorage.readJson('vasThemeHistory', [], function (value) {
   return Array.isArray(value) && value.every(function (entry) { return Boolean(normalizeHistoryEntry(entry)); });
 }).map(normalizeHistoryEntry);
-
 function saveHistory(state) {
   const entry = normalizeHistoryEntry(state);
   if (!entry) return;
@@ -237,20 +210,17 @@ function saveHistory(state) {
   if(tokenHistory.length > 6) tokenHistory.shift(); // 5 + 1
   VASStorage.writeJson('vasThemeHistory', tokenHistory);
 }
-
 function undoTheme() {
   if(tokenHistory.length > 1) {
     tokenHistory.pop(); // Remove current
     const prev = tokenHistory[tokenHistory.length - 1];
     VASStorage.writeJson('vasThemeHistory', tokenHistory);
-
     if (!prev || !prev.tokens) {
       showToast('히스토리 데이터가 호환되지 않습니다. 초기화합니다.');
       tokenHistory = [];
       VASStorage.writeJson('vasThemeHistory', []);
       return;
     }
-
     try {
       currentPreset = PRESETS[prev.preset] ? prev.preset : 'custom';
       setControlsFromTokens(prev.tokens);
@@ -266,22 +236,18 @@ function undoTheme() {
     showToast('더 이상 되돌릴 수 없습니다.');
   }
 }
-
 function getJSON() {
   const v = getValues();
   return JSON.stringify(v, null, 2);
 }
-
 function getCSS() {
   const v = getValues();
   return `:root {\n  --font-family: ${v.fontFamily};\n  --font-size-base: ${v.fontSize}px;\n  --letter-spacing: ${v.letterSpacing}em;\n  --color-primary: ${v.colors.primary};\n  --color-bg: ${v.colors.background};\n  --color-surface: ${v.colors.surface};\n  --color-text: ${v.colors.text};\n  --color-border: ${v.colors.border};\n  --border-radius: ${v.radius}px;\n  --border-width: ${v.borderWidth}px;\n  --padding-base: ${v.padding}px;\n  --transition-speed: ${v.speed}s;\n}`;
 }
-
 function getTailwind() {
   const v = getValues();
   return `module.exports = {\n  theme: {\n    extend: {\n      colors: {\n        primary: '${v.colors.primary}',\n        background: '${v.colors.background}',\n        surface: '${v.colors.surface}',\n        border: '${v.colors.border}',\n      },\n      borderRadius: {\n        DEFAULT: '${v.radius}px',\n      },\n      borderWidth: {\n        DEFAULT: '${v.borderWidth}px',\n      },\n      transitionDuration: {\n        DEFAULT: '${v.speed * 1000}ms',\n      }\n    }\n  }\n}`;
 }
-
 function renderOutput() {
   let txt = '';
   if(currentFormat === 'json') txt = getJSON();
@@ -289,19 +255,16 @@ function renderOutput() {
   else if(currentFormat === 'tailwind') txt = getTailwind();
   document.getElementById('tokenPre').textContent = txt;
 }
-
 function showExport(fmt) {
   document.getElementById('tokenOutput').classList.add('show');
   renderOutput();
 }
-
 function switchFormat(fmt, btn) {
   currentFormat = fmt;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderOutput();
 }
-
 function downloadJSON() {
   const blob = new Blob([getJSON()], { type: 'application/json' });
   const a = document.createElement('a');
@@ -315,16 +278,13 @@ function downloadJSON() {
     });
   }
 }
-
 function triggerFileInput() {
   document.getElementById('fileInput').click();
 }
-
 function handleFileSelect(e) {
   const file = e.target.files[0];
   if (file) importJSON(file);
 }
-
 function importJSON(file) {
   if (!file.name.endsWith('.json')) {
     showToast('JSON 형식의 파일만 지원합니다.');
@@ -338,7 +298,6 @@ function importJSON(file) {
         showToast('유효하지 않은 디자인 토큰 파일입니다.');
         return;
       }
-
       currentPreset = 'custom';
       setControlsFromTokens(VASStorage.normalizeTheme(v));
       update(false, 'custom');
@@ -349,9 +308,9 @@ function importJSON(file) {
   };
   reader.readAsText(file);
 }
-
 // 드래그 앤 드롭 이벤트 리스너 바인딩
 window.addEventListener('DOMContentLoaded', () => {
+  VASProjectContext.init();
   renderPresets();
   const state = VASThemeState.init();
   currentPreset = PRESETS[state.preset] ? state.preset : 'custom';
@@ -359,7 +318,6 @@ window.addEventListener('DOMContentLoaded', () => {
   isHydrating = true;
   update(false, currentPreset);
   isHydrating = false;
-
   const dz = document.getElementById('dragZone');
   if (dz) {
     dz.addEventListener('dragover', (e) => {
@@ -376,12 +334,29 @@ window.addEventListener('DOMContentLoaded', () => {
       if (file) importJSON(file);
     });
   }
+  document.querySelectorAll('[data-studio-view]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const view = button.dataset.studioView;
+      document.querySelector('.app').dataset.mobileView = view;
+      document.querySelectorAll('[data-studio-view]').forEach(function (item) {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+    });
+  });
+  const context = VASProjectContext.get();
+  const applyButton = document.getElementById('applyProjectTheme');
+  if (!context) applyButton.firstChild.textContent = '공통 설정으로 저장하고 허브로 ';
+  else if (!VASRuntime.isAvailable()) {
+    const status = document.getElementById('applyProjectStatus');
+    status.hidden = false;
+    status.textContent = '프로젝트에 저장하려면 Run-VAS-System.bat로 실행하세요.';
+  }
 });
-
 function copyOutput() {
   navigator.clipboard.writeText(document.getElementById('tokenPre').textContent).then(() => showToast(currentFormat.toUpperCase() + ' 코드 복사 완료!'));
 }
-
 async function copyAgentPrompt() {
   const basePrompt = document.getElementById('aiPrompt').value;
   let prompt = basePrompt;
@@ -415,40 +390,66 @@ async function copyAgentPrompt() {
   }
   showToast('에이전트용 프롬프트 복사 완료!');
 }
-
 function showToast(msg) {
   const t = document.getElementById('dc-toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-// --- 스플리터 (Resizer) 드래그 로직 ---
-const resizer = document.getElementById('resizer');
-const controlsPanel = document.getElementById('controlsPanel');
-let isDragging = false;
-
-resizer.addEventListener('mousedown', function(e) {
-  isDragging = true;
-  resizer.classList.add('dragging');
-  document.body.style.cursor = 'col-resize';
-  // 드래그 중 텍스트 선택 방지
-  document.body.style.userSelect = 'none';
-});
-
-window.addEventListener('mousemove', function(e) {
-  if (!isDragging) return;
-  let newWidth = e.clientX;
-  if (newWidth < 300) newWidth = 300;
-  if (newWidth > 800) newWidth = 800;
-  controlsPanel.style.width = newWidth + 'px';
-});
-
-window.addEventListener('mouseup', function(e) {
-  if (isDragging) {
-    isDragging = false;
-    resizer.classList.remove('dragging');
-    document.body.style.cursor = 'default';
-    document.body.style.userSelect = '';
+function navigateWithProject(href) {
+  const wrapper = document.createElement('div');
+  const link = document.createElement('a');
+  link.href = href;
+  link.dataset.vasLink = '';
+  link.dataset.vasProjectLink = '';
+  wrapper.append(link);
+  VASThemeState.decorateLinks(wrapper);
+  VASProjectContext.decorateLinks(wrapper);
+  if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
+  window.location.href = link.href;
+}
+async function applyProjectTheme() {
+  const button = document.getElementById('applyProjectTheme');
+  const status = document.getElementById('applyProjectStatus');
+  const context = VASProjectContext.get();
+  if (!context) {
+    showToast('공통 디자인 설정으로 저장했습니다.');
+    navigateWithProject('vas-hub.html');
+    return;
   }
-});
+  if (!VASRuntime.isAvailable()) {
+    status.hidden = false;
+    status.textContent = 'Run-VAS-System.bat로 실행해야 현재 프로젝트에 저장할 수 있습니다.';
+    return;
+  }
+  button.disabled = true;
+  status.hidden = false;
+  status.textContent = '프로젝트에 디자인을 적용하는 중입니다.';
+  try {
+    const response = await VASRuntime.request('/api/projects/theme', {
+      method: 'POST',
+      body: {
+        projectId: context.projectId,
+        theme: {
+          preset: currentPreset,
+          tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
+          tokens: VASStorage.normalizeTheme(getValues())
+        }
+      }
+    });
+    const project = response && response.project ? response.project : Object.assign({}, context, { stage: 'knowledge' });
+    VASProjectContext.set(project);
+    if (window.VASPersonalization) {
+      await VASPersonalization.record({
+        type: 'workflow_completed', source: 'design-studio',
+        payload: { stage: 'design', preset: currentPreset }
+      });
+    }
+    status.textContent = response && response.warning ? response.warning : '적용했습니다. 프로젝트 RAG로 이어갑니다.';
+    navigateWithProject('knowledge-search.html');
+  } catch (error) {
+    status.textContent = error && error.message ? error.message : '디자인을 적용하지 못했습니다.';
+    button.disabled = false;
+  }
+}
+document.getElementById('applyProjectTheme').addEventListener('click', applyProjectTheme);

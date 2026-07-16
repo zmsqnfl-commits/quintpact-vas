@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS — 기존 프로그램 가져오기</title>
+  <title>VAS 2.6.1 — 기존 프로그램 가져오기</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2315171c%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+  <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="project-import.css">
 </head>
 <body>
@@ -17,7 +18,7 @@
   <main>
     <aside class="steps" aria-label="가져오기 진행 단계">
       <ol>
-        <li class="active" data-nav-step="1"><b>01</b><span>폴더 선택</span></li>
+        <li class="active" data-nav-step="1" aria-current="step"><b>01</b><span>폴더 선택</span></li>
         <li data-nav-step="2"><b>02</b><span>읽기 전용 분석</span></li>
         <li data-nav-step="3"><b>03</b><span>가져오기 승인</span></li>
         <li data-nav-step="4"><b>04</b><span>검증 및 등록</span></li>
@@ -74,7 +75,7 @@
           <p id="resultMessage"></p>
           <div class="actions">
             <a href="vas-hub.html" data-vas-link>허브로 돌아가기</a>
-            <a href="vas-hub.html" id="nextActionLink" data-vas-link>다음 작업 열기</a>
+            <a href="vas-hub.html" id="nextActionLink" data-vas-link data-vas-project-link>다음 작업 열기</a>
             <button type="button" id="rollbackButton">가져오기 롤백</button>
           </div>
         </div>
@@ -88,8 +89,12 @@
   <script src="vas-config.js"></script>
   <script src="storage-utils.js"></script>
   <script src="theme-state.js"></script>
+  <script src="editorial-theme.js"></script>
   <script src="runtime-client.js"></script>
+  <script src="project-context.js"></script>
+  <script src="rag-lite.js"></script>
   <script src="personalization-store.js"></script>
+  <script src="project-rail.js"></script>
   <script src="project-import.js"></script>
 </body>
 </html>

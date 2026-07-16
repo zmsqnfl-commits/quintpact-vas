@@ -21,7 +21,7 @@
   let consentState = null;
   let pauseState = false;
   let sequence = 0;
-  let projectKnowledgeCache = { at: 0, entries: [] };
+  const projectKnowledgeCache = new Map();
 
   function clone(value) {
     if (value === undefined) return undefined;
@@ -325,10 +325,13 @@
   async function record(typeOrEvent, payload, options) {
     await init();
     if (consentState !== true || pauseState) return null;
-    const input = typeof typeOrEvent === 'object' ? typeOrEvent : Object.assign({}, options || {}, {
+    const input = typeof typeOrEvent === 'object' ? Object.assign({}, typeOrEvent) : Object.assign({}, options || {}, {
       type: typeOrEvent,
       payload: payload
     });
+    const context = global.VASProjectContext && global.VASProjectContext.get
+      ? global.VASProjectContext.get() : null;
+    if (!input.projectId && context) input.projectId = context.projectId;
     const event = buildEvent(input, false);
     if (!event) return null;
     const stored = await call('put', event);
@@ -422,31 +425,47 @@
     });
   }
 
-  async function projectKnowledge() {
+  async function projectKnowledge(projectId) {
     const runtime = global.VASRuntime;
+    if (!projectId || !/^[A-Za-z0-9._-]{1,100}$/.test(projectId)) return [];
     if (!runtime || !runtime.isAvailable || !runtime.isAvailable()) return [];
-    if (Date.now() - projectKnowledgeCache.at < 30000) return projectKnowledgeCache.entries;
+    const cached = projectKnowledgeCache.get(projectId);
+    if (cached && Date.now() - cached.at < 30000) return cached.entries;
     try {
-      const response = await runtime.request('/api/knowledge/projects');
-      projectKnowledgeCache = {
+      const response = await runtime.request('/api/knowledge/projects?projectId=' + encodeURIComponent(projectId));
+      projectKnowledgeCache.set(projectId, {
         at: Date.now(),
         entries: response && Array.isArray(response.entries) ? response.entries : []
-      };
+      });
     } catch (error) {
-      projectKnowledgeCache = { at: Date.now(), entries: [] };
+      projectKnowledgeCache.set(projectId, { at: Date.now(), entries: [] });
     }
-    return projectKnowledgeCache.entries;
+    return projectKnowledgeCache.get(projectId).entries;
   }
 
   async function ragCall(method, query, options, prompt) {
     await init();
     if (!global.VASRagLite) return method === 'augmentPrompt' ? String(prompt || '') : method === 'recommend' ? { query: query, preferences: [], results: [] } : [];
-    const memory = consentState === true ? await list({ order: 'asc' }) : [];
-    const profile = consentState === true ? await call('getMeta', 'profile') || { terms: [] } : { terms: [] };
+    const context = global.VASProjectContext && global.VASProjectContext.get
+      ? global.VASProjectContext.get() : null;
+    const requestedProject = options && options.projectId;
+    const projectId = /^[A-Za-z0-9._-]{1,100}$/.test(String(requestedProject || ''))
+      ? String(requestedProject) : context && context.projectId;
+    const memory = consentState === true
+      ? await list({ order: 'asc', projectId: projectId || undefined }) : [];
+    let profile = { terms: [] };
+    if (consentState === true && projectId) {
+      const values = [];
+      memory.forEach(function (event) { collectStrings(event.payload, values); });
+      profile = { terms: profileTokens(values.join(' ')).slice(0, 20) };
+    } else if (consentState === true) {
+      profile = await call('getMeta', 'profile') || profile;
+    }
     const settings = Object.assign({}, options || {}, {
       memory: memory,
       profile: profile,
-      knowledgeEntries: await projectKnowledge()
+      projectId: projectId || null,
+      knowledgeEntries: consentState === true ? await projectKnowledge(projectId) : []
     });
     return method === 'augmentPrompt'
       ? global.VASRagLite.augmentPrompt(prompt, query, settings)

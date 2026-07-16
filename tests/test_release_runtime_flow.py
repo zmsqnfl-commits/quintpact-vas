@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 BASE = Path(__file__).resolve().parents[1]
-ARCHIVE = BASE / "dist" / "VAS-2.6.0-windows.zip"
+ARCHIVE = BASE / "dist" / "VAS-2.6.1-windows.zip"
 POWERSHELL = shutil.which("powershell.exe")
 
 
@@ -51,7 +51,7 @@ def start_release(root, state):
         raise AssertionError(f"release launcher failed: {output}")
     deadline = time.time() + 10
     while time.time() < deadline:
-        for path in state.glob("runtime-2.6.0-*.json"):
+        for path in state.glob("runtime-2.6.1-*.json"):
             try:
                 return json.loads(path.read_text(encoding="utf-8-sig"))
             except (OSError, ValueError):
@@ -69,7 +69,7 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             base.mkdir()
             with zipfile.ZipFile(ARCHIVE) as bundle:
                 bundle.extractall(base)
-            root = base / "VAS-2.6.0-windows"
+            root = base / "VAS-2.6.1-windows"
             state = base / "상태 저장소"
             source = base / "기존 결제 프로그램"
             source.mkdir()
@@ -104,13 +104,14 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
                 self.assertEqual(status, 201)
                 self.assertEqual(imported["status"], "ready")
                 job_id = imported["jobId"]
+                project_id = imported["project"]["projectId"]
 
                 _, projects = client.request("/api/projects")
                 project = next(item for item in projects["projects"] if item["projectId"] == job_id)
                 self.assertEqual(project["goal"], "upgrade")
                 self.assertTrue(project["indexEnabled"])
 
-                _, knowledge = client.request("/api/knowledge/projects")
+                _, knowledge = client.request(f"/api/knowledge/projects?projectId={project_id}")
                 serialized = json.dumps(knowledge, ensure_ascii=False)
                 self.assertIn("결제", serialized)
                 self.assertIn("payOrder", serialized)
@@ -123,7 +124,8 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
                 self.assertEqual(rolled_back["status"], "rolled_back")
                 self.assertTrue(source.is_dir())
                 self.assertFalse((root / "workspace" / "projects" / "가져온 프로젝트").exists())
-                _, after = client.request("/api/knowledge/projects")
+                index_path = root / "workspace" / ".vas" / "project-knowledge.json"
+                after = json.loads(index_path.read_text(encoding="utf-8"))
                 self.assertNotIn("payOrder", json.dumps(after, ensure_ascii=False))
             finally:
                 try:

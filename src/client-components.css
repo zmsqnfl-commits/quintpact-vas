@@ -1,93 +1,21 @@
-/* =========================================
-   client-components.css
-   드래그존, 파일 칩, 새로 작성하기 버튼 컴포넌트
-   ========================================= */
-
-.drag-drop-zone {
-    border: 2px dashed #ccc;
-    padding: 40px 20px;
-    text-align: center;
-    margin-top: 16px;
-    border-radius: 8px;
-    background: #fafafa;
-    transition: all 0.3s;
-    cursor: pointer;
-}
-.drag-drop-zone.dragover {
-    border-color: var(--accent);
-    background: #eef2ff;
-}
-.drag-drop-zone span {
-    font-size: 14px;
-    color: #666;
-    pointer-events: none;
-}
-
-.file-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-    justify-content: center;
-}
-.file-chip {
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-.file-chip button {
-    background: none; border: none; cursor: pointer; color: #999; font-weight: bold; font-size: 14px;
-}
-.file-chip button:hover { color: red; }
-
-/* 새로 작성하기 버튼 */
-.vas-btn-clear {
-    background: transparent !important;
-    border: 0 !important;
-    color: inherit !important;
-    font-size: 0.8rem !important;
-    cursor: pointer !important;
-    padding: 4px 0 !important;
-    font-family: inherit !important;
-    opacity: 0.7 !important;
-    transition: all 0.2s var(--bezier) !important;
-    box-shadow: none !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: fit-content !important;
-}
-.vas-btn-clear:hover { opacity: 1 !important; }
-.vas-btn-clear:active { transform: scale(0.98) !important; }
-
-.draft-notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 0 0 24px;
-  padding: 16px 18px;
-  border: 2px solid var(--border-dark);
-  background: #ffcc00;
-  color: #111;
-  font-size: 13px;
-}
-.draft-policy { display: flex; justify-content: space-between; gap: 14px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--border-dark); font-size: 12px; line-height: 1.5; }
-.draft-policy button { flex: none; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.drag-drop-zone { display: block; margin-top: 18px; border: 1px dashed color-mix(in srgb, var(--border) 58%, transparent); border-radius: 0; padding: 28px 18px; background: transparent; text-align: left; cursor: pointer; transition: border-color .3s, padding .3s; }
+.drag-drop-zone:hover, .drag-drop-zone.dragover { border-color: var(--accent); padding-left: 26px; }
+.drag-drop-zone > span { color: var(--text-muted); font-size: 13px; line-height: 1.6; pointer-events: none; }
+.file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.file-chip { display: inline-flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding: 5px 0; font-size: 12px; }
+.file-chip button { border: 0; background: none; color: inherit; cursor: pointer; }
+.vas-btn-clear { width: fit-content; border: 0; border-bottom: 1px solid currentColor; padding: 4px 0; background: transparent; color: inherit; cursor: pointer; font-size: 12px; opacity: .7; }
+.draft-policy, .draft-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 14px 0; border-bottom: 1px solid color-mix(in srgb, var(--border-dark) 35%, transparent); font-size: 12px; line-height: 1.5; }
+.draft-policy button { flex: none; border: 0; border-bottom: 1px solid currentColor; padding: 3px 0; background: transparent; cursor: pointer; font-weight: 700; }
+.draft-notice { border-top: 1px solid var(--border-dark); border-bottom-color: var(--border-dark); }
 .draft-notice[hidden] { display: none; }
-.draft-actions { display: flex; gap: 8px; }
-.draft-actions button {
-  border: 1px solid #111;
-  background: #fff;
-  padding: 7px 10px;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
+.draft-notice > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.draft-notice span { color: var(--text-muted); }
+.draft-actions { flex: none; display: flex; gap: 8px; }
+.draft-actions button { min-width: 56px; min-height: 38px; border: 1px solid var(--border-dark); border-radius: 0; padding: 0 10px; background: transparent; color: inherit; cursor: pointer; font-weight: 700; }
+@media (max-width: 520px) {
+  .draft-policy { align-items: flex-start; }
+  .draft-notice { align-items: stretch; flex-direction: column; }
+  .draft-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .draft-actions button { width: 100%; }
 }

@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS — 내부 지식 검색</title>
+  <title>VAS 2.6.1 — 프로젝트 RAG</title>
+  <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="knowledge-search.css">
 </head>
 <body>
-  <header><a href="vas-hub.html" data-vas-link>← 허브</a><strong>내부 지식 검색</strong><span>LOCAL RAG-LITE</span></header>
+  <header><a href="vas-hub.html" data-vas-link>← 허브</a><strong>프로젝트 RAG</strong><span>LOCAL / PRIVATE</span></header>
   <main>
     <section class="search-hero">
-      <h1>무엇을<br>찾을까요?</h1>
-      <form id="searchForm" role="search"><label for="searchInput">VAS 문서와 내 사용 기록 검색</label><div><input id="searchInput" type="search" minlength="2" maxlength="300" autocomplete="off" placeholder="예: 기존 프로젝트 가져오기"><button>검색</button></div></form>
+      <div><p class="eyebrow">SEARCH / CURRENT PROJECT</p><h1>무엇을<br>찾을까요?</h1></div>
+      <div class="search-side"><p id="ragScope">VAS 문서에서 검색합니다. 프로젝트를 선택하고 RAG를 켜면 해당 프로젝트 자료와 사용 흐름도 자동으로 함께 찾습니다.</p><form id="searchForm" role="search"><label for="searchInput">찾고 싶은 내용</label><div><input id="searchInput" type="search" minlength="2" maxlength="200" autocomplete="off" placeholder="예: 다음에 구현할 기능"><button>검색</button></div></form><div class="query-suggestions" aria-label="검색 예시"><button type="button" data-query="다음 작업 우선순위">다음 작업 우선순위</button><button type="button" data-query="디자인 구현 계획">디자인 구현 계획</button><button type="button" data-query="배포 전 확인사항">배포 전 확인사항</button></div></div>
     </section>
     <section class="results-section" aria-live="polite">
-      <div class="result-heading"><h2>검색 결과</h2><span id="resultCount">검색어를 입력해 주세요.</span></div>
+      <div class="result-heading"><h2>검색 결과</h2><span id="resultCount">현재 프로젝트를 확인 중입니다.</span></div>
       <div id="results" class="results"></div>
     </section>
   </main>
-  <script src="vas-config.js"></script><script src="storage-utils.js"></script><script src="theme-state.js"></script><script src="runtime-client.js"></script><script src="knowledge-index.js"></script><script src="rag-lite.js"></script><script src="personalization-store.js"></script><script src="knowledge-search-ui.js"></script>
+  <script src="vas-config.js"></script><script src="storage-utils.js"></script><script src="theme-state.js"></script><script src="editorial-theme.js"></script><script src="runtime-client.js"></script><script src="project-context.js"></script><script src="knowledge-index.js"></script><script src="rag-lite.js"></script><script src="personalization-store.js"></script><script src="project-rail.js"></script><script src="knowledge-search-ui.js"></script>
 </body>
 </html>

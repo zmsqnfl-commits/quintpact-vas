@@ -1,16 +1,14 @@
 ﻿Set-StrictMode -Version 2.0
 $memoryModule = Join-Path $PSScriptRoot 'VAS.Memory.psm1'
-if (-not (Get-Command Get-VASMemoryStatus -ErrorAction SilentlyContinue)) {
-    Import-Module $memoryModule -Force
-}
-
+if (-not (Get-Command Get-VASMemoryStatus -ErrorAction SilentlyContinue)) { Import-Module $memoryModule -Force }
+$projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'
+if (-not (Get-Command Get-VASProjectRecords -ErrorAction SilentlyContinue)) { Import-Module $projectsModule -Force }
 function New-VASSessionToken {
     $bytes = New-Object byte[] 32
     $rng = New-Object Security.Cryptography.RNGCryptoServiceProvider
     try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
     return ([Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'))
 }
-
 function Set-VASSecurityHeaders {
     param([Net.HttpListenerResponse]$Response, [bool]$Api = $false)
     $Response.Headers['X-Content-Type-Options'] = 'nosniff'
@@ -21,7 +19,6 @@ function Set-VASSecurityHeaders {
     $Response.Headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     $Response.Headers['Cache-Control'] = if ($Api) { 'no-store' } else { 'no-cache' }
 }
-
 function Write-VASResponse {
     param(
         [Net.HttpListenerContext]$Context,
@@ -47,12 +44,10 @@ function Write-VASResponse {
         $response.OutputStream.Close()
     }
 }
-
 function Write-VASError {
     param([Net.HttpListenerContext]$Context, [int]$Status, [string]$Message, [string]$Code = 'request_failed')
     Write-VASResponse $Context $Status ([ordered]@{ error = $Message; code = $Code })
 }
-
 function Read-VASJsonBody {
     param([Net.HttpListenerRequest]$Request, [int]$MaximumBytes = 5242880)
     if ($Request.ContentLength64 -gt $MaximumBytes) { throw '요청 본문이 너무 큽니다.' }
@@ -72,7 +67,6 @@ function Read-VASJsonBody {
         $memory.Dispose()
     }
 }
-
 function Test-VASConstantTimeToken {
     param([string]$Actual, [string]$Expected)
     if ($null -eq $Actual -or $null -eq $Expected) { return $false }
@@ -83,7 +77,6 @@ function Test-VASConstantTimeToken {
     for ($i = 0; $i -lt $a.Length; $i++) { $difference = $difference -bor ($a[$i] -bxor $b[$i]) }
     return $difference -eq 0
 }
-
 function Test-VASApiAccess {
     param([Net.HttpListenerRequest]$Request, $State)
     if (-not [Net.IPAddress]::IsLoopback($Request.RemoteEndPoint.Address)) { return 'loopback-only' }
@@ -104,7 +97,6 @@ function Test-VASApiAccess {
     }
     return $null
 }
-
 function Get-VASContentType {
     param([string]$Extension)
     $types = @{
@@ -118,7 +110,6 @@ function Get-VASContentType {
     if ($types.ContainsKey($key)) { return $types[$key] }
     return $null
 }
-
 function Resolve-VASAllowedFile {
     param([string]$RootPath, [string]$Scope, [string]$RelativePath, [bool]$TextOnly = $false)
     if ($Scope -notin @('src', 'docs')) { return $null }
@@ -139,7 +130,6 @@ function Resolve-VASAllowedFile {
     }
     return [ordered]@{ path = $candidate; type = $contentType; scope = $Scope; relative = ($RelativePath -replace '\\', '/') }
 }
-
 function Import-VASMigrationModuleIfAvailable {
     if (Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue) { return $true }
     $path = Join-Path $PSScriptRoot 'VAS.Migration.psm1'
@@ -147,7 +137,6 @@ function Import-VASMigrationModuleIfAvailable {
     try { Import-Module $path -Force -DisableNameChecking } catch { return $false }
     return [bool](Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue)
 }
-
 function Get-VASBodyProperty {
     param($Body, [string]$Name, $Default = $null)
     if ($null -eq $Body) { return $Default }
@@ -155,7 +144,6 @@ function Get-VASBodyProperty {
     if ($null -eq $property) { return $Default }
     return $property.Value
 }
-
 function Get-VASPythonCapability {
     $unsupported = $null
     $migrationProbe = Get-Command Get-VASPythonRuntime -ErrorAction SilentlyContinue
@@ -198,7 +186,6 @@ function Get-VASPythonCapability {
     if ($unsupported) { return $unsupported }
     return [ordered]@{ available = $false; command = $null; version = $null }
 }
-
 function Get-VASMigrationError {
     param([string]$RawMessage)
     if ($RawMessage -match '(?i)(python|py\.exe).*(없|not found|unavailable)|CLI를 찾을 수 없습니다') {
@@ -221,7 +208,6 @@ function Get-VASMigrationError {
     }
     return [ordered]@{ status = 400; code = 'migration_input_invalid'; message = '가져오기 입력을 확인한 뒤 다시 시도하세요.' }
 }
-
 function Invoke-VASMigrationRoute {
     param([string]$Path, [Net.HttpListenerContext]$Context, $State, $Body)
     if (-not (Import-VASMigrationModuleIfAvailable)) {
@@ -265,7 +251,6 @@ function Invoke-VASMigrationRoute {
         Write-VASError $Context $mapped.status $mapped.message $mapped.code
     }
 }
-
 function Invoke-VASApiRequest {
     param([Net.HttpListenerContext]$Context, $State)
     $request = $Context.Request
@@ -291,7 +276,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.6.0'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.6.1'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
         Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
@@ -339,20 +324,19 @@ function Invoke-VASApiRequest {
         Write-VASResponse $Context 200 ([ordered]@{ scope = $file.scope; path = $file.relative; content = $content }); return
     }
     if ($path -eq '/api/projects' -and $method -eq 'GET') {
-        $projects = @()
-        if (Import-VASMigrationModuleIfAvailable) {
-            $projects = @(Get-VASProjects -Root $State.RootPath | ForEach-Object {
-                [ordered]@{
-                    projectId = $_.projectId; name = $_.name; sourceType = $_.sourceType; status = $_.status
-                    goal = if ($null -ne $_.PSObject.Properties['goal']) { $_.goal } else { $null }
-                    indexEnabled = if ($null -ne $_.PSObject.Properties['createIndex']) { [bool]$_.createIndex } else { $false }
-                }
-            })
-        }
+        $projects = @(Get-VASProjectRecords -Root $State.RootPath | ForEach-Object { [ordered]@{
+            projectId = $_.projectId; name = $_.name; sourceType = $_.sourceType; status = $_.status
+            goal = $_.goal; stage = $_.stage; updatedAt = $_.updatedAt; indexEnabled = [bool]$_.createIndex
+        } })
         Write-VASResponse $Context 200 ([ordered]@{ projects = $projects }); return
     }
     if ($path -eq '/api/projects/create' -and $method -eq 'POST') {
-        try { Write-VASResponse $Context 201 ([ordered]@{ project = New-VASLocalProject -Root $State.RootPath -InputObject $body }) }
+        try {
+            $project = New-VASLocalProject -Root $State.RootPath -InputObject $body
+            $warning = $null
+            if (Import-VASMigrationModuleIfAvailable) { $warning = Update-VASProjectKnowledge -Root $State.RootPath }
+            Write-VASResponse $Context 201 ([ordered]@{ project = $project; warning = $warning })
+        }
         catch {
             $reason = $_.Exception.Message
             if ($reason -eq 'VAS_PROJECT_CONFLICT') { Write-VASError $Context 409 '같은 이름의 프로젝트가 이미 있습니다.' 'project_conflict' }
@@ -365,26 +349,53 @@ function Invoke-VASApiRequest {
         return
     }
     if ($path -eq '/api/projects/open' -and $method -eq 'POST') {
-        if (-not (Import-VASMigrationModuleIfAvailable)) { Write-VASError $Context 503 '마이그레이션 모듈을 사용할 수 없습니다.'; return }
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
-        $project = @(Get-VASProjects -Root $State.RootPath | Where-Object { $_.projectId -eq $projectId }) | Select-Object -First 1
+        $project = Get-VASProjectRecord -Root $State.RootPath -ProjectId $projectId
         if ($null -eq $project) { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.'; return }
-        $projectsRoot = [IO.Path]::GetFullPath((Join-Path $State.RootPath 'workspace\projects')).TrimEnd('\')
-        $projectPath = [IO.Path]::GetFullPath([string]$project.path).TrimEnd('\')
-        if ([IO.Path]::GetDirectoryName($projectPath) -ne $projectsRoot -or -not (Test-Path -LiteralPath $projectPath -PathType Container)) {
-            Write-VASError $Context 403 '등록된 프로젝트 경로가 허용 범위를 벗어났습니다.'; return
-        }
+        try { $projectPath = Resolve-VASRegisteredProjectPath -Root $State.RootPath -Project $project }
+        catch { Write-VASError $Context 403 '등록된 프로젝트 경로가 허용 범위를 벗어났습니다.'; return }
         Start-Process -FilePath 'explorer.exe' -ArgumentList @($projectPath) | Out-Null
         Write-VASResponse $Context 200 ([ordered]@{ opened = $true; projectId = $projectId }); return
     }
+    if ($path -eq '/api/projects/theme' -and $method -eq 'POST') {
+        $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
+        $theme = Get-VASBodyProperty $body 'theme' $null
+        if ($null -eq $theme) { Write-VASError $Context 400 '디자인 설정을 확인하세요.' 'project_theme_invalid'; return }
+        try {
+            $project = Set-VASProjectTheme -Root $State.RootPath -ProjectId $projectId -Theme $theme
+            $warning = $null
+            if (Import-VASMigrationModuleIfAvailable) { $warning = Update-VASProjectKnowledge -Root $State.RootPath }
+            Write-VASResponse $Context 200 ([ordered]@{ project = $project; warning = $warning })
+        } catch {
+            if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
+            elseif ($_.Exception.Message -eq 'VAS_PROJECT_PATH_FORBIDDEN') { Write-VASError $Context 403 '프로젝트 경로가 허용 범위를 벗어났습니다.' 'project_path_forbidden' }
+            else { Write-VASError $Context 400 '디자인 설정을 저장하지 못했습니다.' 'project_theme_invalid' }
+        }
+        return
+    }
+    if ($path -eq '/api/projects/export' -and $method -eq 'POST') {
+        $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
+        try {
+            $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.6.1-handoff.zip"'
+            Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
+        } catch {
+            if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
+            else { Write-VASError $Context 500 '안전 인계 ZIP을 만들지 못했습니다.' 'project_export_failed' }
+        }
+        return
+    }
     if ($path -eq '/api/knowledge/projects' -and $method -eq 'GET') {
+        $projectId = [string]$request.QueryString['projectId']
+        if ($projectId -notmatch '^[A-Za-z0-9._-]{1,100}$') { Write-VASError $Context 400 '현재 프로젝트를 먼저 선택하세요.' 'project_context_required'; return }
+        if ($null -eq (Get-VASProjectRecord -Root $State.RootPath -ProjectId $projectId)) { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found'; return }
         $entries = @()
         $knowledgePath = Join-Path $State.RootPath 'workspace\.vas\project-knowledge.json'
         if (Test-Path -LiteralPath $knowledgePath -PathType Leaf) {
             if ((Get-Item -LiteralPath $knowledgePath).Length -gt 20971520) { Write-VASError $Context 413 '지식 색인이 너무 큽니다.'; return }
             try {
                 $knowledge = [IO.File]::ReadAllText($knowledgePath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-                if ($null -ne $knowledge.PSObject.Properties['entries']) { $entries = @($knowledge.entries) }
+                if ($null -ne $knowledge.PSObject.Properties['entries']) { $entries = @($knowledge.entries | Where-Object { $_.projectId -eq $projectId }) }
             } catch { Write-VASError $Context 500 '프로젝트 지식 색인을 읽을 수 없습니다.'; return }
         }
         Write-VASResponse $Context 200 ([ordered]@{ entries = $entries }); return
@@ -407,7 +418,6 @@ function Invoke-VASApiRequest {
     }
     Write-VASError $Context 404 'API 경로를 찾을 수 없습니다.'
 }
-
 function Invoke-VASStaticRequest {
     param([Net.HttpListenerContext]$Context, $State)
     $request = $Context.Request
@@ -425,7 +435,6 @@ function Invoke-VASStaticRequest {
     $bytes = [IO.File]::ReadAllBytes($file.path)
     Write-VASResponse $Context 200 $null $file.type $bytes
 }
-
 function New-VASServerState {
     param([string]$RootPath, [string]$MemoryRoot, [int]$PreferredPort = 41725, [string]$RuntimeId)
     $ports = @()
@@ -452,7 +461,6 @@ function New-VASServerState {
     }
     throw "포트 $PreferredPort 부근에서 로컬 서버를 시작할 수 없습니다."
 }
-
 function Start-VASRequestLoop {
     param($State, [int]$IdleTimeoutSeconds = 1800)
     $listener = $State.Listener
@@ -472,7 +480,7 @@ function Start-VASRequestLoop {
                 $context = $listener.EndGetContext($pending)
                 $State.LastActivity = [DateTime]::UtcNow
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.6.0'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.6.1'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

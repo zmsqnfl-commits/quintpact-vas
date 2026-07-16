@@ -67,5 +67,5 @@ jobs:
             gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
           else
             gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
-              --verify-tag --generate-notes --title "VAS ${version}"
+              --verify-tag --notes-file "docs/releases/${version}.md" --title "VAS ${version}"
           fi

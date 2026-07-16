@@ -82,7 +82,7 @@
     VASStorage.writeJson('vasThemeTokens', state.tokens);
     VASStorage.writeText('vasCurrentPreset', state.preset);
     VASStorage.writeText('vasTasteProfileMode', state.tasteProfileMode);
-    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.6.0');
+    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.6.1');
     VASStorage.writeJson('vasThemeStateMeta', { v: STATE_VERSION, preset: state.preset });
   }
 

@@ -10,15 +10,15 @@ const importUrl = source('project-import.html');
 
 test('first visit asks for personalization consent and respects decline', async ({ page }) => {
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#privacyDialog')).toBeVisible();
-  await expect(page.locator('#privacyDialog h2')).toHaveText('내 사용 기록을 저장할까요?');
-  await expect(page.locator('#privacyDialog')).toContainText('이 컴퓨터에만 저장');
-  await expect(page.locator('#declinePersonalization')).toHaveText('저장 안 함');
-  await expect(page.locator('#acceptPersonalization')).toHaveText('저장하고 시작');
+  await expect(page.locator('#privacyRail')).toBeVisible();
+  await expect(page.locator('#privacyRail h2')).toHaveText('이 기기에서 작업 흐름을 기억할까요?');
+  await expect(page.locator('#privacyRail')).toContainText('현재 프로젝트');
+  await expect(page.locator('#declinePersonalization')).toHaveText('기억하지 않기');
+  await expect(page.locator('#acceptPersonalization')).toHaveText('기억하고 계속');
   await page.locator('#declinePersonalization').click();
-  await expect(page.locator('#privacyDialog')).not.toBeVisible();
+  await expect(page.locator('#privacyRail')).not.toBeVisible();
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#privacyDialog')).not.toBeVisible();
+  await expect(page.locator('#privacyRail')).not.toBeVisible();
   expect(await page.evaluate(() => VASPersonalization.getConsent())).toBe(false);
 });
 
@@ -31,6 +31,35 @@ test('theme state flows from design studio to client form', async ({ page }) => 
   expect(expected.href).toContain('#vas=');
   await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())).toBe(expected.primary);
+});
+
+test('project context stays minimal and automatically scopes new memory', async ({ page }) => {
+  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+  const result = await page.evaluate(async () => {
+    VASProjectContext.set({
+      projectId: 'project-123', sourceType: 'imported', goal: 'redesign', stage: 'design',
+      name: 'should-not-travel', path: 'C:\\private\\project'
+    });
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = '<a data-vas-project-link href="design-controller.html">계속</a>';
+    VASProjectContext.decorateLinks(wrapper);
+    await VASPersonalization.init();
+    await VASPersonalization.consent(true);
+    const event = await VASPersonalization.record({
+      type: 'navigation', source: 'test', payload: { action: 'continue' }
+    });
+    return {
+      context: VASProjectContext.get(),
+      href: wrapper.querySelector('a').href,
+      eventProjectId: event && event.projectId,
+      stored: JSON.parse(sessionStorage.getItem('vasProjectContext'))
+    };
+  });
+  expect(result.context.projectId).toBe('project-123');
+  expect(result.href).toContain('vasProject=project-123');
+  expect(result.href).not.toContain('should-not-travel');
+  expect(JSON.stringify(result.stored)).not.toContain('private');
+  expect(result.eventProjectId).toBe('project-123');
 });
 
 test('form draft is explicit and restorable', async ({ page }) => {

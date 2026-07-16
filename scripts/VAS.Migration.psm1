@@ -233,7 +233,7 @@ function Save-VASJob {
 function Update-VASRegistry {
     param([string]$Root, $Job, [switch]$Remove, [Nullable[bool]]$CreateIndex = $null, [string]$Goal = $null)
     $path = Join-Path (Get-VASStateRoot $Root) 'projects.json'
-    $store = Read-VASJsonFile $path ([pscustomobject]@{ version = 1; projects = @() })
+    $store = Read-VASJsonFile $path ([pscustomobject]@{ version = 2; projects = @() })
     $existing = @($store.projects | Where-Object {
         $_.jobId -eq $Job.jobId -or $_.path -eq $Job.target
     }) | Select-Object -First 1
@@ -245,14 +245,16 @@ function Update-VASRegistry {
             [bool]$existing.createIndex
         } else { $false }
         $projectGoal = if ($Goal -in @('manage', 'improve', 'redesign', 'upgrade')) { $Goal } elseif ($null -ne $existing -and $null -ne $existing.PSObject.Properties['goal'] -and [string]$existing.goal -in @('manage', 'improve', 'redesign', 'upgrade')) { [string]$existing.goal } else { 'manage' }
+        $projectStage = if ($projectGoal -eq 'redesign') { 'design' } elseif ($indexEnabled -or $projectGoal -in @('improve', 'upgrade')) { 'knowledge' } else { 'ready' }
+        $now = [DateTimeOffset]::UtcNow.ToString('o')
         $items += [pscustomobject]@{
             projectId = $Job.jobId; name = [IO.Path]::GetFileName($Job.target); path = $Job.target
             sourceType = 'imported'; source = $Job.source; jobId = $Job.jobId
-            importedAt = [DateTimeOffset]::UtcNow.ToString('o'); status = $Job.status
-            createIndex = $indexEnabled; goal = $projectGoal
+            importedAt = $now; updatedAt = $now; status = $Job.status
+            createIndex = $indexEnabled; indexEnabled = $indexEnabled; goal = $projectGoal; stage = $projectStage
         }
     }
-    Write-VASJsonFile $path ([pscustomobject]@{ version = 1; projects = @($items) })
+    Write-VASJsonFile $path ([pscustomobject]@{ version = 2; projects = @($items) })
 }
 
 function Select-VASProjectFolder {
@@ -299,6 +301,8 @@ function Import-VASProject {
     $saved = Save-VASJob $Root $job
     Update-VASRegistry $Root $job -CreateIndex $CreateIndex -Goal $Goal
     $saved | Add-Member -NotePropertyName createIndex -NotePropertyValue $CreateIndex -Force
+    $project = @(Get-VASProjects -Root $Root | Where-Object { $_.jobId -eq $job.jobId }) | Select-Object -First 1
+    $saved | Add-Member -NotePropertyName project -NotePropertyValue $project -Force
     return (Add-VASKnowledgeWarning $saved (Update-VASProjectKnowledge $Root))
 }
 
@@ -339,12 +343,13 @@ function Get-VASProjects {
     [CmdletBinding()]
     param([string]$Root)
     $path = Join-Path (Get-VASStateRoot $Root) 'projects.json'
-    $store = Read-VASJsonFile $path ([pscustomobject]@{ version = 1; projects = @() })
+    $store = Read-VASJsonFile $path ([pscustomobject]@{ version = 2; projects = @() })
     return @($store.projects)
 }
 
 Export-ModuleMember -Function @(
     'Select-VASProjectFolder', 'Analyze-VASProject', 'Import-VASProject',
     'Get-VASMigrationStatus', 'Undo-VASProjectImport',
-    'Remove-VASSourceAdvanced', 'Get-VASProjects', 'Get-VASPythonRuntime'
+    'Remove-VASSourceAdvanced', 'Get-VASProjects', 'Get-VASPythonRuntime',
+    'Update-VASProjectKnowledge'
 )

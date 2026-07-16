@@ -1,4 +1,4 @@
-"""VAS 2.6.0 재현 가능한 Windows/독립 신청서/Pages 배포 빌더."""
+"""VAS 2.6.1 재현 가능한 Windows/독립 신청서/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -33,7 +33,8 @@ CLIENT_ASSETS = [
     "client-application.html", "client-style.css", "client-components.css",
     "client-print.css", "client-i18n.js", "client-form.js", "client-draft.js",
     "client-export.js", "client-application-init.js", "vas-config.js",
-    "storage-utils.js", "theme-state.js",
+    "storage-utils.js", "theme-state.js", "editorial-shell.css",
+    "editorial-theme.js", "project-context.js", "project-rail.js",
 ]
 
 
@@ -139,7 +140,7 @@ def build_windows(stage: Path) -> Path:
     for dirname in FULL_DIRS:
         copy_tree(ROOT / dirname, root / dirname)
     (root / "README.md").write_text(
-        """# VAS 2.6.0 Windows 실행본
+        """# VAS 2.6.1 Windows 실행본
 
 ## 시작
 

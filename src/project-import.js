@@ -8,7 +8,8 @@
   const localMode = VASRuntime.isAvailable();
   let importReady = localMode;
   const modeLabel = document.getElementById('modeLabel');
-  modeLabel.textContent = localMode ? 'LOCAL / 확인 중' : 'WEB / ANALYZE';
+  modeLabel.textContent = localMode ? '로컬 / 확인 중' : '웹 / 분석만';
+  VASProjectContext.init();
 
   async function checkLocalCapabilities() {
     if (!localMode) return;
@@ -19,7 +20,7 @@
       const status = await VASRuntime.request('/api/status');
       const capability = status && status.capabilities && status.capabilities.projectImport;
       importReady = !capability || capability.available === true;
-      modeLabel.textContent = importReady ? 'LOCAL / FULL' : 'LOCAL / 제한 모드';
+      modeLabel.textContent = importReady ? '로컬 / 전체 기능' : '로컬 / 제한 모드';
       button.disabled = !importReady;
       if (!importReady) {
         notice.textContent = capability.reason === 'python-unavailable' || capability.reason === 'python-version-unsupported'
@@ -29,7 +30,7 @@
       }
     } catch (error) {
       importReady = false;
-      modeLabel.textContent = 'LOCAL / 연결 확인 필요';
+      modeLabel.textContent = '로컬 / 연결 확인 필요';
       button.disabled = true;
       notice.textContent = '로컬 기능 상태를 확인하지 못했습니다. VAS를 다시 실행해 주세요.';
       notice.hidden = false;
@@ -51,6 +52,8 @@
     });
     document.querySelectorAll('[data-nav-step]').forEach(function (item) {
       item.classList.toggle('active', Number(item.dataset.navStep) <= step);
+      if (Number(item.dataset.navStep) === step) item.setAttribute('aria-current', 'step');
+      else item.removeAttribute('aria-current');
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -205,7 +208,7 @@
     go(3);
   }
 
-  function configureNextAction() {
+  function configureNextAction(project) {
     const goal = document.getElementById('migrationGoal').value;
     const actions = {
       manage: { href: 'vas-hub.html', label: '허브에서 프로젝트 관리' },
@@ -218,6 +221,10 @@
     link.href = action.href;
     link.textContent = action.label + ' →';
     VASThemeState.decorateLinks(link.parentNode);
+    if (project) {
+      VASProjectContext.set(project);
+      VASProjectContext.decorateLinks(link.parentNode);
+    }
     if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
   }
 
@@ -239,13 +246,21 @@
         }
       });
       jobId = response.jobId;
+      const goal = document.getElementById('migrationGoal').value;
+      const project = response.project || {
+        projectId: response.jobId,
+        sourceType: 'imported',
+        goal: goal,
+        stage: goal === 'redesign' ? 'design' : (document.getElementById('createIndex').checked || goal === 'improve' || goal === 'upgrade' ? 'knowledge' : 'ready')
+      };
       renderProgress(['백업 완료', '스테이징 완료', '무결성 통과', '프로젝트 등록 완료'], 4);
       document.getElementById('resultTitle').textContent = '가져오기가 완료됐습니다.';
       const completed = response.message || '프로젝트가 안전하게 등록되었습니다.';
       document.getElementById('resultMessage').textContent = response.warning
         ? completed + ' 안내: ' + response.warning : completed;
-      configureNextAction();
+      configureNextAction(project);
       document.getElementById('result').hidden = false;
+      if (window.VASProjectRail) VASProjectRail.init().catch(function () {});
       if (window.VASPersonalization && document.getElementById('createIndex').checked) {
         const stack = report.stack || (Array.isArray(report.stacks) ? report.stacks.join(', ') : 'unknown');
         window.VASPersonalization.record({
@@ -269,6 +284,11 @@
     list.innerHTML = '';
     items.forEach(function (label, index) { const li = document.createElement('li'); li.textContent = (index < completed ? '완료 — ' : '대기 — ') + label; list.append(li); });
     document.getElementById('progressBar').style.width = (completed / items.length * 100) + '%';
+    const progress = document.querySelector('.progress');
+    progress.setAttribute('role', 'progressbar');
+    progress.setAttribute('aria-valuemin', '0');
+    progress.setAttribute('aria-valuemax', String(items.length));
+    progress.setAttribute('aria-valuenow', String(completed));
   }
 
   async function rollback() {

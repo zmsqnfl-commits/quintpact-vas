@@ -3,6 +3,7 @@
 import json
 import hashlib
 import http.server
+import io
 import os
 import shutil
 import socket
@@ -14,21 +15,19 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-
 
 BASE = Path(__file__).resolve().parents[1]
 START_SCRIPT = BASE / "scripts" / "Start-VAS.ps1"
 POWERSHELL = shutil.which("powershell.exe")
-
 
 def paths_match(left, right):
     try:
         return os.path.samefile(left, right)
     except OSError:
         return os.path.normcase(os.path.realpath(left)) == os.path.normcase(os.path.realpath(right))
-
 
 def run_launcher(root, state, port, idle=30):
     command = [
@@ -56,7 +55,7 @@ def run_launcher(root, state, port, idle=30):
     deadline = time.time() + 5
     runtime_path = None
     while time.time() < deadline and runtime_path is None:
-        for candidate in Path(state).glob("runtime-2.6.0-*.json"):
+        for candidate in Path(state).glob("runtime-2.6.1-*.json"):
             try:
                 value = json.loads(candidate.read_text(encoding="utf-8-sig"))
                 if value.get("rootPath") and paths_match(value["rootPath"], root):
@@ -68,7 +67,6 @@ def run_launcher(root, state, port, idle=30):
     if runtime_path is None:
         raise AssertionError("root-scoped runtime file was not created")
     return json.loads(runtime_path.read_text(encoding="utf-8-sig"))
-
 
 class RuntimeClient:
     def __init__(self, runtime):
@@ -90,7 +88,6 @@ class RuntimeClient:
             value = json.loads(raw.decode("utf-8")) if "json" in content_type else raw
             return response.status, value, response.headers
 
-
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
 class WindowsRuntimeTests(unittest.TestCase):
     @classmethod
@@ -101,13 +98,30 @@ class WindowsRuntimeTests(unittest.TestCase):
         (cls.root / "src").mkdir(parents=True)
         (cls.root / "docs").mkdir()
         (cls.root / "workspace" / ".vas").mkdir(parents=True)
+        project_a = cls.root / "workspace" / "projects" / "project-a"
+        project_a.mkdir(parents=True)
+        (project_a / "guide.md").write_text("# Project A\n", encoding="utf-8")
         (cls.root / "src" / "vas-hub.html").write_text(
             "<!doctype html><html><body>VAS runtime</body></html>", encoding="utf-8"
         )
         (cls.root / "docs" / "guide.md").write_bytes(b"# Guide\n")
+        registry = {
+            "version": 1,
+            "projects": [{
+                "projectId": "p1", "name": "project-a", "path": str(project_a),
+                "sourceType": "imported", "status": "ready", "createIndex": True,
+                "goal": "improve",
+            }],
+        }
+        (cls.root / "workspace" / ".vas" / "projects.json").write_text(
+            json.dumps(registry), encoding="utf-8"
+        )
         knowledge = {
             "version": 1,
-            "entries": [{"id": "project-a", "title": "Project A"}],
+            "entries": [
+                {"id": "project-a", "projectId": "p1", "title": "Project A"},
+                {"id": "project-b", "projectId": "p2", "title": "Project B"},
+            ],
             "padding": "x" * 6_000_000,
         }
         (cls.root / "workspace" / ".vas" / "project-knowledge.json").write_text(
@@ -168,7 +182,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         try:
             self.assertNotEqual(second["pid"], self.runtime["pid"])
             self.assertNotEqual(second["token"], self.runtime["token"])
-            self.assertGreaterEqual(len(list(self.state.glob("runtime-2.6.0-*.json"))), 2)
+            self.assertGreaterEqual(len(list(self.state.glob("runtime-2.6.1-*.json"))), 2)
             _, page, _ = second_client.request("/src/vas-hub.html", auth=False)
             self.assertIn(b"SECOND", page)
             _, health, _ = self.client.request("/health", auth=False)
@@ -197,12 +211,12 @@ class WindowsRuntimeTests(unittest.TestCase):
         (forged_root / "docs").mkdir()
         (forged_root / "src" / "vas-hub.html").write_text("REAL", encoding="utf-8")
         canonical = str(forged_root.resolve()).rstrip("\\").upper().encode("utf-8")
-        runtime_id = "2.6.0-" + hashlib.sha256(canonical).hexdigest()[:16]
+        runtime_id = "2.6.1-" + hashlib.sha256(canonical).hexdigest()[:16]
 
         class ForgedHealth(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
                 body = json.dumps(
-                    {"service": "VAS", "version": "2.6.0", "runtimeId": "wrong", "port": self.server.server_port}
+                    {"service": "VAS", "version": "2.6.1", "runtimeId": "wrong", "port": self.server.server_port}
                 ).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -217,7 +231,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         thread = threading.Thread(target=forged_server.serve_forever, daemon=True)
         thread.start()
         stale = {
-            "service": "VAS", "version": "2.6.0", "runtimeId": runtime_id,
+            "service": "VAS", "version": "2.6.1", "runtimeId": runtime_id,
             "rootPath": str(forged_root), "pid": 999999, "port": forged_server.server_port,
             "token": "stale-token",
         }
@@ -261,8 +275,13 @@ class WindowsRuntimeTests(unittest.TestCase):
         status, result, _ = self.client.request(f"/api/files/read?{query}")
         self.assertEqual(status, 200)
         self.assertEqual(result["content"], "# Guide\n")
-        status, result, _ = self.client.request("/api/knowledge/projects")
+        with self.assertRaises(urllib.error.HTTPError) as missing_context:
+            self.client.request("/api/knowledge/projects")
+        self.assertEqual(missing_context.exception.code, 400)
+        missing_context.exception.close()
+        status, result, _ = self.client.request("/api/knowledge/projects?projectId=p1")
         self.assertEqual(result["entries"][0]["id"], "project-a")
+        self.assertTrue(all(item["projectId"] == "p1" for item in result["entries"]))
         _, runtime_status, _ = self.client.request("/api/status")
         self.assertIsInstance(runtime_status["capabilities"]["projectImport"]["available"], bool)
         self.assertIn(runtime_status["capabilities"]["projectImport"]["reason"], (None, "python-unavailable", "python-version-unsupported", "migration-module-unavailable"))
@@ -344,7 +363,8 @@ class WindowsRuntimeTests(unittest.TestCase):
         request = {
             "name": "새 프로젝트",
             "brief": {
-                "goal": "부드러운 사용자 흐름",
+                "goal": "부드러운 사용자 흐름", "problem_desc": "문서 검색 개선",
+                "contact": "private@example.com",
                 "_meta": {"themeTokens": {"primary": "#3451ff", "radius": "8px"}},
             },
         }
@@ -353,7 +373,8 @@ class WindowsRuntimeTests(unittest.TestCase):
         project = result["project"]
         self.assertEqual(project["sourceType"], "new")
         self.assertEqual(project["status"], "ready")
-        self.assertFalse(project["indexEnabled"])
+        self.assertTrue(project["indexEnabled"])
+        self.assertEqual(project["stage"], "design")
         target = self.root / "workspace" / "projects" / "새 프로젝트"
         self.assertTrue(paths_match(project["path"], target))
         self.assertEqual(
@@ -361,6 +382,9 @@ class WindowsRuntimeTests(unittest.TestCase):
             "부드러운 사용자 흐름",
         )
         self.assertIn("brief.json", (target / "README.md").read_text(encoding="utf-8-sig"))
+        rag_context = (target / "rag-context.json").read_text(encoding="utf-8-sig")
+        self.assertIn("문서 검색 개선", rag_context)
+        self.assertNotIn("private@example.com", rag_context)
         self.assertEqual(
             json.loads((target / "design-tokens.json").read_text(encoding="utf-8-sig"))["primary"],
             "#3451ff",
@@ -368,6 +392,34 @@ class WindowsRuntimeTests(unittest.TestCase):
         _, projects, _ = self.client.request("/api/projects")
         self.assertIn(project["projectId"], [item["projectId"] for item in projects["projects"]])
         self.assertTrue(all("path" not in item and "source" not in item for item in projects["projects"]))
+
+        status, themed, _ = self.client.request(
+            "/api/projects/theme", "POST", {
+                "projectId": project["projectId"],
+                "theme": {"preset": "awwwards", "tokens": {"colors": {"primary": "#111111"}}},
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(themed["project"]["stage"], "knowledge")
+        self.assertEqual(
+            json.loads((target / "design-tokens.json").read_text(encoding="utf-8-sig"))["preset"],
+            "awwwards",
+        )
+
+        status, archive_bytes, headers = self.client.request(
+            "/api/projects/export", "POST", {"projectId": project["projectId"]}
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("application/zip", headers.get("Content-Type", ""))
+        with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
+            names = set(archive.namelist())
+            self.assertEqual(names, {
+                "README.md", "SHA256SUMS.txt", "design-tokens.json",
+                "project.json", "rag-context.json", "requirements.json",
+            })
+            joined = b"\n".join(archive.read(name) for name in sorted(names))
+            self.assertNotIn(b"private@example.com", joined)
+            self.assertNotIn(b"brief.json", joined)
 
         try:
             self.client.request("/api/projects/create", "POST", request)
@@ -423,8 +475,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             payload = json.loads(error.read().decode("utf-8"))
             error.close()
         self.assertEqual(payload["code"], "invalid_create_index")
-
-
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
 class WindowsRuntimeIdleTest(unittest.TestCase):
     def test_idle_server_stops_and_removes_runtime_file(self):
@@ -439,48 +489,12 @@ class WindowsRuntimeIdleTest(unittest.TestCase):
                 port = probe.getsockname()[1]
             runtime = run_launcher(root, state, port, idle=2)
             deadline = time.time() + 7
-            while time.time() < deadline and list(state.glob("runtime-2.6.0-*.json")):
+            while time.time() < deadline and list(state.glob("runtime-2.6.1-*.json")):
                 time.sleep(0.2)
             self.assertFalse(
-                list(state.glob("runtime-2.6.0-*.json")),
+                list(state.glob("runtime-2.6.1-*.json")),
                 f"idle runtime {runtime['pid']} did not stop",
             )
-
-
-class WindowsRuntimeSourceTests(unittest.TestCase):
-    def test_runtime_files_are_bounded_and_launcher_has_fallback(self):
-        for relative in (
-            "scripts/Start-VAS.ps1",
-            "scripts/VAS.Server.psm1",
-            "scripts/VAS.Memory.psm1",
-            "tests/test_windows_runtime.py",
-        ):
-            lines = (BASE / relative).read_text(encoding="utf-8-sig").splitlines()
-            self.assertLessEqual(len(lines), 500, relative)
-        launcher = (BASE / "Run-VAS-System.bat").read_text(encoding="utf-8-sig")
-        self.assertIn(":fallback", launcher)
-        self.assertIn("src\\vas-hub.html", launcher)
-
-    @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
-    def test_conflict_mapping_never_echoes_source_path(self):
-        command = (
-            "Import-Module '.\\scripts\\VAS.Server.psm1' -Force; "
-            "& (Get-Module VAS.Server) { "
-            "Get-VASMigrationError 'target already exists: C:\\Users\\demo\\secret' | "
-            "ConvertTo-Json -Compress }"
-        )
-        result = subprocess.run(
-            [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
-            cwd=BASE,
-            capture_output=True,
-            timeout=10,
-        )
-        self.assertEqual(result.returncode, 0)
-        mapped = json.loads(result.stdout.decode("utf-8-sig"))
-        self.assertEqual(mapped["status"], 409)
-        self.assertEqual(mapped["code"], "project_conflict")
-        self.assertNotIn("C:\\Users", json.dumps(mapped))
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

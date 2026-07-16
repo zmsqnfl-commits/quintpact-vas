@@ -2,17 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VAS /// Client Application</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAS 2.6.1 — 새 프로젝트</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+    <link rel="stylesheet" href="editorial-shell.css">
     <link rel="stylesheet" href="client-style.css">
 </head>
 <body>
-
-    <div class="lang-toggle no-print">
-        <button class="lang-btn active" onclick="setLang('ko')" id="btn-ko">KR</button>
-        <button class="lang-btn" onclick="setLang('en')" id="btn-en">EN</button>
-    </div>
 
     <div class="layout-wrapper">
 
@@ -57,12 +53,12 @@
                         <p data-i18n="step1Desc">\uc6d0\ud65c\ud55c \uc18c\ud1b5\uc744 \uc704\ud574 \uae30\ubcf8 \uc815\ubcf4\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.</p>
                     </div>
                     <div class="q">
-                        <label data-i18n="labelName">\uae30\uc5c5\uba85 \ub610\ub294 \uc131\ud568</label>
-                        <input type="text" name="client_name" data-i18n-ph="phName" placeholder="(\uc8fc)\ud14c\ud06c\uc194\ub8e8\uc158" required>
+                        <label for="clientName" data-i18n="labelName">기업명 또는 성함</label>
+                        <input id="clientName" type="text" name="client_name" data-i18n-ph="phName" placeholder="예: 테크솔루션" required autocomplete="organization">
                     </div>
                     <div class="q">
-                        <label data-i18n="labelContact">\uc5f0\ub77d\ucc98 (\uc774\uba54\uc77c \uad8c\uc7a5)</label>
-                        <input type="text" name="contact" data-i18n-ph="phContact" placeholder="hello@company.com" required>
+                        <label for="clientContact" data-i18n="labelContact">연락처</label>
+                        <input id="clientContact" type="text" name="contact" data-i18n-ph="phContact" placeholder="예: hello@company.com" required autocomplete="email">
                     </div>
                 </div>
 
@@ -73,16 +69,16 @@
                         <p data-i18n="step2Desc">\ud574\uacb0\ud558\uace0\uc790 \ud558\ub294 \ubb38\uc81c\uc640 \ubaa9\ud45c\ub97c \uc54c\ub824\uc8fc\uc138\uc694.</p>
                     </div>
                     <div class="q">
-                        <label data-i18n="labelProject">\ud504\ub85c\uc81d\ud2b8 \uba85\uce6d (\uac00\uce6d)</label>
-                        <input type="text" name="project_name" data-i18n-ph="phProject" placeholder="AI \uae30\ubc18 \ubb38\uc11c \uac80\uc0c9 \uc2dc\uc2a4\ud15c">
+                        <label for="projectName" data-i18n="labelProject">프로젝트 이름</label>
+                        <input id="projectName" type="text" name="project_name" data-i18n-ph="phProject" placeholder="예: 사내 문서 검색" required maxlength="80">
                     </div>
                     <div class="q">
-                        <label data-i18n="labelProblem">\ud604\uc7ac\uc758 \ubb38\uc81c\uc810 \ubc0f \ud575\uc2ec \uc694\uad6c\uc0ac\ud56d</label>
-                        <textarea name="problem_desc" data-i18n-ph="phProblem" placeholder="\uac80\uc0c9 \uc18d\ub3c4\uac00 \ub290\ub9ac\uace0 \uc815\ud655\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \uc790\uc5f0\uc5b4 \uac80\uc0c9\uc774 \uac00\ub2a5\ud558\uac8c \ub9cc\ub4e4\uace0 \uc2f6\uc2b5\ub2c8\ub2e4." required></textarea>
+                        <label for="problemDescription" data-i18n="labelProblem">해결할 문제</label>
+                        <textarea id="problemDescription" name="problem_desc" data-i18n-ph="phProblem" placeholder="현재 불편한 점과 원하는 결과를 적어주세요." required></textarea>
                     </div>
                     <div class="q">
-                        <label data-i18n="labelRef">레퍼런스 (URLs &amp; Files)</label>
-                        <input type="text" name="reference" data-i18n-ph="phRef" placeholder="Notion AI">
+                        <label for="projectReference" data-i18n="labelRef">참고할 서비스나 링크</label>
+                        <input id="projectReference" type="text" name="reference" data-i18n-ph="phRef" placeholder="예: Notion AI">
                         <div class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
                             <span data-i18n="dragDropText">참고 파일을 선택하면 파일명만 기록됩니다. 파일 내용은 업로드되지 않습니다.</span>
                             <div class="file-chips" id="fileChips"></div>
@@ -167,8 +163,8 @@
                         <p data-i18n="step5Desc">\ud604\uc2e4\uc801\uc778 \ub9ac\uc18c\uc2a4 \ud50c\ub798\ub2dd\uc744 \uc704\ud574 \ubc94\uc704\ub97c \uc54c\ub824\uc8fc\uc138\uc694.</p>
                     </div>
                     <div class="q">
-                        <label data-i18n="labelDeadline">\ud76c\ub9dd \ub7f0\uce6d \uae30\ud55c</label>
-                        <input type="text" name="deadline" data-i18n-ph="phDeadline" placeholder="예: 3개월 내 또는 가능한 납기">
+                        <label for="projectDeadline" data-i18n="labelDeadline">희망 일정</label>
+                        <input id="projectDeadline" type="text" name="deadline" data-i18n-ph="phDeadline" placeholder="예: 3개월 내">
                     </div>
                     <div class="q">
                         <label data-i18n="labelBudget">\uc608\uc0c1 \uac00\uc6a9 \uc608\uc0b0</label>
@@ -180,8 +176,8 @@
                         </div>
                     </div>
                     <div class="q">
-                        <label data-i18n="labelExtra">\ucd94\uac00 \ucf54\uba58\ud2b8</label>
-                        <textarea name="extra" data-i18n-ph="phExtra" placeholder="\uc790\uc720\ub86d\uac8c \uae30\uc7ac\ud574 \uc8fc\uc138\uc694."></textarea>
+                        <label for="projectExtra" data-i18n="labelExtra">추가 내용</label>
+                        <textarea id="projectExtra" name="extra" data-i18n-ph="phExtra" placeholder="추가로 전할 내용이 있다면 적어주세요."></textarea>
                     </div>
                 </div>
 
@@ -197,7 +193,7 @@
                     <p data-i18n="doneDesc">작성 내용이 완료되었습니다. JSON 파일로 저장한 뒤 담당자에게 전달해 주세요. 첨부 파일은 별도로 전달해 주세요.</p>
                     <div class="done-btns no-print">
                         <button type="button" class="btn action-btn" id="createProjectButton" onclick="createWorkspaceProject()" data-i18n="btnCreateProject" hidden>이 내용으로 작업공간 만들기</button>
-                        <a class="btn action-btn" id="createdProjectNext" href="design-controller.html" data-vas-link data-i18n="btnContinueDesign" hidden>디자인 설정 이어가기</a>
+                        <a class="btn action-btn" id="createdProjectNext" href="design-controller.html" data-vas-link data-vas-project-link data-i18n="btnContinueDesign" hidden>디자인 설정 이어가기</a>
                         <button type="button" class="btn action-btn" onclick="exportJson()" data-i18n="btnJson">JSON 파일 저장</button>
                         <p id="projectCreateStatus" class="done-info" role="status" hidden></p>
                         <button type="button" class="btn" onclick="goBackFromDone()" data-i18n="btnBackToForm" style="margin-top: 16px; border-color: transparent; text-align: center; justify-content: center; color: var(--text-muted);">\u2190 Back to Form</button>
@@ -211,9 +207,12 @@
 <script src="vas-config.js"></script>
 <script src="storage-utils.js"></script>
 <script src="theme-state.js"></script>
+<script src="editorial-theme.js"></script>
 <script src="runtime-client.js"></script>
-<script src="personalization-store.js"></script>
+<script src="project-context.js"></script>
 <script src="rag-lite.js"></script>
+<script src="personalization-store.js"></script>
+<script src="project-rail.js"></script>
 <script src="client-i18n.js"></script>
 <script src="client-form.js"></script>
 <script src="client-draft.js"></script>

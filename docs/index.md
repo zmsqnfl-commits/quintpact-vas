@@ -1,13 +1,13 @@
-# VAS 2.6.0 시스템 지도
+# VAS 2.6.1 시스템 지도
 
 ## 사용자 흐름
 
 ```text
 Run-VAS-System.bat
   -> 로컬 서버 + 허브
-     -> 새 프로젝트 -> 의뢰서/디자인 -> workspace/projects
-     -> 기존 프로젝트 -> 분석/승인/복제 -> workspace/projects
-     -> 지식 검색/RAG -> 관련 문서와 이전 작업 추천
+     -> 새 프로젝트 -> 요구사항 -> 디자인 -> 프로젝트 RAG -> 계속 작업
+     -> 기존 프로젝트 -> 분석/승인/복제 -> 디자인 또는 프로젝트 RAG
+     -> 안전 ZIP -> 요구사항/토큰/RAG 메타/해시만 인계
      -> 내 메모리 -> 동의/일시정지/삭제/내보내기
 ```
 
@@ -21,6 +21,9 @@ Run-VAS-System.bat
 | 가져오기 | 폴더 분석·승인·진행·되돌리기 | `src/project-import.html` |
 | 개인화 | 동의 기반 이벤트와 추천 | `src/personalization-store.js` |
 | RAG | 로컬 지식 색인·검색·프롬프트 보강 | `src/rag-lite.js` |
+| 프로젝트 연결 | 화면 간 projectId·단계 전달 | `src/project-context.js` |
+| 공통 화면 | Editorial 토큰·프로젝트/RAG 상태 | `src/editorial-shell.css`, `src/project-rail.js` |
+| 프로젝트 API | 레지스트리 v2·디자인·안전 ZIP | `scripts/VAS.Projects.psm1` |
 | 런타임 | 토큰·동일 출처 보호 로컬 HTTP API | `scripts/Start-VAS.ps1` |
 | 마이그레이션 | 아카이브·해시·원자적 배치·롤백 | `scripts/vas_project_import.py` |
 | 배포 | 재현 가능한 ZIP/Pages 생성 | `scripts/build_release.py` |
@@ -33,6 +36,7 @@ Run-VAS-System.bat
 - 로컬 체크포인트: `.vas_backups/` (Git 제외)
 - 생성 배포물: `dist/` (Git 제외)
 - 공개 배포에는 사용자 데이터와 메모리를 포함하지 않습니다.
+- 프로젝트 인계 ZIP은 실행본 배포 ZIP과 별개이며 원본 소스를 포함하지 않습니다.
 
 ## 운영 원칙
 

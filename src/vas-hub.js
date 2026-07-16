@@ -43,6 +43,8 @@
   });
   root.dataset.preset = themeState.preset;
   VASThemeState.decorateLinks(document);
+  VASProjectContext.init();
+  VASProjectContext.decorateLinks(document);
 
   function initReveals() {
     const items = Array.from(document.querySelectorAll('[data-reveal]'));
@@ -88,7 +90,7 @@
       await window.VASPersonalization.consent(consent);
     }
     if (consent === true) await loadRecommendation();
-    if (consent === 'unset' || consent === null) document.getElementById('privacyDialog').showModal();
+    document.getElementById('privacyRail').hidden = !(consent === 'unset' || consent === null);
   }
 
   async function loadRecommendation() {
@@ -118,6 +120,7 @@
 
   async function setConsent(value) {
     VASStorage.writeText('vasPersonalizationConsent', value ? 'accepted' : 'declined');
+    document.getElementById('privacyRail').hidden = true;
     if (window.VASPersonalization && window.VASPersonalization.consent) {
       await window.VASPersonalization.consent(value);
       if (value) await loadRecommendation();
@@ -153,6 +156,15 @@
         meta.textContent = [project.sourceType === 'imported' ? '가져온 프로젝트' : '새 프로젝트', goalLabels[project.goal], project.status]
           .filter(Boolean).join(' · ');
         copy.append(title, meta);
+        const actions = document.createElement('div');
+        actions.className = 'project-actions';
+        const continueLink = document.createElement('a');
+        continueLink.href = VASProjectContext.nextHref(project);
+        continueLink.dataset.vasLink = '';
+        continueLink.textContent = '계속 작업';
+        continueLink.addEventListener('click', function () {
+          VASProjectContext.set(project);
+        });
         const open = document.createElement('button');
         open.type = 'button';
         open.textContent = '폴더 열기';
@@ -174,7 +186,33 @@
             open.disabled = false;
           }
         });
-        row.append(copy, open);
+        const exportButton = document.createElement('button');
+        exportButton.type = 'button';
+        exportButton.textContent = '안전 ZIP';
+        exportButton.addEventListener('click', async function () {
+          exportButton.disabled = true;
+          try {
+            const blob = await VASRuntime.download('/api/projects/export', {
+              method: 'POST', body: { projectId: project.projectId }
+            });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'VAS-2.6.1-handoff.zip';
+            link.click();
+            URL.revokeObjectURL(link.href);
+          } catch (error) {
+            meta.textContent = '안전 ZIP을 만들지 못했습니다. 다시 시도해 주세요.';
+          } finally { exportButton.disabled = false; }
+        });
+        actions.append(continueLink, open, exportButton);
+        row.append(copy, actions);
+        VASThemeState.decorateLinks(row);
+        if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
+        const continueUrl = new URL(continueLink.href, window.location.href);
+        const fragments = new URLSearchParams(continueUrl.hash.replace(/^#/, ''));
+        fragments.set('vasProject', project.projectId);
+        continueUrl.hash = fragments.toString();
+        continueLink.href = continueUrl.href;
         list.append(row);
       });
     } catch (error) {

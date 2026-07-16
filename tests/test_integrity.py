@@ -1,4 +1,4 @@
-"""VAS 2.6.0 단일 무결성 검사: 23개 시스템 경계를 한 번 확인합니다."""
+"""VAS 2.6.1 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
 from __future__ import annotations
 
 import ast
@@ -33,8 +33,8 @@ js_files = sorted(SRC.glob("*.js"))
 package = json.loads(text(ROOT / "package.json"))
 config = text(SRC / "vas-config.js")
 
-check("01 package version", package.get("version") == "2.6.0")
-check("02 runtime version", "version: '2.6.0'" in config or 'version: "2.6.0"' in config)
+check("01 package version", package.get("version") == "2.6.1")
+check("02 runtime version", "version: '2.6.1'" in config or 'version: "2.6.1"' in config)
 check("03 public entrypoints", all((ROOT / item).exists() for item in [
     "Run-VAS-System.bat", "src/vas-hub.html", "src/client-application.html",
 ]))
@@ -117,6 +117,14 @@ for path in sorted((ROOT / "scripts").glob("*.py")) + sorted((ROOT / "tests").gl
         syntax_errors.append(f"{path.name}:{error.lineno}")
 html_ok = all("<!doctype html" in text(path).lower() and "</html>" in text(path).lower() for path in html_files)
 check("23 Python and HTML syntax", not syntax_errors and html_ok, ", ".join(syntax_errors))
+
+project_context = text(SRC / "project-context.js")
+project_module = text(ROOT / "scripts" / "VAS.Projects.psm1")
+server = text(ROOT / "scripts" / "VAS.Server.psm1")
+check("24 project context contract", all(token in project_context for token in ["projectId", "sourceType", "goal", "stage", "vasProjectContext"]))
+check("25 project scoped RAG", "projectId=" in personalization and "Where-Object { $_.projectId -eq $projectId }" in server)
+check("26 safe handoff allowlist", all(token in project_module for token in ["project.json", "requirements.json", "design-tokens.json", "rag-context.json", "SHA256SUMS.txt"]))
+check("27 Windows PowerShell encoding", all(text(ROOT / item) for item in ["scripts/VAS.Server.psm1", "scripts/VAS.Projects.psm1"]) and all((ROOT / item).read_bytes().startswith(b"\xef\xbb\xbf") for item in ["scripts/VAS.Server.psm1", "scripts/VAS.Projects.psm1"]))
 
 failed = [(name, detail) for name, passed, detail in results if not passed]
 for name, passed, detail in results:

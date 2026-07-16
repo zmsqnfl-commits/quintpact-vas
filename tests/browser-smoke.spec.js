@@ -14,14 +14,14 @@ test('client application core flow works in a browser', async ({ page }) => {
 
   await expect(page.locator('#progressText')).toContainText('01');
 
-  await page.locator('#btn-en').click();
-  await expect(page.locator('#nextBtn')).toContainText(/Next|Submit/);
+  await expect(page.locator('#nextBtn')).toContainText('다음');
 
   await page.locator('input[name="client_name"]').fill('Acme');
   await page.locator('input[name="contact"]').fill('hello@example.com');
   await page.locator('#nextBtn').click();
   await expect(page.locator('#progressText')).toContainText('02');
 
+  await page.locator('input[name="project_name"]').fill('Safe Flow');
   await page.locator('textarea[name="problem_desc"]').fill('Need a safe workflow.');
   await page.locator('#fileInput').setInputFiles({
     name: '<script>alert(1)</script>.txt',
@@ -41,6 +41,7 @@ test('client application reaches JSON save step after required selections', asyn
   await page.locator('#nextBtn').click();
   await waitStep(page, 2);
 
+  await page.locator('input[name="project_name"]').fill('Safe Flow');
   await page.locator('textarea[name="problem_desc"]').fill('Need a safe workflow.');
   await page.locator('#nextBtn').click();
   await waitStep(page, 3);
@@ -54,11 +55,13 @@ test('client application reaches JSON save step after required selections', asyn
   await waitStep(page, 5);
 
   await page.locator('.step.active label.v-block').last().click();
-  await expect(page.locator('#nextBtn')).toContainText(/JSON 저장 단계로 이동|Go to JSON Save/);
+  await expect(page.locator('#nextBtn')).toContainText('내용 확인');
   await page.locator('#nextBtn').click();
 
   await expect(page.locator('#doneScreen')).toHaveClass(/active/);
   await expect(page.locator('[data-i18n="btnJson"]')).toBeVisible();
+  await expect(page.locator('#createProjectButton')).toBeHidden();
+  await expect(page.locator('#createdProjectNext')).toBeHidden();
 });
 
 test('client application shows visible required selection feedback', async ({ page }) => {
@@ -70,6 +73,7 @@ test('client application shows visible required selection feedback', async ({ pa
   await page.locator('#nextBtn').click();
   await waitStep(page, 2);
 
+  await page.locator('input[name="project_name"]').fill('Safe Flow');
   await page.locator('textarea[name="problem_desc"]').fill('Need a safe workflow.');
   await page.locator('#nextBtn').click();
   await waitStep(page, 3);

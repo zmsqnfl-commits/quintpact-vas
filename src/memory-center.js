@@ -1,6 +1,7 @@
 (function () {
   'use strict';
   const state = VASThemeState.init();
+  const projectContext = VASProjectContext.init();
   const root = document.documentElement;
   root.style.setProperty('--bg', state.tokens.colors.background);
   root.style.setProperty('--surface', state.tokens.colors.surface);
@@ -8,11 +9,13 @@
   root.style.setProperty('--border', state.tokens.colors.border);
   root.style.setProperty('--font', state.tokens.fontFamily);
   VASThemeState.decorateLinks(document);
+  VASProjectContext.decorateLinks(document);
 
   const listRoot = document.getElementById('memoryList');
   const filter = document.getElementById('typeFilter');
   let paused = false;
   let consent = null;
+  let projectOnly = Boolean(projectContext);
 
   function download(name, content) {
     const blob = new Blob([content], { type: 'application/json' });
@@ -47,17 +50,24 @@
     await VASPersonalization.init();
     paused = await VASPersonalization.pause();
     consent = await VASPersonalization.consent();
-    const events = await VASPersonalization.list({ type: filter.value || undefined });
+    const events = await VASPersonalization.list({
+      type: filter.value || undefined,
+      projectId: projectOnly && projectContext ? projectContext.projectId : undefined
+    });
     render(events);
     document.getElementById('memoryState').textContent = !consent ? '저장 안 함' : paused ? '기록 일시정지' : '기록 중';
     document.getElementById('togglePause').textContent = paused ? '기록 다시 시작' : '기록 일시정지';
     document.getElementById('togglePause').disabled = consent !== true;
     document.getElementById('toggleConsent').textContent = consent === true ? '기록 저장 끄기' : '기록 저장 켜기';
     document.getElementById('storageLocation').textContent = VASRuntime.isAvailable() ? 'Windows 사용자 로컬' : '현재 브라우저';
+    const scopeButton = document.getElementById('toggleScope');
+    scopeButton.hidden = !projectContext;
+    scopeButton.textContent = projectOnly ? '모든 프로젝트 보기' : '현재 프로젝트만 보기';
   }
 
   VASPersonalization.eventTypes.forEach(function (type) { const option = document.createElement('option'); option.value = type; option.textContent = type; filter.append(option); });
   filter.addEventListener('change', refresh);
+  document.getElementById('toggleScope').addEventListener('click', function () { projectOnly = !projectOnly; refresh(); });
   document.getElementById('toggleConsent').addEventListener('click', async function () {
     if (consent === true && !confirm('새 기록을 중지하시겠습니까? 기존 기록은 직접 삭제할 때까지 남습니다.')) return;
     await VASPersonalization.consent(consent !== true); await refresh();

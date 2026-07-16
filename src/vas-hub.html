@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.0 — Agent Hub</title>
+  <title>VAS 2.6.1 — 프로젝트 허브</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+  <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="vas-hub.css">
+  <link rel="stylesheet" href="vas-hub-components.css">
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="vas-hub.html" data-vas-link>VAS 2.6</a>
+      <a class="brand" href="vas-hub.html" data-vas-link>VAS 2.6.1</a>
       <div class="header-actions">
         <span class="runtime-status" id="runtimeStatus" aria-live="polite">연결 확인 중</span>
         <a class="history-link" href="memory-center.html" data-vas-link aria-label="내 사용 기록">
@@ -27,7 +29,7 @@
         <div class="hero-copy">
           <h1><span>무엇을</span> <span>도와드릴까요?</span></h1>
           <p>새 프로젝트를 시작하거나 기존 프로그램을 안전하게 가져오세요.</p>
-          <span class="hero-signature" aria-hidden="true">VAS / 2.6</span>
+          <span class="hero-signature" aria-hidden="true">VAS / 2.6.1</span>
         </div>
 
         <h2 id="startTitle" class="sr-only">프로젝트 시작</h2>
@@ -45,6 +47,11 @@
         </div>
       </section>
 
+      <section class="privacy-rail" id="privacyRail" aria-labelledby="privacyTitle" hidden>
+        <div><span class="action-index" aria-hidden="true">RAG</span><h2 id="privacyTitle">이 기기에서 작업 흐름을 기억할까요?</h2><p>허용하면 현재 프로젝트의 선택과 검색만 저장해 다음 작업을 추천합니다. 이름·연락처·비밀번호·API 키·파일 내용은 기록하지 않습니다.</p></div>
+        <div class="privacy-rail-actions"><button type="button" id="declinePersonalization">기억하지 않기</button><button type="button" id="acceptPersonalization" class="primary">기억하고 계속</button></div>
+      </section>
+
       <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle" data-reveal>
         <div class="onboarding-heading">
           <h2 id="onboardingTitle">처음 사용하는 순서</h2>
@@ -60,11 +67,11 @@
       <section class="tools-section" aria-labelledby="toolsTitle" data-reveal>
         <div class="section-heading"><h2 id="toolsTitle">도구 바로가기</h2></div>
         <div class="tool-list">
-          <a href="design-controller.html" data-vas-link data-track="tool.design">
+          <a href="design-controller.html" data-vas-link data-vas-project-link data-track="tool.design">
             <span class="tool-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4-1 10-10-3-3L5 16zM13 8l3 3M15 4l2-2 3 3-2 2"/></svg></span>
             <span><strong>디자인 스튜디오</strong><small>화면의 색상과 구성을 정합니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
-          <a href="knowledge-search.html" data-vas-link data-track="tool.knowledge">
+          <a href="knowledge-search.html" data-vas-link data-vas-project-link data-track="tool.knowledge">
             <span class="tool-icon icon-green" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>
             <span><strong>내부 지식 검색</strong><small>VAS 문서와 프로젝트 내용을 찾습니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
@@ -85,30 +92,21 @@
       <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" data-reveal hidden>
         <span class="recommendation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span>
         <div><h2 id="recommendationTitle">다음 작업 추천</h2><p id="recommendationCopy"></p></div>
-        <a id="recommendationLink" href="knowledge-search.html" data-vas-link>추천 작업 열기<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
+        <a id="recommendationLink" href="knowledge-search.html" data-vas-link data-vas-project-link>추천 작업 열기<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
       </section>
     </div>
   </main>
 
-  <dialog id="privacyDialog" class="privacy-dialog" aria-labelledby="privacyTitle">
-    <form method="dialog">
-      <h2 id="privacyTitle">내 사용 기록을 저장할까요?</h2>
-      <p>자주 쓰는 메뉴와 검색, 선택한 설정을 기억해 다음에 더 편하게 보여드려요.</p>
-      <ul><li>기록은 이 컴퓨터에만 저장되고 언제든 지울 수 있어요.</li><li>이름, 연락처, 직접 쓴 글, 비밀번호, API 키와 파일은 저장하지 않아요.</li></ul>
-      <div class="dialog-actions">
-        <button value="decline" id="declinePersonalization">저장 안 함</button>
-        <button value="accept" id="acceptPersonalization" class="primary">저장하고 시작</button>
-      </div>
-    </form>
-  </dialog>
-
   <script src="vas-config.js"></script>
   <script src="storage-utils.js"></script>
   <script src="theme-state.js"></script>
+  <script src="editorial-theme.js"></script>
   <script src="runtime-client.js"></script>
+  <script src="project-context.js"></script>
   <script src="knowledge-index.js"></script>
   <script src="personalization-store.js"></script>
   <script src="rag-lite.js"></script>
+  <script src="project-rail.js"></script>
   <script src="vas-hub.js"></script>
 </body>
 </html>

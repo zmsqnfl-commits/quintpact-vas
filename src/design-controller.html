@@ -1,185 +1,125 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VAS 2.6.0 — Hybrid Design Studio</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
-<link rel="stylesheet" href="design-controller.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAS 2.6.1 — 디자인 스튜디오</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+  <link rel="stylesheet" href="editorial-shell.css">
+  <link rel="stylesheet" href="design-controller.css">
 </head>
 <body>
-<div class="app">
-  
-  <div class="controls" id="controlsPanel">
-    <div class="header">
-      <div style="display: flex; justify-content: space-between; align-items: baseline;">
-        <a href="vas-hub.html" class="back-link" data-vas-link>← 허브로 돌아가기</a>
-        <button class="btn btn-primary" onclick="undoTheme()" style="padding: 4px 12px; font-size: 12px; height: 28px;">↶ Undo</button>
-      </div>
-      <h1>VAS 디자인 스튜디오</h1>
-      <p>VAS 하이브리드 코어 & 글로벌 Top-Tier 테마</p>
-    </div>
+  <header class="studio-topbar">
+    <a href="vas-hub.html" data-vas-link>← 허브</a>
+    <strong>VAS 디자인 스튜디오</strong>
+    <button type="button" onclick="undoTheme()">이전 설정</button>
+  </header>
 
-    <!-- 프리셋 (Top Tier Styles) 동적 렌더링 컨테이너 -->
-    <div class="group" id="preset-container">
-      <!-- JS에서 카테고리별로 렌더링됨 -->
-    </div>
+  <nav class="mobile-view-tabs" aria-label="모바일 보기 전환">
+    <button type="button" class="active" data-studio-view="settings" aria-pressed="true">설정</button>
+    <button type="button" data-studio-view="preview" aria-pressed="false">미리보기</button>
+  </nav>
 
-    <!-- 통합된 프롬프트 아틀리에 영역 -->
-    <div class="group">
-      <h3>AI 에이전트 시스템 프롬프트</h3>
-      <div class="field">
-        <label>Taste Profile</label>
-        <select id="tasteProfileMode" onchange="setTasteProfileMode(this.value)">
-          <option value="auto">프리셋 기준 자동</option>
-        </select>
-      </div>
-      <textarea id="aiPrompt" class="prompt-box" readonly></textarea>
-      <label><input type="checkbox" id="includeRagContext"> 동의한 로컬 RAG 맥락 포함 (붙여넣는 서비스로 전달될 수 있음)</label>
-      <button class="btn btn-primary" onclick="copyAgentPrompt()" style="width: 100%;">프롬프트 복사 (에이전트에게 전달)</button>
-      <p id="ragPromptStatus">기본 프롬프트만 복사합니다. 필요할 때 로컬 RAG 포함을 선택하세요.</p>
-    </div>
-
-    <!-- 세부 토큰 조정 (기존 컨트롤러 기능) -->
-    <div class="group">
-      <h3>세부 토큰 제어 (Manual Override)</h3>
-      
-      <!-- 타이포그래피 -->
-      <div class="field">
-        <label>폰트 패밀리</label>
-        <select id="fontFamily" onchange="update()">
-          <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">시스템 Sans (한글 권장)</option>
-          <option value="ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace">시스템 Mono</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>기준 크기 (Base Size) <span id="fsVal">16px</span></label>
-        <input type="range" id="fontSize" min="12" max="24" value="16" step="1" oninput="update()">
-      </div>
-      <div class="field">
-        <label>자간 (Letter Spacing) <span id="lsVal">-0.04em</span></label>
-        <input type="range" id="letterSpacing" min="-0.1" max="0.2" value="-0.04" step="0.01" oninput="update()">
-      </div>
-      
-      <!-- 형태 및 모션 -->
-      <div class="field">
-        <label>기준 여백 (Padding) <span id="padVal">24px</span></label>
-        <input type="range" id="padding" min="12" max="64" value="24" step="4" oninput="update()">
-      </div>
-      <div class="field">
-        <label>둥글기 (Border Radius) <span id="radVal">0px</span></label>
-        <input type="range" id="radius" min="0" max="40" value="0" step="2" oninput="update()">
-      </div>
-      <div class="field">
-        <label>테두리 두께 (Border) <span id="borderVal">2px</span></label>
-        <input type="range" id="borderWidth" min="0" max="8" value="2" step="1" oninput="update()">
-      </div>
-      <div class="field">
-        <label>그림자 강도 (Shadow) <span id="shadowVal">0px</span></label>
-        <input type="range" id="shadow" min="0" max="80" value="0" step="4" oninput="update()">
-      </div>
-      <div class="field">
-        <label>모션 속도 (Transition) <span id="speedVal">0.2s</span></label>
-        <input type="range" id="speed" min="0.1" max="1.0" value="0.2" step="0.1" oninput="update()">
+  <main class="app" data-mobile-view="settings">
+    <aside class="controls" id="controlsPanel" aria-label="디자인 설정">
+      <div class="controls-intro">
+        <p class="eyebrow">PROJECT DESIGN / 2.6.1</p>
+        <h1>프로젝트의<br>보이는 기준.</h1>
+        <p>프리셋을 고르고 필요한 값만 조정하세요. 오른쪽 미리보기에 바로 반영됩니다.</p>
       </div>
 
-      <!-- 색상 -->
-      <div class="color-grid">
-        <div class="color-item"><label>Primary (주색)</label><input type="color" id="colorPrimary" value="#111111" oninput="update()"></div>
-        <div class="color-item"><label>Background (배경)</label><input type="color" id="colorBg" value="#f4f4f4" oninput="update()"></div>
-        <div class="color-item"><label>Surface (카드 배경)</label><input type="color" id="colorSurface" value="#ffffff" oninput="update()"></div>
-        <div class="color-item"><label>Text (글자색)</label><input type="color" id="colorText" value="#111111" oninput="update()"></div>
-        <div class="color-item"><label>Border (테두리색)</label><input type="color" id="colorBorder" value="#111111" oninput="update()"></div>
-        <div class="color-item"><label>Success (성공)</label><input type="color" id="colorSuccess" value="#10b981" oninput="update()"></div>
-      </div>
-    </div>
+      <section class="group" id="preset-container" aria-labelledby="presetTitle">
+        <h2 id="presetTitle">프리셋</h2>
+      </section>
 
-    <!-- 액션 -->
-    <div class="group">
-      <h3>토큰 추출 (Code Export)</h3>
-      <div class="actions">
-        <button class="btn btn-secondary" onclick="showExport('json')">포맷 추출 (JSON/CSS)</button>
-        <button class="btn btn-secondary" onclick="downloadJSON()">토큰 다운로드</button>
-      </div>
-      <div class="drag-zone" id="dragZone" onclick="triggerFileInput()">
-        <p>JSON 파일을 드롭하거나 클릭하여 로드</p>
-        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileSelect(event)">
-      </div>
-      <div class="token-output" id="tokenOutput">
-        <div class="export-tabs">
-          <button class="tab-btn active" onclick="switchFormat('json', this)">JSON</button>
-          <button class="tab-btn" onclick="switchFormat('css', this)">CSS</button>
-          <button class="tab-btn" onclick="switchFormat('tailwind', this)">Tailwind</button>
+      <section class="group">
+        <h2>취향 방향</h2>
+        <div class="field">
+          <label for="tasteProfileMode">Taste Profile</label>
+          <select id="tasteProfileMode" onchange="setTasteProfileMode(this.value)">
+            <option value="auto">프리셋 기준 자동</option>
+          </select>
         </div>
-        <pre id="tokenPre"></pre>
-        <button class="btn btn-secondary" style="width:100%; padding:10px; font-size:11px;" onclick="copyOutput()">코드 복사</button>
-      </div>
-    </div>
-  </div>
+        <details class="prompt-details">
+          <summary>에이전트용 디자인 프롬프트</summary>
+          <textarea id="aiPrompt" class="prompt-box" readonly aria-label="에이전트용 디자인 프롬프트"></textarea>
+          <label class="check-line"><input type="checkbox" id="includeRagContext"> 복사할 때 현재 프로젝트 RAG도 포함</label>
+          <button type="button" class="btn btn-primary" onclick="copyAgentPrompt()">프롬프트 복사</button>
+          <p id="ragPromptStatus">기본 프롬프트만 복사합니다.</p>
+        </details>
+      </section>
 
-
-  <!-- 좌우 패널 크기 조절용 스플리터 -->
-  <div class="resizer" id="resizer"></div>
-
-  <!-- Preview -->
-  <div class="preview">
-    <p class="preview-label">실시간 복합 컴포넌트 프리뷰</p>
-    
-    <div class="adv-preview" id="advPreview">
-      
-      <!-- Hero -->
-      <div class="p-hero">
-        <h2>Design System Core<br><span style="font-size: 0.6em; font-weight: 700; opacity: 0.8; letter-spacing: inherit;">디자인 시스템 코어</span></h2>
-        <p>This advanced live preview demonstrates how your industry-standard tokens behave across complex UI structures in real-time.<br><span style="opacity: 0.8; letter-spacing: inherit;">이 고급 실시간 프리뷰는 산업 표준 토큰이 복잡한 UI 구조에서 어떻게 동작하는지 보여줍니다.</span></p>
-        <button class="p-btn">Get Started / 시작하기</button>
-      </div>
-
-      <!-- Stats -->
-      <div class="p-grid">
-        <div class="p-stat-card">
-          <span class="label">Total Users (전체 사용자)</span>
-          <div class="value">24,592</div>
-          <div class="trend">+12.5%</div>
+      <section class="group token-controls">
+        <h2>세부 토큰</h2>
+        <div class="field"><label for="fontFamily">글꼴</label><select id="fontFamily" onchange="update()"><option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">시스템 Sans</option><option value="ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace">시스템 Mono</option></select></div>
+        <div class="field range-field"><label for="fontSize">글자 크기 <output id="fsVal">16px</output></label><input type="range" id="fontSize" min="12" max="24" value="16" step="1" oninput="update()"></div>
+        <div class="field range-field"><label for="letterSpacing">자간 <output id="lsVal">-0.04em</output></label><input type="range" id="letterSpacing" min="-0.1" max="0.2" value="-0.04" step="0.01" oninput="update()"></div>
+        <div class="field range-field"><label for="padding">여백 <output id="padVal">40px</output></label><input type="range" id="padding" min="12" max="64" value="40" step="4" oninput="update()"></div>
+        <div class="field range-field"><label for="radius">모서리 <output id="radVal">0px</output></label><input type="range" id="radius" min="0" max="40" value="0" step="2" oninput="update()"></div>
+        <div class="field range-field"><label for="borderWidth">테두리 <output id="borderVal">1px</output></label><input type="range" id="borderWidth" min="0" max="8" value="1" step="1" oninput="update()"></div>
+        <div class="field range-field"><label for="shadow">그림자 <output id="shadowVal">0px</output></label><input type="range" id="shadow" min="0" max="80" value="0" step="4" oninput="update()"></div>
+        <div class="field range-field"><label for="speed">모션 <output id="speedVal">0.50s</output></label><input type="range" id="speed" min="0.1" max="1" value="0.5" step="0.1" oninput="update()"></div>
+        <div class="color-grid">
+          <label>주색<input type="color" id="colorPrimary" value="#111111" oninput="update()"></label>
+          <label>배경<input type="color" id="colorBg" value="#e8e8e5" oninput="update()"></label>
+          <label>표면<input type="color" id="colorSurface" value="#e8e8e5" oninput="update()"></label>
+          <label>글자<input type="color" id="colorText" value="#111111" oninput="update()"></label>
+          <label>선<input type="color" id="colorBorder" value="#111111" oninput="update()"></label>
+          <label>완료<input type="color" id="colorSuccess" value="#10b981" oninput="update()"></label>
         </div>
-        <div class="p-stat-card">
-          <span class="label">Revenue (매출액)</span>
-          <div class="value">$124K</div>
-          <div class="trend">+8.2%</div>
+      </section>
+
+      <section class="group export-group">
+        <h2>토큰 내보내기</h2>
+        <div class="actions"><button type="button" class="btn btn-secondary" onclick="showExport('json')">코드 보기</button><button type="button" class="btn btn-secondary" onclick="downloadJSON()">JSON 저장</button></div>
+        <label class="drag-zone" id="dragZone" for="fileInput">저장한 JSON 토큰 불러오기<input type="file" id="fileInput" accept=".json,application/json" onchange="handleFileSelect(event)"></label>
+        <div class="token-output" id="tokenOutput">
+          <div class="export-tabs" role="tablist" aria-label="토큰 형식"><button type="button" class="tab-btn active" onclick="switchFormat('json', this)">JSON</button><button type="button" class="tab-btn" onclick="switchFormat('css', this)">CSS</button><button type="button" class="tab-btn" onclick="switchFormat('tailwind', this)">Tailwind</button></div>
+          <pre id="tokenPre"></pre><button type="button" class="btn btn-secondary" onclick="copyOutput()">코드 복사</button>
         </div>
-        <div class="p-stat-card">
-          <span class="label">Bounce Rate (이탈률)</span>
-          <div class="value">42.1%</div>
-          <div class="trend" style="color:var(--text-muted)">-1.1%</div>
+      </section>
+    </aside>
+
+    <section class="preview" aria-labelledby="previewTitle">
+      <div class="preview-heading"><span class="eyebrow">LIVE PREVIEW</span><h2 id="previewTitle">디자인 미리보기</h2></div>
+      <div class="adv-preview" id="advPreview">
+        <div class="p-editorial-copy">
+          <span class="p-index">01 / PROJECT</span>
+          <h2>무엇을<br>만들까요?</h2>
+          <p>아이디어를 구조화하고 필요한 정보를 연결해, 다음 작업이 자연스럽게 이어지도록 만듭니다.</p>
+          <button type="button" class="p-btn">지금 시작하기 →</button>
         </div>
+        <ol class="p-flow" aria-label="프로젝트 흐름">
+          <li><span>01</span><strong>프로젝트 흐름</strong><i>→</i></li>
+          <li><span>02</span><strong>요구사항 정리</strong><i>→</i></li>
+          <li><span>03</span><strong>디자인 적용</strong><i>→</i></li>
+          <li><span>04</span><strong>다음 작업 추천</strong><i>→</i></li>
+        </ol>
+        <div class="p-footnote"><span>VAS / EDITORIAL MOTION</span><p>표현은 과감하게, 흐름은 분명하게.</p></div>
       </div>
+    </section>
+  </main>
 
-      <!-- Profile Form -->
-      <div class="p-profile">
-        <div class="p-avatar"></div>
-        <div class="p-profile-info">
-          <h3>Architect Agent <span style="font-size: 0.7em; font-weight: normal; opacity: 0.6;">(아키텍트 에이전트)</span></h3>
-          <p>System structural planning and token management. <br><span style="opacity: 0.8;">시스템 구조 기획 및 토큰 관리.</span></p>
-          <input type="text" class="p-input" placeholder="Enter system prompt... (시스템 프롬프트 입력)">
-        </div>
-      </div>
+  <footer class="studio-applybar">
+    <button type="button" class="reset-theme" onclick="undoTheme()">변경 사항 되돌리기</button>
+    <button type="button" class="apply-theme" id="applyProjectTheme">이 프로젝트에 적용하고 계속 <span aria-hidden="true">→</span></button>
+    <p id="applyProjectStatus" role="status" hidden></p>
+  </footer>
 
-    </div>
-  </div>
-
-</div>
-
-<script src="vas-config.js"></script>
-<script src="storage-utils.js"></script>
-<script src="theme-state.js"></script>
-<script src="runtime-client.js"></script>
-<script src="knowledge-index.js"></script>
-<script src="personalization-store.js"></script>
-<script src="rag-lite.js"></script>
-<script src="design-presets.js"></script>
-<script src="design-taste-pack.js"></script>
-<script src="design-profile-control.js"></script>
-<script src="design-controller.js"></script>
-<div class="toast" id="dc-toast"></div>
+  <div class="toast" id="dc-toast" role="status"></div>
+  <script src="vas-config.js"></script>
+  <script src="storage-utils.js"></script>
+  <script src="theme-state.js"></script>
+  <script src="editorial-theme.js"></script>
+  <script src="runtime-client.js"></script>
+  <script src="project-context.js"></script>
+  <script src="knowledge-index.js"></script>
+  <script src="rag-lite.js"></script>
+  <script src="personalization-store.js"></script>
+  <script src="project-rail.js"></script>
+  <script src="design-presets.js"></script>
+  <script src="design-taste-pack.js"></script>
+  <script src="design-profile-control.js"></script>
+  <script src="design-controller.js"></script>
 </body>
 </html>

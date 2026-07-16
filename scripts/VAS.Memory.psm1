@@ -323,6 +323,24 @@ function Import-VASMemory {
     } finally { Exit-VASMemoryLock $guard }
 }
 
+function ConvertTo-VASSafeRagValue {
+    param($Value, [int]$Depth = 0)
+    if ($Depth -gt 2 -or $null -eq $Value) { return $null }
+    if ($Value -is [string]) {
+        $text = ($Value -replace '[\x00-\x1f\x7f]', ' ' -replace '\s+', ' ').Trim()
+        $text = $text -replace '(?i)\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b', '[연락처 제외]'
+        $text = $text -replace '(?i)(?:[a-z]:[\\/]|\\\\)[^\s"''<>]+', '[경로 제외]'
+        $text = $text -replace '(?i)\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{10,}\b', '[비밀값 제외]'
+        if ($text.Length -gt 3000) { $text = $text.Substring(0, 3000) }
+        return $text
+    }
+    if ($Value -is [bool] -or $Value -is [ValueType]) { return $Value }
+    if ($Value -is [Collections.IEnumerable]) {
+        return @($Value | Select-Object -First 20 | ForEach-Object { ConvertTo-VASSafeRagValue $_ ($Depth + 1) })
+    }
+    return $null
+}
+
 function New-VASLocalProject {
     param([Parameter(Mandatory = $true)][string]$Root, [Parameter(Mandatory = $true)]$InputObject)
 
@@ -364,7 +382,7 @@ function New-VASLocalProject {
         try { $locked = $mutex.WaitOne(10000) } catch [Threading.AbandonedMutexException] { $locked = $true }
         if (-not $locked) { throw 'VAS_PROJECT_BUSY' }
         $registryPath = Join-Path $stateRoot 'projects.json'
-        $registry = [pscustomobject]@{ version = 1; projects = @() }
+        $registry = [pscustomobject]@{ version = 2; projects = @() }
         if (Test-Path -LiteralPath $registryPath -PathType Leaf) {
             try { $registry = [IO.File]::ReadAllText($registryPath, [Text.Encoding]::UTF8) | ConvertFrom-Json }
             catch { throw 'VAS_PROJECT_REGISTRY_INVALID' }
@@ -379,6 +397,13 @@ function New-VASLocalProject {
         $briefJson = $brief | ConvertTo-Json -Depth 20
         if ([Text.Encoding]::UTF8.GetByteCount($briefJson) -gt 2097152) { throw 'VAS_PROJECT_BRIEF_TOO_LARGE' }
         [IO.File]::WriteAllText((Join-Path $stage 'brief.json'), $briefJson + [Environment]::NewLine, (New-Object Text.UTF8Encoding($false)))
+        $ragContext = [ordered]@{ schema = 1; purpose = '새 프로젝트 요구사항' }
+        foreach ($key in @('problem_desc', 'reference', 'sense_vision', 'sense_audio', 'sense_text', 'sense_auto', 'data_status', 'env_web', 'env_mobile', 'env_windows', 'env_edge', 'deadline', 'budget')) {
+            $safeValue = ConvertTo-VASSafeRagValue (Get-VASProperty $brief $key $null)
+            if ($null -ne $safeValue -and [string]$safeValue) { $ragContext[$key] = $safeValue }
+        }
+        $ragJson = $ragContext | ConvertTo-Json -Depth 10
+        [IO.File]::WriteAllText((Join-Path $stage 'rag-context.json'), $ragJson + [Environment]::NewLine, (New-Object Text.UTF8Encoding($false)))
         $readme = "# VAS 프로젝트`r`n`r`n1. brief.json에서 요구사항을 확인합니다.`r`n2. 실행·테스트 명령을 정리합니다.`r`n3. 작은 단위로 구현하고 검증합니다.`r`n4. 배포 전 비밀 파일과 생성물을 다시 확인합니다.`r`n"
         [IO.File]::WriteAllText((Join-Path $stage 'README.md'), $readme, (New-Object Text.UTF8Encoding($false)))
         $metadata = Get-VASProperty $brief '_meta' $null
@@ -394,11 +419,11 @@ function New-VASLocalProject {
         $now = [DateTime]::UtcNow.ToString('o')
         $project = [ordered]@{
             projectId = $projectId; name = $name; path = $target; sourceType = 'new'
-            source = $null; jobId = $null; importedAt = $now; status = 'ready'
-            createIndex = $false; indexEnabled = $false
+            source = $null; jobId = $null; importedAt = $now; updatedAt = $now; status = 'ready'
+            createIndex = $true; indexEnabled = $true; goal = 'manage'; stage = 'design'
         }
         $registry.projects = @($registry.projects) + @($project)
-        $registry.version = 1
+        $registry.version = 2
         $registryJson = $registry | ConvertTo-Json -Depth 20
         $temporary = Join-Path $stateRoot ('.projects-' + [Guid]::NewGuid().ToString('N') + '.tmp')
         [IO.File]::WriteAllText($temporary, $registryJson + [Environment]::NewLine, (New-Object Text.UTF8Encoding($false)))
