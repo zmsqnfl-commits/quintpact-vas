@@ -16,7 +16,7 @@ denied_tools: [write_to_file, replace_file_content, multi_replace_file_content, 
 - **파일 쓰기:** ❌ (설계만 담당, 코드 직접 작성 금지)
 - **터미널:** ❌
 - **브라우저:** ✅ (리서치 목적)
-- **`final/` 쓰기:** ❌
+- **`workspace/`, `dist/` 쓰기:** ❌
 
 > 상세 정책 및 ABAC 동적 권한: `.agents/access-control.md` 참조
 

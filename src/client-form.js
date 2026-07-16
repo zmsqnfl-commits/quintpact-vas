@@ -1,11 +1,11 @@
 /* =========================================
    client-form.js
    폼 네비게이션, 드래그앤드롭, 완료 화면, 다국어 전환 로직
-   (자동저장 제거 — 매번 새 폼으로 시작)
+   초안 저장은 client-draft.js가 담당합니다.
    ========================================= */
 
-let currentLang = 'ko';
-let cur = 1;
+var currentLang = 'ko';
+var cur = 1;
 const total = 5;
 
 /* 언어 전환 */
@@ -25,6 +25,8 @@ function setLang(lang) {
     });
 
     updateUI();
+    if (window.VASClientDraft) window.VASClientDraft.renderPolicy();
+    if (window.VASClientDraft) window.VASClientDraft.save();
 }
 
 /* 진행 상태 UI 갱신 */
@@ -136,6 +138,7 @@ function changeStep(dir) {
     }, 350);
 
     updateUI();
+    if (window.VASClientDraft) window.VASClientDraft.save();
 }
 
 /* 완료 화면 진입 */
@@ -149,6 +152,19 @@ function showDone() {
     document.getElementById('navWrap').style.display = 'none';
     const ds = document.getElementById('doneScreen');
     ds.classList.add('active');
+    if (window.VASPersonalization) {
+        const selected = name => Array.from(document.querySelectorAll(`[name="${name}"]:checked`)).map(input => input.value || 'selected');
+        const capabilities = ['vision', 'audio', 'text', 'auto'].filter(name => document.querySelector(`[name="sense_${name}"]`).checked);
+        const environments = ['web', 'mobile', 'windows', 'edge'].filter(name => document.querySelector(`[name="env_${name}"]`).checked);
+        window.VASPersonalization.record({
+            type: 'form_completed',
+            source: 'client-application',
+            payload: {
+                language: currentLang, schema: 1, capabilities: capabilities,
+                environments: environments, dataStatus: selected('data_status'), budget: selected('budget')
+            }
+        });
+    }
 }
 
 /* 완료 화면 → 폼으로 복귀 */
@@ -170,7 +186,11 @@ function clearForm() {
     const msg = currentLang === 'ko'
         ? '작성 중인 내용을 모두 지우고 처음부터 다시 시작하시겠습니까?'
         : 'Clear all and start over?';
-    if (confirm(msg)) location.reload();
+    if (confirm(msg)) {
+        if (window.VASClientDraft) window.VASClientDraft.clear();
+        document.getElementById('projectForm').reset();
+        location.reload();
+    }
 }
 
 /* 드래그 앤 드롭 로직 */

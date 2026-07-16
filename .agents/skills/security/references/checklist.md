@@ -24,6 +24,6 @@
 ### ABAC 정책 검증
 - [ ] `sensitive_data_guard` 대상 파일이 적절히 보호되는가
 - [ ] `prod_config_lock` 대상 파일의 수정 권한이 올바른가
-- [ ] `review_before_final` — 리뷰/테스트 통과 전 final/ 쓰기 시도 없는가
+- [ ] `review_before_release` — 리뷰/테스트 통과 전 배포 생성 시도 없는가
 
 > 프로젝트별 보안 요건은 `/setup-from-application` 시 추가됩니다.

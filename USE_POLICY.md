@@ -1,27 +1,7 @@
-# USE POLICY
+# VAS Use Policy
 
-This file records the current project use policy for the VAS 2.5.2 public release candidate.
-Project copyright licensing is governed by `LICENSE` (MIT License).
-
-## Attribution
-
-- Official English attribution: QUINTPACT Team
-- Official Korean attribution: 퀀트펙트 팀
-
-Public documents should use `QUINTPACT Team` first. Use `퀀트펙트 팀` only where Korean attribution is needed.
-
-## Allowed Use
-
-- See `LICENSE` for MIT License permissions and conditions.
-- Redistribution or modified redistribution must preserve the MIT copyright notice and permission notice.
-- Do not present modified versions as the official original release unless the project owner approves that wording.
-
-## Release Process Boundary
-
-Public GitHub upload, NAS upload, external distribution, and archive creation have not been performed in this handoff workflow and still require separate project-owner approval.
-
-## License Status
-
-- License: MIT License
-- Copyright holder: QUINTPACT Team
-- License file: `LICENSE`
+- Windows 배포판과 GitHub Pages는 같은 `src/` 원본에서 생성합니다.
+- 프로젝트 원본, `workspace/`, 개인화 메모리, 시크릿은 GitHub Pages와 Release에 포함하지 않습니다.
+- 기존 프로젝트는 분석과 백업 검증 전에는 변경하거나 삭제하지 않습니다.
+- 개인화 기능은 최초 안내와 동의 후 사용하며 언제든 중지·삭제할 수 있습니다.
+- 사용자는 가져온 코드와 데이터의 권리 및 보안 책임을 확인해야 합니다.

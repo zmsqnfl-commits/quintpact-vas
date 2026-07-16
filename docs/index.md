@@ -1,42 +1,46 @@
-# VAS 2.5.2 - Project Compass (Index)
+# VAS 2.6.0 시스템 지도
 
-## Operations
+## 사용자 흐름
 
-- [Operations Guide](./OPERATIONS.md): release flow, verification commands, backup policy, Git hygiene, and failure routing.
-- [Design System](./design-system.md): built-in hybrid design studio, token presets, and visual rules.
+```text
+Run-VAS-System.bat
+  -> 로컬 서버 + 허브
+     -> 새 프로젝트 -> 의뢰서/디자인 -> workspace/projects
+     -> 기존 프로젝트 -> 분석/승인/복제 -> workspace/projects
+     -> 지식 검색/RAG -> 관련 문서와 이전 작업 추천
+     -> 내 메모리 -> 동의/일시정지/삭제/내보내기
+```
 
-이 파일은 에이전트 팀이 작업을 시작하기 전에 가장 먼저 읽어야 하는 **단일 진실 공급원(Single Source of Truth)**입니다.
-프로젝트의 현재 상태, 기술 아키텍처 요약, 핵심 위키 문서들의 링크를 포함합니다.
+## 구성
 
----
+| 영역 | 역할 | 기준 파일 |
+|---|---|---|
+| 허브 | 첫 실행, 프로젝트 목록, 기능 연결 | `src/vas-hub.html` |
+| 신청서 | 요구사항 입력, 초안 복원, JSON 저장 | `src/client-application.html` |
+| 디자인 | 테마 편집과 상태 전달 | `src/design-controller.html` |
+| 가져오기 | 폴더 분석·승인·진행·되돌리기 | `src/project-import.html` |
+| 개인화 | 동의 기반 이벤트와 추천 | `src/personalization-store.js` |
+| RAG | 로컬 지식 색인·검색·프롬프트 보강 | `src/rag-lite.js` |
+| 런타임 | 토큰·동일 출처 보호 로컬 HTTP API | `scripts/Start-VAS.ps1` |
+| 마이그레이션 | 아카이브·해시·원자적 배치·롤백 | `scripts/vas_project_import.py` |
+| 배포 | 재현 가능한 ZIP/Pages 생성 | `scripts/build_release.py` |
 
-## 🧭 프로젝트 현황 (Current State)
-- **버전:** VAS 2.5.2 (Taste-Skill + Final-Centric 아키텍처 적용 및 내장 하이브리드 디자인 스튜디오 전환 완료)
-- **주요 목적:** AI 에이전트 6인 팀 협업을 돕는 인간(Human) 인터페이스 및 허브 제공.
-- **최근 업데이트:** LLM Wiki 방식 도입으로 인해 문서를 파편화하지 않고 `docs/` 위키 폴더 하나에서 모든 지식을 관리하도록 구조 통합.
+## 저장 위치
 
-## 🏗️ 시스템 아키텍처 (Architecture)
-- **프론트엔드 스택:** 순수 Vanilla JS, HTML, Vanilla CSS
-- **외부 라이브러리:** 최소화. (Pretendard 폰트 CDN, Phosphor/Radix 아이콘 CDN 사용 중)
-- **로컬 구동 방식:** 완전 독립형 로컬 파일 (Run-VAS-System.bat 또는 브라우저에서 `vas-hub.html` 직접 실행)
+- 작업 원본: `src/`, `docs/`, `scripts/`, `tests/`
+- 사용자 프로젝트·가져오기 상태: `workspace/` (Git 제외)
+- Windows 개인화 메모리: `%LOCALAPPDATA%\QUINTPACT\VAS\` (Git·배포 제외)
+- 로컬 체크포인트: `.vas_backups/` (Git 제외)
+- 생성 배포물: `dist/` (Git 제외)
+- 공개 배포에는 사용자 데이터와 메모리를 포함하지 않습니다.
 
-## 📁 주요 위키 문서 (Wiki Directory)
+## 운영 원칙
 
-- 📜 [**연대기 및 교훈 (docs/log.md)**](./log.md)
-  - 과거에 어떤 작업이 언제 이루어졌는지, 어떤 버그/교훈이 있었는지 확인할 때 참고하세요. (이전 `HISTORY.md`와 `LESSONS.md`의 합본)
-- 🎨 [**디자인 시스템 명세 (docs/design-system.md)**](./design-system.md)
-  - Designer 에이전트가 확정한 컴포넌트 명세, 색상 토큰 등이 정의되어 있습니다. UI 개발 전 필독.
-- 🧩 [**디자인 스튜디오 사용 흐름 (docs/design-studio-controls.md)**](./design-studio-controls.md)
-  - 프리셋, Taste Profile, Agent Prompt, Token Export 흐름을 짧게 정리합니다.
-- 📦 [**Clean Copy Package Plan (docs/clean-copy-package-plan.md)**](./clean-copy-package-plan.md)
-  - 전체 VAS 폴더 전달 전 포함/제외 기준과 검증 흐름을 정리합니다.
-- 🔌 [**하이브리드 디자인 스튜디오 (src/design-controller.html)**](../src/design-controller.html)
-  - VAS 내장 디자인 컨트롤러에서 프리셋, 세부 토큰, JSON/CSS/Tailwind 내보내기를 직접 처리합니다.
-- 📐 **디자인 엔지니어링 룰 (TASTE-RULES.md)**
-  - `.agents/skills/designer/TASTE-RULES.md`
-  - 뻔하고 지루한 AI 템플릿(Slop) 생성을 금지하고 고급스러운 Vanilla UI를 뽑아내기 위한 절대 수칙.
+- 모든 기능은 외부 CDN 없이 동작합니다.
+- 저장소가 차단되거나 손상돼도 기본값으로 실행합니다.
+- 폴더 가져오기는 분석 전 실행 금지, 승인 전 쓰기 금지입니다.
+- 저장소 내부 배포 미러는 사용하지 않습니다. 배포본은 매번 원본에서 생성합니다.
+- 파일은 500줄 이하로 유지합니다.
+- 고정 커밋 번호나 고정 테스트 개수를 문서에 기록하지 않습니다.
 
----
-
-> **에이전트 행동 지침:**
-> 코드를 `final/` 폴더에 병합할 때, 위 내용 중 변경된 아키텍처나 주요 상태가 있다면 이 `docs/index.md`를 함께 업데이트해야 합니다.
+관련 문서: `docs/OPERATIONS.md`, `docs/MIGRATION.md`, `docs/import-existing-project.md`, `docs/HANDOFF.md`.

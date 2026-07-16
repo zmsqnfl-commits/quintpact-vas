@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>VAS — 개인화 메모리</title><link rel="stylesheet" href="memory-center.css"></head>
+<body>
+  <header><a href="vas-hub.html" data-vas-link>← 허브</a><strong>개인화 메모리</strong><span id="memoryState">확인 중</span></header>
+  <main>
+    <section class="memory-hero"><h1>내가 남긴<br>기억.</h1><div><p>추천과 에이전트 프롬프트에 사용되는 로컬 기록입니다. 외부로 전송되지 않으며 언제든 삭제할 수 있습니다.</p><div class="hero-actions"><button id="toggleConsent">개인화 켜기</button><button id="togglePause">기록 일시정지</button><button id="exportMemory">JSON 내보내기</button><label class="import-label">JSON 가져오기<input id="importMemory" type="file" accept="application/json,.json" hidden></label></div></div></section>
+    <section class="summary"><div><span>기록</span><strong id="eventCount">0</strong></div><div><span>보관</span><strong>직접 삭제 전까지</strong></div><div><span>위치</span><strong id="storageLocation">현재 브라우저</strong></div></section>
+    <section class="memory-list-section"><div class="section-heading"><h2>사용 기록</h2><div><select id="typeFilter"><option value="">전체 유형</option></select><button id="deleteAll" class="danger">전체 삭제</button></div></div><div id="memoryList" class="memory-list"></div></section>
+  </main>
+  <script src="vas-config.js"></script><script src="storage-utils.js"></script><script src="theme-state.js"></script><script src="runtime-client.js"></script><script src="knowledge-index.js"></script><script src="rag-lite.js"></script><script src="personalization-store.js"></script><script src="memory-center.js"></script>
+</body></html>

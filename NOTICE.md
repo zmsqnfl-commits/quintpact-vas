@@ -1,27 +1,7 @@
-# NOTICE
+# VAS Notice
 
-This notice summarizes public-release attribution candidates for VAS 2.5.2.
+VAS 2.6.0은 오프라인 우선 도구이며 외부 CDN 폰트나 원격 실행 스크립트를 포함하지 않습니다.
+브라우저 자동화 개발 의존성은 배포 ZIP에 포함되지 않습니다.
 
-## Project
-
-- VAS 2.5.2 (Vibecoding Agent System)
-- Original author: QUINTPACT Team
-- Korean author name: 퀀트펙트 팀
-- License: MIT License
-- Copyright holder: QUINTPACT Team
-
-## Third-Party References
-
-- Pretendard is loaded from jsDelivr and the upstream `orioncactus/pretendard` project. Upstream license: SIL Open Font License 1.1.
-- Google Fonts CSS is referenced for Geist Mono, Inter, and JetBrains Mono. Google Fonts families are distributed under open font licenses; verify each upstream family page before vendoring font files.
-- Playwright / `@playwright/test` is referenced by `tests/package.json` and `tests/package-lock.json` for local browser smoke tests. Upstream license: Apache License 2.0.
-
-## Bundling Notes
-
-- `node_modules/` is intentionally excluded from this release candidate.
-- External font files are not vendored in this folder; the HTML/CSS files reference CDN-hosted CSS.
-- Claude, Figma, GitHub, Google Fonts, jsDelivr, Microsoft, and Playwright names appear as tool, integration, or dependency references and remain the property of their respective owners.
-
-## Release Note
-
-TASK-039 applied the MIT License in the root `LICENSE` file. Public GitHub upload, NAS upload, external distribution, and archive creation still require separate project-owner approval in this handoff workflow.
+기존 프로그램 가져오기와 개인화 메모리는 사용자의 로컬 기기에서만 처리됩니다.
+내보낸 프로젝트·메모리 파일에는 개인정보나 시크릿이 포함될 수 있으므로 공유 전에 확인하십시오.

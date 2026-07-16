@@ -61,9 +61,7 @@ Agent Prompt는 에이전트에게 전달할 작업 지시문입니다. 아래 5
 
 ```powershell
 python tests\test_html_syntax.py
-cd tests
-npm run test:design-preview
-npm run test:browser
+npm.cmd run test:browser
 ```
 
-`test:design-preview`는 프리셋 토큰 반영과 Taste Profile 자동/수동 전환을 확인합니다.
+브라우저 검사는 프리셋 토큰 반영과 Taste Profile 자동/수동 전환을 함께 확인합니다.

@@ -1,18 +1,36 @@
-# 시스템 인계 문서
+# VAS 2.6.0 인계
 
-## 최근 작업 (대기 중)
+## 기준
 
-**[2026-05-23] VAS 2.5.2 기준 9대 보완 작업 전면 완료**
+- 단일 작업 원본: `src/`, `docs/`, `scripts/`, `tests/`
+- 사용자 데이터: `workspace/`이며 Git·배포에서 제외
+- 배포 생성: `python scripts/build_release.py`
+- 시스템 지도: `docs/index.md`
+- 운영: `docs/OPERATIONS.md`
 
-### ✅ 완료된 항목 (최신)
-- **#1~#9 전 항목 완수**: 허브 카드 정리, 카테고리 분리, JS 모듈화, 고아 문서 삭제, 즐겨찾기, 의뢰서 테마 연동, Undo/Redo 기능 구현까지 모두 완료됨.
-- **추가 버그 픽스**: Undo 시 localStorage 호환성 문제 해결 및 누락 값 복원, `index.html` 중복 카드 정리, CSS 노출 버그 수정.
-- **동기화**: 작업 결과물은 모두 `final/` 디렉터리에 완벽히 동기화됨.
+## 시작 점검
 
-### 🔧 남은 작업
-- 현재 진행 중인 워크플로우나 긴급한 버그 픽스 없음.
-- 다음 에이전트는 사용자의 새로운 요구사항에 맞추어 작업을 시작하면 됨.
+```powershell
+git status --short
+npm.cmd ci
+python -m pip install -r tests/requirements-dev.txt
+npm.cmd run knowledge:check
+npm.cmd run test:python
+npm.cmd run test:browser
+```
 
-### 참조 파일
-- 히스토리 및 교훈: `docs/log.md` (최신 업데이트됨)
-- 단일 진실 공급원: `docs/index.md`
+## 핵심 호환성
+
+- 진입점: `Run-VAS-System.bat`, `src/vas-hub.html`, 독립 신청서 `index.html`
+- 기존 테마 키: `vasFavorites`, `vasThemeHistory`, `vasThemeTokens`, `vasCurrentPreset`
+- 기존 색상·간격은 보존하고 레거시 폰트만 시스템 폰트로 정규화
+- 개인화는 명시적 동의 전 비활성
+
+## 릴리즈 전
+
+1. 단일 테스트와 브라우저 테스트를 통과시킵니다.
+2. `npm.cmd run test:package`로 배포본을 생성·검증합니다.
+3. 캐시·비밀·사용자 데이터가 스테이징되지 않았는지 확인합니다.
+4. `docs/log.md`에 변경 이유와 검증 결과를 한 번만 기록합니다.
+
+10회 스트레스 테스트는 사용자가 명시한 경우에만 실행합니다.

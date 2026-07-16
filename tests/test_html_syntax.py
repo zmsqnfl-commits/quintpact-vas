@@ -16,6 +16,7 @@ def test_html_files_exist():
 def test_js_files_exist():
     expected_files = [
         os.path.join("src", "client-form.js"),
+        os.path.join("src", "storage-utils.js"),
     ]
     for file in expected_files:
         path = os.path.join(ROOT_DIR, file)
@@ -27,7 +28,6 @@ def test_line_limits():
     html_files = (
         glob.glob(os.path.join(ROOT_DIR, "*.html"))
         + glob.glob(os.path.join(ROOT_DIR, "src", "*.html"))
-        + glob.glob(os.path.join(ROOT_DIR, "final", "src", "*.html"))
     )
     for file_path in html_files:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -51,6 +51,8 @@ def test_html_structure():
         name = os.path.basename(file_path)
         assert '</body>' in content, f"{name}: </body> 태그 없음 — 파일이 절단되었을 수 있음"
         assert '</html>' in content, f"{name}: </html> 태그 없음 — 파일이 절단되었을 수 있음"
+        assert '@import url(\'http' not in content and '@import url("http' not in content, \
+            f"{name}: 외부 CDN CSS 의존성 발견"
 
 def test_md_files_nonempty():
     """필수 MD 파일이 존재하고 비어 있지 않은지 확인"""

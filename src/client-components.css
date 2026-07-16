@@ -66,3 +66,28 @@
 }
 .vas-btn-clear:hover { opacity: 1 !important; }
 .vas-btn-clear:active { transform: scale(0.98) !important; }
+
+.draft-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border: 2px solid var(--border-dark);
+  background: #ffcc00;
+  color: #111;
+  font-size: 13px;
+}
+.draft-policy { display: flex; justify-content: space-between; gap: 14px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--border-dark); font-size: 12px; line-height: 1.5; }
+.draft-policy button { flex: none; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.draft-notice[hidden] { display: none; }
+.draft-actions { display: flex; gap: 8px; }
+.draft-actions button {
+  border: 1px solid #111;
+  background: #fff;
+  padding: 7px 10px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}

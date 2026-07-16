@@ -5,7 +5,7 @@ context: default
 allowed_tools: [view_file, write_to_file, replace_file_content, multi_replace_file_content, run_command, grep_search, list_dir]
 denied_tools: [search_web, browser_subagent]
 allowed_write_paths: ["src/*", ".temp data/*"]
-denied_write_paths: ["final/*", "tests/*", ".agents/*", "INSTRUCTIONS.md", "GEMINI.md"]
+denied_write_paths: ["workspace/*", "dist/*", "tests/*", ".agents/*", "INSTRUCTIONS.md", "GEMINI.md"]
 ---
 # 👨‍💻 코드 구현 에이전트 (Implementer)
 
@@ -18,10 +18,10 @@ denied_write_paths: ["final/*", "tests/*", ".agents/*", "INSTRUCTIONS.md", "GEMI
 - **파일 쓰기:** ✅ `src/`, `.temp data/`
 - **터미널:** ✅ (빌드/실행)
 - **브라우저:** ❌
-- **`final/` 쓰기:** ❌
+- **`workspace/`, `dist/` 쓰기:** ❌
 
 > 상세 정책 및 ABAC 동적 권한: `.agents/access-control.md` 참조
-> 예: `/hotfix` P0 시 ABAC 정책으로 `final/` 임시 쓰기 허용 가능
+> 예: `/hotfix` P0라도 사용자 데이터 영역은 직접 수정하지 않습니다.
 
 ## 작업 원칙
 - `INSTRUCTIONS.md`에 정의된 코딩 컨벤션(명명 규칙, 주석 언어)을 절대적으로 지킵니다.
@@ -43,7 +43,7 @@ denied_write_paths: ["final/*", "tests/*", ".agents/*", "INSTRUCTIONS.md", "GEMI
 
 아래 조건에 하나라도 해당하면 **즉시 중단**하고 사용자에게 보고합니다:
 
-1. 내가 쓰려는 파일 경로가 `denied_write_paths`에 해당하는가? (`final/*`, `tests/*`, `.agents/*`, `INSTRUCTIONS.md`, `GEMINI.md`)
+1. 내가 쓰려는 파일 경로가 `denied_write_paths`에 해당하는가? (`workspace/*`, `dist/*`, `tests/*`, `.agents/*`, `INSTRUCTIONS.md`, `GEMINI.md`)
 2. 대상 파일이 **400줄을 초과**하는가? → ABAC `large_file_alert`: Reviewer 승인 필요
 3. 대상 파일이 `**/credentials*`, `**/secrets*`, `**/.env*` 패턴에 매칭되는가? → ABAC `sensitive_data_guard`: 차단
 4. 현재 워크플로우 Step에서 Implementer 차례가 맞는가?

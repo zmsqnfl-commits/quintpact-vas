@@ -1,67 +1,58 @@
 # 프로젝트 연대기 및 교훈 (Log & Lessons)
 
 이 문서는 에이전트 시스템이 스스로 유지보수하는 **작업 이력 및 교훈 기록장**입니다.
-작업(`/dev-cycle` 또는 `/migration-cycle`)이 완료되어 `final/` 폴더로 코드가 병합될 때마다, Security 에이전트가 가장 최상단에 새로운 내역과 교훈을 덧붙입니다.
+작업과 검증이 완료될 때마다 가장 최상단에 새 내역과 교훈을 덧붙입니다.
 
-## 2026-06-04 TASK-041 업로드 전 통합 검증
-- **분류:** `[릴리즈 검증]`
-- **수행 내용:** README/license/manifest 정합성, Hub/Design Studio/Client/NAS smoke, Python/browser/integrity 검증.
-- **검증:** html 5 PASS, client 18 passed, integrity 166/166 PASS, browser 5 passed, direct smoke PASS.
-- **특이사항:** `final/Run-VAS-System.bat`를 루트 BAT와 동기화했으며 업로드/압축/NAS 업로드는 수행하지 않음.
+## 2026-07-16 VAS 2.6.0 릴리즈 재검증
 
-## 2026-06-03 TASK-040 GitHub 메인 README 정리
-
-- **분류:** `[릴리즈 준비/문서]`
+- **분류:** `[릴리즈/개인정보/실사용 검증]`
 - **수행 내용:**
-  1. public release 후보의 루트 README를 GitHub 메인 페이지용 영어 우선 구조로 정리.
-  2. 바로 아래에 한국어 안내 섹션을 병기.
-  3. features, quick start, folder structure, attribution, license, client form note를 포함.
-  4. MIT License, AUTHORS, NOTICE, USE_POLICY, RELEASE_MANIFEST와 충돌하지 않게 보정.
-  5. 동일 내용을 `final/README.md`에 동기화.
+  1. 개인화 이벤트에서 사용자 프로젝트 식별자를 제거하고 프로젝트·고객 이름과 연락처 키를 저장 단계에서 차단.
+  2. GitHub Actions의 checkout/setup-node를 최신 major로 갱신.
+  3. 한글·공백 경로에서 Windows ZIP 실행 후 선택→분석→가져오기→RAG→롤백을 검증하고 독립 신청서 JSON 저장까지 확인.
+  4. 2.5.2 기준 커밋을 외부 ZIP으로 보존하고 작업 폴더를 `VAS 2.6.0`으로 변경.
 - **교훈/특이사항:**
-  - 공개 저장소 첫 화면은 내부 운영 절차보다 실행, 구조, 라이선스, 고지 위치를 먼저 보여줘야 함.
+  - 자동 테스트 통과와 별개로 사용자 입력값이 개인화 기록에 섞이지 않는지 실제 저장 결과를 재검증해야 함.
 
-## 2026-06-03 TASK-039 MIT License 적용
+## 2026-07-16 VAS 2.6.0 통합 사용자 흐름
 
-- **분류:** `[릴리즈 준비/라이선스]`
+- **분류:** `[기능 릴리즈/마이그레이션/로컬 RAG]`
 - **수행 내용:**
-  1. public release 후보 루트와 `final/`에 MIT License 파일을 추가.
-  2. Copyright holder를 `QUINTPACT Team`으로 확정.
-  3. README, NOTICE, USE_POLICY, RELEASE_MANIFEST의 TASK-038 잔여 라이선스 미정 문구를 정리.
-  4. 실제 GitHub public 업로드, NAS 업로드, 외부 배포, 압축 생성은 수행하지 않음.
+  1. 새 프로젝트 생성과 기존 프로그램 폴더 선택·읽기 전용 분석·복사·검증·등록·복구를 하나의 허브 흐름으로 연결.
+  2. 동의 기반 개인화 메모리와 문서·프로젝트 로컬 RAG를 추가하고 비밀값·경로 노출을 차단.
+  3. localhost 전용 Windows 런타임과 재현 가능한 Windows·독립형·Pages 배포 패키지를 정비.
+  4. Python 무결성 23/23, pytest 35 통과·1 권한 스킵, 브라우저 16/16, 패키지 7/7 통과. 정책에 따라 10회 스트레스 테스트는 미실행.
 - **교훈/특이사항:**
-  - MIT 조건은 `LICENSE`가 기준이며, `USE_POLICY.md`는 이번 handoff의 업로드 승인 경계만 보조 기록함.
+  - 기존 프로그램은 원본을 직접 바꾸지 않고 복사본 검증과 명시적 승인·복구 지점을 거쳐야 안전하게 사용자화할 수 있음.
 
-## 2026-06-03 TASK-038 원저작 표기 및 사용 정책 확정
+## 2026-07-16 TASK-035/TASK-037 임시 형제 폴더 정리
 
-- **분류:** `[릴리즈 준비/정책]`
+- **분류:** `[폴더 정리/중복 제거/복구 보존]`
 - **수행 내용:**
-  1. public release 후보의 원저작 표기를 `QUINTPACT Team` / `퀀트펙트 팀`으로 확정.
-  2. README, AUTHORS, NOTICE, 허브 카드 표기에서 placeholder author를 제거.
-  3. 재배포/수정 허용과 원저작 표기 유지 조건을 `USE_POLICY.md`로 문서화.
-  4. 포함/제외 기준과 허브 노출 정책을 `RELEASE_MANIFEST.md`로 문서화.
-  5. release 후보 smoke와 공식 표기 검사를 재확인.
+  1. clean-copy 리허설과 public-release 후보를 현행 `VAS 2.5.2` 기준본과 SHA-256으로 비교해 최신 고유 코드가 없음을 확인.
+  2. public-release 후보의 고유 법적·배포 문서 5종을 포함한 두 폴더 전체를 `.vas_backups/retired-sibling-folders/`에 ZIP으로 보존.
+  3. 실행 코드·스크립트·바로가기·예약 작업·프로세스 참조가 없음을 확인하고 두 임시 형제 폴더를 제거.
 - **교훈/특이사항:**
-  - 공식 문서에는 구어체 약칭을 쓰지 않고, 영문 공식 표기 `QUINTPACT Team`을 우선 사용함.
+  - 공개 배포 후보를 정리할 때는 오래된 코드와 고유 라이선스·배포 메타데이터를 구분하고, 법적 문서는 현행 적용 여부를 결정하기 전 복구 가능하게 보존해야 함.
 
-## 2026-06-03 TASK-037 public release hub 정리
+## 2026-07-16 VAS 2.5.2 전체 안정화 및 기준점 정리
 
-- **분류:** `[릴리즈 준비/고지]`
+- **분류:** `[안정화/오프라인/운영 정합성]`
 - **수행 내용:**
-  1. TASK-035 clean copy를 기준으로 별도 public release 후보 폴더를 생성.
-  2. 배포용 허브에서 보조 템플릿 카드를 제거하고 Design Studio만 노출.
-  3. Client Form/NAS Form, agent rules, taste-skills, docs, scripts, tests는 유지.
-  4. `AUTHORS.md`, `NOTICE.md`를 추가하고 README에 원저작/고지 확인 위치를 명시.
-  5. release 후보 기준 smoke와 허브 노출 검증을 재실행.
+  1. VAS 코어 작업본→검증→`final/` 배포 흐름과 신규 프로젝트의 `final/projects/` 격리 원칙을 문서·워크플로우·마이그레이션 스크립트에 통일.
+  2. 런타임 CDN 폰트를 제거하고 시스템 sans/mono 스택 및 레거시 폰트 토큰 변환을 적용.
+  3. 공용 `storage-utils.js`로 손상·차단된 localStorage를 안전하게 복구하고 색상 등 유효한 사용자 테마 값은 보존.
+  4. 단일 무결성 검사와 10회 반복 릴리즈 검사를 분리하고 `src/`와 `final/`을 SHA-256 기준으로 동기화.
+  5. Python 23/23, 통합 무결성 167/167, 브라우저 9/9, 마이그레이션 128/128, 드라이런 138/138 통과.
 - **교훈/특이사항:**
-  - 공개 배포 전 허브 노출 정책과 파일 포함 정책은 분리해서 봐야 함. 허브에서 숨긴 파일도 직접 경로/테스트용으로 유지할 수 있음.
+  - 오프라인 제품은 폴백만 제공하는 것보다 외부 요청 자체를 제거하고 저장 데이터 마이그레이션까지 검증해야 안정적임.
 
 ## 2026-06-03 TASK-035 clean copy rehearsal
 
 - **분류:** `[전달 준비/검증]`
 - **수행 내용:**
   1. 사용자 직접 실행에서 TASK-034 보정 후 다음 단계로 clean copy rehearsal을 진행.
-  2. `Z:\E.Samchon\promake\VAS\VAS-2.5.2-clean-copy-rehearsal-TASK-035-20260603` 별도 폴더를 생성하고 포함/제외 기준을 적용.
+  2. 별도 clean-copy 리허설 폴더를 생성하고 포함/제외 기준을 적용. 해당 폴더는 2026-07-16 기준본 통합 확인 후 정리 완료.
   3. 제외 후보로 들어온 `.vas_backups`, `.pytest_cache`, `node_modules`, `test-results`를 clean copy 내부에서만 제거.
   4. clean copy 기준 Python smoke와 Playwright browser smoke를 재확인.
 - **교훈/특이사항:**
@@ -288,7 +279,7 @@
   3. **코드 최적화**: 500줄이 넘어가던 컨트롤러에서 `PRESETS` 데이터를 `design-presets.js`로 외부 모듈화하여 구조 개선 완료.
   4. **신규 기능 1**: 프리셋 `즐겨찾기` 기능 추가 (별표 클릭 시 localStorage에 저장되어 최상단 노출).
   5. **신규 기능 2**: `Undo(되돌리기)` 버튼 추가. 이전 5개의 테마 변경 기록을 추적하여 안전하게 원상복구.
-  6. **버그 픽스**: 
+  6. **버그 픽스**:
      - Undo 사용 시 예전 버전 데이터 포맷 오류로 인한 멈춤 현상 수정 (초기 데이터 주입 및 안전 방어코드 추가).
      - CSS 코드 노출 버그 및 누락되었던 폰트, 색상값 복구 오류 수정.
   7. 삭제가 필요했던 옛날 `OPEN_DESIGN_BRIDGE.md` 및 `.bat` 고아 파일 완벽 정리 및 `final/` 디렉터리 동기화 완료.
@@ -481,7 +472,7 @@
 - **로그 자동 압축 (Log Condensation):** 작업 완료 시 이전 오래된 로그를 3~4줄 이내로 Pruning/Merge하여 토큰 낭비 방지.
 
 ### 테스트 기본 규칙
-- **경량화 규칙:** 평소 개발 시 10-Loop 스트레스 테스트 대신 단일 경량 스모크 테스트(`python tests/test_integrity_10loop.py`)만 단 1회 실행.
+- **경량화 규칙:** 평소 개발 시 반복 스트레스 테스트 대신 단일 무결성 검사(`python tests/test_integrity.py`)만 실행.
 - **스트레스 테스트 제한:** `run_10x_stress.py` 등은 사용자의 명시적 요청이 있을 때만 최종 구동.
 
 ---

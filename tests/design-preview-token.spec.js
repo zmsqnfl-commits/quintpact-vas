@@ -3,6 +3,11 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 const appUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'design-controller.html')).href;
+const hubUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'vas-hub.html')).href;
+const clientUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href;
+const importUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href;
+const searchUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'knowledge-search.html')).href;
+const memoryUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'memory-center.html')).href;
 const requiredSections = [
   '[BASELINE RULES]',
   '[TASTE PROFILE RULES]',
@@ -127,4 +132,77 @@ test('taste profile manual override updates prompt and can return to auto', asyn
   expect(result.manualKeyCleared).toBe(true);
   expect(result.storedMode).toBe('auto');
   expect(result.sectionsOk).toBe(true);
+});
+
+test('corrupted local storage heals without breaking the design studio', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    localStorage.setItem('vasFavorites', '{broken');
+    localStorage.setItem('vasThemeHistory', 'not-json');
+  });
+
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('#preset-container')).toBeVisible();
+  await expect(page.locator('#aiPrompt')).not.toHaveValue('');
+  const healed = await page.evaluate(() => ({
+    favorites: JSON.parse(localStorage.getItem('vasFavorites')),
+    history: JSON.parse(localStorage.getItem('vasThemeHistory'))
+  }));
+  expect(errors).toEqual([]);
+  expect(healed.favorites).toEqual([]);
+  expect(Array.isArray(healed.history)).toBe(true);
+});
+
+test('blocked local storage falls back without runtime errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = () => { throw new Error('blocked'); };
+    Storage.prototype.setItem = () => { throw new Error('blocked'); };
+  });
+
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('#preset-container')).toBeVisible();
+  await expect(page.locator('#aiPrompt')).not.toHaveValue('');
+  expect(errors).toEqual([]);
+});
+
+test('legacy font tokens migrate without changing theme colors', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('vasThemeTokens', JSON.stringify({
+      fontFamily: "'Pretendard', 'Geist', sans-serif",
+      fontSize: 16,
+      padding: 24,
+      radius: 0,
+      borderWidth: 2,
+      shadow: 0,
+      colors: {
+        primary: '#123456', background: '#f5f5f4', surface: '#ffffff',
+        text: '#09090b', border: '#09090b', success: '#10b981'
+      }
+    }));
+    localStorage.setItem('vasThemeTokensVersion', '2.5.2');
+  });
+
+  await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+  const migrated = await page.evaluate(() => JSON.parse(localStorage.getItem('vasThemeTokens')));
+  expect(migrated.fontFamily).toContain('system-ui');
+  expect(migrated.fontFamily).not.toContain('Pretendard');
+  expect(migrated.colors.primary).toBe('#123456');
+});
+
+test('all entry pages load without external network requests', async ({ page }) => {
+  const externalRequests = [];
+  page.on('request', request => {
+    if (/^https?:/i.test(request.url())) externalRequests.push(request.url());
+  });
+
+  for (const url of [hubUrl, appUrl, clientUrl, importUrl, searchUrl, memoryUrl]) {
+    await page.goto(url, { waitUntil: 'load' });
+  }
+
+  expect(externalRequests).toEqual([]);
 });

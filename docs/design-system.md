@@ -1,6 +1,6 @@
 # 디자인 시스템 (Design System)
 
-이 문서는 VAS 2.5 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
+이 문서는 VAS 2.6 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
 과거의 고정된(하드코딩된) 다크모드 룰은 폐기되었으며, 메인 디자인 시스템과 산출물 생성은 **내장 하이브리드 디자인 스튜디오**를 기준으로 합니다.
 
 ---
@@ -18,8 +18,8 @@ Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/desi
 
 프리셋 프롬프트에서 별도의 폰트를 지정하지 않은 경우, 아래 기본 룰을 따릅니다.
 
-- **기본 한글 폰트:** `Pretendard` 강제 (Noto Sans, 맑은 고딕 절대 금지)
-- **숫자 및 코드 폰트:** `Geist Mono` 또는 `JetBrains Mono` 혼용 권장
+- **기본 한글 폰트:** 운영체제 기본 sans 스택 (`system-ui`, `Segoe UI`, `Malgun Gothic`, `Apple SD Gothic Neo`)
+- **숫자 및 코드 폰트:** 시스템 mono 스택 (`ui-monospace`, `Cascadia Code`, `Consolas`)
 - **헤드라인 규칙:** 거대하게 키우지 말고 `tracking-tighter` (자간 좁게), `leading-none` (행간 좁게) 적용.
 - **이모지 규칙:** 시스템 이모지 대신 Phosphor/Radix 등 고품질 웹 아이콘 사용 원칙.
 

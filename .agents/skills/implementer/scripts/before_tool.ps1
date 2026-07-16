@@ -15,7 +15,7 @@ Write-Host "[BeforeTool] 권한 체크 시작: $env:TOOL_NAME on $env:TARGET_PAT
 # }
 
 # denied_write_paths 검증 예시:
-# $deniedPaths = @("final\*", "tests\*", ".agents\*")
+# $deniedPaths = @("workspace\*", "dist\*", "tests\*", ".agents\*")
 # foreach ($pattern in $deniedPaths) {
 #     if ($env:TARGET_PATH -like $pattern) {
 #         Write-Host "[DENIED] $env:TARGET_PATH 는 쓰기 금지 경로입니다."

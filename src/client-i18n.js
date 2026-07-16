@@ -62,12 +62,14 @@ const i18n = {
         btnNext: "Next Step",
         btnSubmit: "JSON 저장 단계로 이동",
         doneDesc: "작성 내용이 완료되었습니다. JSON 파일로 저장한 뒤 담당자에게 전달해 주세요. 첨부 파일은 별도로 전달해 주세요.",
+        btnCreateProject: "이 내용으로 작업공간 만들기",
+        btnContinueDesign: "디자인 설정 이어가기",
         btnJson: "JSON 파일 저장",
         submitTo: "제출처:",
         checkedStr: "☑ 선택됨",
         uncheckedStr: "☐",
         noInputStr: "(미입력)",
-        backHub: "공유받은 신청서입니다",
+        backHub: "← VAS 허브로 돌아가기",
         dragDropText: "참고 파일을 선택하면 파일명만 기록됩니다. 파일 내용은 업로드되지 않습니다.",
         btnBackToForm: "← 수정하기 (이전으로)",
         btnClear: "↺ 새로 작성하기",
@@ -132,12 +134,14 @@ const i18n = {
         btnNext: "Next Step",
         btnSubmit: "Go to JSON Save",
         doneDesc: "Your application is complete. Save the JSON file and send it to the project contact. Please send any actual files separately.",
+        btnCreateProject: "Create Workspace from This Brief",
+        btnContinueDesign: "Continue to Design Settings",
         btnJson: "Save JSON File",
         submitTo: "Submit to:",
         checkedStr: "☑ Selected",
         uncheckedStr: "☐",
         noInputStr: "(Not provided)",
-        backHub: "Shared application form",
+        backHub: "← Back to VAS Hub",
         dragDropText: "Select reference files to record their names only. File contents are not uploaded.",
         btnBackToForm: "← Back to Form",
         btnClear: "↺ Start Over",
@@ -145,4 +149,3 @@ const i18n = {
         phRef: "Notion AI or related links"
     }
 };
-

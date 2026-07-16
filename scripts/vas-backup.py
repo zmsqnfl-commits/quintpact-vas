@@ -1,46 +1,48 @@
-import os
-import datetime
+"""VAS 코어 체크포인트를 만들고 최신 10개만 보관합니다."""
+from __future__ import annotations
+
+import datetime as dt
 import shutil
 import sys
-import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+import tempfile
+from pathlib import Path
 
-def create_backup():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    base_dir = os.path.abspath(os.path.join(script_dir, '..'))
-    backup_dir = os.path.join(base_dir, '.vas_backups')
-    os.makedirs(backup_dir, exist_ok=True)
-    
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    target_zip = os.path.join(backup_dir, f'checkpoint_{timestamp}')
-    
-    # Prune old backups (keep only last 10 to save space)
-    existing_backups = sorted([f for f in os.listdir(backup_dir) if f.endswith('.zip')])
-    while len(existing_backups) >= 10:
-        oldest = existing_backups.pop(0)
-        os.remove(os.path.join(backup_dir, oldest))
-        print(f"Removed old backup: {oldest}")
+ROOT = Path(__file__).resolve().parents[1]
+BACKUPS = ROOT / ".vas_backups"
+EXCLUDED = {
+    ".git", ".vas_backups", ".temp data", "workspace", "dist", "final",
+    "node_modules", "__pycache__", ".pytest_cache", "test-results",
+    "playwright-report", ".vscode", ".idea",
+}
 
-    print("Creating Project Root Checkpoint...")
-    
-    # Ignore patterns
-    def ignore_patterns(path, names):
-        return [n for n in names if n in ('.vas_backups', '.git', 'node_modules', '__pycache__', '.vscode', '.idea')]
-    
-    # Create temp directory for safe zipping
-    temp_dir = os.path.join(backup_dir, 'temp_copy')
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)
-        
+
+def ignore(_path: str, names: list[str]) -> set[str]:
+    return {name for name in names if name in EXCLUDED}
+
+
+def prune(limit: int = 10) -> None:
+    backups = sorted(BACKUPS.glob("checkpoint_*.zip"), key=lambda item: item.stat().st_mtime)
+    for old in backups[:-limit]:
+        old.unlink()
+        print(f"Removed old backup: {old.name}")
+
+
+def create_backup() -> Path:
+    BACKUPS.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output = BACKUPS / f"checkpoint_{stamp}.zip"
+    with tempfile.TemporaryDirectory(prefix="vas-checkpoint-") as temporary:
+        staged = Path(temporary) / ROOT.name
+        shutil.copytree(ROOT, staged, ignore=ignore)
+        archive = Path(shutil.make_archive(str(output.with_suffix("")), "zip", staged))
+    prune()
+    print(f"VAS checkpoint saved: {archive}")
+    return archive
+
+
+if __name__ == "__main__":
     try:
-        shutil.copytree(base_dir, temp_dir, ignore=ignore_patterns)
-        shutil.make_archive(target_zip, 'zip', temp_dir)
-        print(f"✅ Vibe Coding Checkpoint Saved: .vas_backups/checkpoint_{timestamp}.zip")
-    except Exception as e:
-        print(f"❌ Backup failed: {e}")
-    finally:
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-
-if __name__ == '__main__':
-    create_backup()
+        create_backup()
+    except Exception as error:
+        print(f"Backup failed: {error}", file=sys.stderr)
+        raise SystemExit(1)

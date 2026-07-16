@@ -11,7 +11,7 @@
     label: 'VAS Taste Baseline',
     source: '.agents/skills/designer/TASTE-RULES.md',
     rules: [
-      'Use Pretendard first for Korean UI; use Geist Mono or JetBrains Mono for numeric/code-heavy details.',
+      'Use the system sans stack for Korean UI and the system mono stack for numeric or code-heavy details.',
       'Avoid generic centered heroes, repeated 3-card rows, card spam, default emojis, and template-like SaaS layouts.',
       'Prefer deliberate asymmetry, clear hierarchy, calibrated negative space, and strong scan paths.',
       'Use one controlled accent color; avoid generic AI purple/blue gradients unless the preset explicitly needs a muted reference.',
@@ -122,7 +122,7 @@
 
   const CONFLICT_POLICY = [
     'Priority: security/lightweight/Vanilla constraints > VAS baseline > selected taste profile > preset direction.',
-    'If a preset asks for generic system fonts, preserve the mood but use Pretendard, Geist, or JetBrains Mono where practical.',
+    'Preserve the preset mood while using the offline-safe system sans or system mono stack.',
     'If a preset uses loud purple/blue, preserve the intent with a calmer single accent unless the brief explicitly demands it.',
     'If a preset implies heavy libraries or complex animation frameworks, translate the idea into Vanilla CSS/JS.',
     'Treat brand clone wording as visual reference, not literal copying.'
@@ -132,7 +132,7 @@
     'Return practical design guidance that can become standalone HTML/CSS/JS.',
     'Name concrete layout, typography, color, spacing, motion, and component-state decisions.',
     'Avoid vague moodboard language, filler copy, and generic AI UI defaults.',
-    'Keep the result light, local-file friendly, and suitable for VAS final/projects output.'
+    'Keep the result light, local-file friendly, and suitable for VAS workspace/projects output.'
   ];
 
   function formatRuleList(title, rules) {

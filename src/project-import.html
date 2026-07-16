@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAS — 기존 프로그램 가져오기</title>
+  <link rel="stylesheet" href="project-import.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="vas-hub.html" data-vas-link>← 허브</a>
+    <strong>기존 프로그램 가져오기</strong>
+    <span id="modeLabel">LOCAL</span>
+  </header>
+
+  <main>
+    <aside class="steps" aria-label="가져오기 진행 단계">
+      <ol>
+        <li class="active" data-nav-step="1"><b>01</b><span>폴더 선택</span></li>
+        <li data-nav-step="2"><b>02</b><span>읽기 전용 분석</span></li>
+        <li data-nav-step="3"><b>03</b><span>가져오기 승인</span></li>
+        <li data-nav-step="4"><b>04</b><span>검증 및 등록</span></li>
+      </ol>
+      <p>원본 폴더는 기본적으로 변경하거나 삭제하지 않습니다.</p>
+    </aside>
+
+    <section class="workspace">
+      <div class="panel active" data-step="1">
+        <p class="step-number">STEP 01</p>
+        <h1>원래 프로그램이 있는<br>폴더를 선택하세요.</h1>
+        <p class="lead">선택 직후에는 파일을 복사하거나 실행하지 않고 구조만 확인합니다.</p>
+        <p class="web-note" id="runtimeNotice" hidden></p>
+        <button type="button" class="select-folder" id="selectFolder">폴더 선택</button>
+        <input type="file" id="folderFallback" webkitdirectory multiple hidden>
+        <div class="selection" id="selection" hidden><span>선택됨</span><strong id="selectedPath"></strong></div>
+        <div class="actions"><button type="button" class="primary" id="analyzeButton" disabled>안전하게 분석하기</button></div>
+      </div>
+
+      <div class="panel" data-step="2">
+        <p class="step-number">STEP 02</p>
+        <h1>분석 결과</h1>
+        <div class="analysis-grid" id="analysisGrid"></div>
+        <section class="risk-section"><h2>확인할 항목</h2><ul id="riskList"></ul></section>
+        <p class="web-note" id="webNote" hidden>웹에서는 분석 보고서까지만 제공합니다. 실제 가져오기는 Windows 배포판에서 진행하세요.</p>
+        <div class="actions">
+          <button type="button" id="downloadReport">보고서 저장</button>
+          <button type="button" class="primary" id="configureButton">가져오기 설정</button>
+        </div>
+      </div>
+
+      <div class="panel" data-step="3">
+        <p class="step-number">STEP 03</p>
+        <h1>가져오기 승인</h1>
+        <div class="form-grid">
+          <label>프로젝트명<input id="projectName" type="text" maxlength="80"></label>
+          <label>가져온 뒤 할 일<select id="migrationGoal"><option value="manage">그대로 관리</option><option value="improve">기능 개선 계획</option><option value="redesign">리디자인 계획</option><option value="upgrade">VAS 업그레이드 계획</option></select></label>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="preserveGit" checked disabled> Git 이력과 브랜치 보존</label>
+          <label><input type="checkbox" id="createIndex"> 허용된 텍스트 파일을 이 기기에서 색인해 프로젝트 RAG에 연결</label>
+          <label><input type="checkbox" id="confirmCopy"> 원본은 유지되고 검증된 복사본이 생성됨을 확인했습니다.</label>
+        </div>
+        <div class="summary" id="importSummary"></div>
+        <div class="actions"><button type="button" class="primary" id="importButton" disabled>백업 후 가져오기</button></div>
+      </div>
+
+      <div class="panel" data-step="4">
+        <p class="step-number">STEP 04</p>
+        <h1 id="resultTitle">가져오는 중입니다.</h1>
+        <div class="progress"><div id="progressBar"></div></div>
+        <ol class="progress-list" id="progressList"></ol>
+        <div class="result" id="result" hidden>
+          <p id="resultMessage"></p>
+          <div class="actions">
+            <a href="vas-hub.html" data-vas-link>허브로 돌아가기</a>
+            <a href="vas-hub.html" id="nextActionLink" data-vas-link>다음 작업 열기</a>
+            <button type="button" id="rollbackButton">가져오기 롤백</button>
+          </div>
+        </div>
+        <div class="actions" id="retryActions" hidden><button type="button" id="retryImportButton">설정으로 돌아가기</button></div>
+      </div>
+
+      <div class="error-box" id="errorBox" role="alert" hidden></div>
+    </section>
+  </main>
+
+  <script src="vas-config.js"></script>
+  <script src="storage-utils.js"></script>
+  <script src="theme-state.js"></script>
+  <script src="runtime-client.js"></script>
+  <script src="personalization-store.js"></script>
+  <script src="project-import.js"></script>
+</body>
+</html>

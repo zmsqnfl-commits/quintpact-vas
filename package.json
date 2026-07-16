@@ -1,0 +1,18 @@
+{
+  "name": "quintpact-vas",
+  "version": "2.6.0",
+  "private": true,
+  "scripts": {
+    "knowledge:index": "python scripts/build-knowledge-index.py",
+    "knowledge:check": "python scripts/build-knowledge-index.py --check",
+    "test:python": "python tests/test_client_form.py && python tests/test_html_syntax.py && python tests/test_integrity.py && python tests/test_personalization_core.py && pytest -q tests/test_project_import.py tests/test_project_knowledge.py tests/test_windows_runtime.py",
+    "test:browser": "playwright test -c tests/playwright.config.js",
+    "test:migration": "pytest -q tests/test_project_import.py tests/test_project_knowledge.py",
+    "test:package": "python scripts/build_release.py && python tests/test_release_package.py",
+    "test:release": "npm run test:python && npm run test:browser && npm run test:package && python tests/run_10x_stress.py && python tests/test_release_runtime_flow.py",
+    "release:build": "python scripts/build_release.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0"
+  }
+}

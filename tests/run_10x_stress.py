@@ -1,71 +1,26 @@
-"""
-VAS 2.4 - 연속 10회 무결점 스트레스 테스트 래퍼
-================================================
-test_integrity_10loop.py를 10회 연속 실행하여
-시스템 안정성을 검증합니다.
-"""
+"""VAS 2.6.0 명시적 릴리즈용 10회 무결성 스트레스 검사."""
+from __future__ import annotations
+
 import subprocess
 import sys
-import io
 import time
-import os
+from pathlib import Path
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+ROOT = Path(__file__).resolve().parents[1]
+TEST = ROOT / "tests" / "test_integrity.py"
+results: list[tuple[int, int, float]] = []
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(BASE, 'tests', 'test_integrity_10loop.py')
-results = []
+print("VAS 2.6.0 - 10회 무결성 스트레스 검사")
+for round_number in range(1, 11):
+    started = time.monotonic()
+    process = subprocess.run([sys.executable, str(TEST)], cwd=ROOT, capture_output=True, text=True)
+    elapsed = time.monotonic() - started
+    results.append((round_number, process.returncode, elapsed))
+    print(f"Round {round_number:02d}/10: {'PASS' if process.returncode == 0 else 'FAIL'} ({elapsed:.2f}s)")
+    if process.returncode:
+        print(process.stdout)
+        print(process.stderr, file=sys.stderr)
 
-print('=' * 60)
-print('  VAS 2.4 -- 연속 10회 무결점 스트레스 테스트')
-print('=' * 60)
-print()
-
-for i in range(1, 11):
-    start = time.time()
-    proc = subprocess.run(
-        [sys.executable, SCRIPT],
-        capture_output=True, text=True, encoding='utf-8', errors='replace'
-    )
-    elapsed = time.time() - start
-
-    # TOTAL 줄 파싱
-    total_line = [l for l in proc.stdout.splitlines() if 'TOTAL:' in l]
-    if total_line:
-        info = total_line[0].strip()
-    else:
-        info = 'PARSE ERROR'
-
-    passed = proc.returncode == 0
-    status = 'PASS' if passed else 'FAIL'
-    results.append((i, status, elapsed, info))
-    icon = '[O]' if passed else '[X]'
-    print(f'  Round {i:2d}/10: {icon} {elapsed:.2f}s | {info}')
-
-print()
-print('=' * 60)
-print('  최종 집계')
-print('=' * 60)
-
-pass_count = sum(1 for r in results if r[1] == 'PASS')
-fail_count = sum(1 for r in results if r[1] == 'FAIL')
-avg_time = sum(r[2] for r in results) / len(results)
-
-print(f'  총 라운드: 10 | PASS: {pass_count} | FAIL: {fail_count}')
-print(f'  평균 실행 시간: {avg_time:.2f}s')
-
-if fail_count > 0:
-    print()
-    print('  실패 라운드:')
-    for r in results:
-        if r[1] == 'FAIL':
-            print(f'    Round {r[0]}: {r[3]}')
-
-print()
-if pass_count == 10:
-    print('  *** 10/10 연속 무결점 통과 ***')
-else:
-    print(f'  !!! {fail_count}회 실패 -- 불안정 요소 존재')
-print('=' * 60)
-
-sys.exit(0 if fail_count == 0 else 1)
+failures = [item for item in results if item[1]]
+print(f"TOTAL: 10 | PASS: {10 - len(failures)} | FAIL: {len(failures)}")
+raise SystemExit(1 if failures else 0)

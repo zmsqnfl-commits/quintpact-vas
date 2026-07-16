@@ -19,7 +19,7 @@
         <!-- LEFT: Hero -->
         <div class="hero-section no-print">
             <div>
-                <div class="back-link external-note" data-i18n="backHub">공유받은 신청서입니다</div>
+                <a class="back-link" id="hubBackLink" href="vas-hub.html" data-vas-link data-i18n="backHub">← VAS 허브로 돌아가기</a>
                 <div class="hero-meta" data-i18n="heroMeta">VAS /// Client App</div>
                 <div class="active-theme-label" id="currentThemeDisplay" style="margin-top: 8px; font-size: 13px; font-family: monospace; opacity: 0.5; color: var(--bg-color);">Theme: <span id="themeNameSpan">Custom</span></div>
                 <div class="hero-title">
@@ -37,6 +37,17 @@
 
         <!-- RIGHT: Form -->
         <div class="form-section">
+            <div class="draft-policy no-print">
+                <span id="draftPolicyText">입력 내용은 복구를 위해 이 브라우저에 자동 저장됩니다.</span>
+                <button type="button" id="draftPolicyToggle" onclick="VASClientDraft.toggle()">자동 저장 끄기</button>
+            </div>
+            <div class="draft-notice no-print" id="draftNotice" hidden>
+                <div><strong>작성 중인 내용이 있습니다.</strong><span id="draftSavedAt"></span></div>
+                <div class="draft-actions">
+                    <button type="button" onclick="VASClientDraft.restore()">복원</button>
+                    <button type="button" onclick="VASClientDraft.discard()">삭제</button>
+                </div>
+            </div>
             <form id="projectForm">
 
                 <!-- Step 1 -->
@@ -185,7 +196,10 @@
                     <div class="done-graphic">DONE.</div>
                     <p data-i18n="doneDesc">작성 내용이 완료되었습니다. JSON 파일로 저장한 뒤 담당자에게 전달해 주세요. 첨부 파일은 별도로 전달해 주세요.</p>
                     <div class="done-btns no-print">
+                        <button type="button" class="btn action-btn" id="createProjectButton" onclick="createWorkspaceProject()" data-i18n="btnCreateProject" hidden>이 내용으로 작업공간 만들기</button>
+                        <a class="btn action-btn" id="createdProjectNext" href="design-controller.html" data-vas-link data-i18n="btnContinueDesign" hidden>디자인 설정 이어가기</a>
                         <button type="button" class="btn action-btn" onclick="exportJson()" data-i18n="btnJson">JSON 파일 저장</button>
+                        <p id="projectCreateStatus" class="done-info" role="status" hidden></p>
                         <button type="button" class="btn" onclick="goBackFromDone()" data-i18n="btnBackToForm" style="margin-top: 16px; border-color: transparent; text-align: center; justify-content: center; color: var(--text-muted);">\u2190 Back to Form</button>
                     </div>
                 </div>
@@ -194,8 +208,15 @@
         </div>
     </div>
 
+<script src="vas-config.js"></script>
+<script src="storage-utils.js"></script>
+<script src="theme-state.js"></script>
+<script src="runtime-client.js"></script>
+<script src="personalization-store.js"></script>
+<script src="rag-lite.js"></script>
 <script src="client-i18n.js"></script>
 <script src="client-form.js"></script>
+<script src="client-draft.js"></script>
 <script src="client-export.js"></script>
 <script src="client-application-init.js"></script>
 

@@ -5,7 +5,7 @@ context: fork
 allowed_tools: [view_file, write_to_file, replace_file_content, multi_replace_file_content, run_command, grep_search, list_dir]
 denied_tools: [search_web, browser_subagent]
 allowed_write_paths: ["tests/*", ".temp data/*"]
-denied_write_paths: ["src/*", "final/*", ".agents/*"]
+denied_write_paths: ["src/*", "workspace/*", "dist/*", ".agents/*"]
 allowed_commands: ["pytest", "jest", "npm test", "coverage", "python -m pytest"]
 ---
 # 🧪 테스트 작성 에이전트 (Tester)
@@ -21,7 +21,7 @@ allowed_commands: ["pytest", "jest", "npm test", "coverage", "python -m pytest"]
 - **파일 쓰기:** ✅ `tests/`, `.temp data/` (테스트 코드만)
 - **터미널:** ✅ (테스트 실행만)
 - **브라우저:** ❌
-- **`final/` 쓰기:** ❌
+- **`workspace/`, `dist/` 쓰기:** ❌
 - **소스 코드 수정:** ❌ (테스트 실패 시 Implementer에게 인계)
 
 > 상세 정책 및 ABAC 동적 권한: `.agents/access-control.md` 참조
@@ -43,7 +43,7 @@ allowed_commands: ["pytest", "jest", "npm test", "coverage", "python -m pytest"]
 
 아래 조건에 하나라도 해당하면 **즉시 중단**하고 사용자에게 보고합니다:
 
-1. `src/*` 또는 `final/*` 파일을 **수정**하려 하고 있는가? → Tester는 `tests/`, `.temp data/`만 쓰기 가능
+1. `src/*`, `workspace/*`, `dist/*` 파일을 **수정**하려 하고 있는가? → Tester는 `tests/`, `.temp data/`만 쓰기 가능
 2. 터미널에서 `allowed_commands` 외 명령을 실행하려 하는가? → 테스트 실행 도구만 허용
 3. 테스트 실패 시 소스 코드를 직접 고치려 하고 있는가? → Implementer에게 인계 필요
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VAS 2.5.2 — Hybrid Design Studio</title>
+<title>VAS 2.6.0 — Hybrid Design Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
 <link rel="stylesheet" href="design-controller.css">
 
@@ -14,7 +14,7 @@
   <div class="controls" id="controlsPanel">
     <div class="header">
       <div style="display: flex; justify-content: space-between; align-items: baseline;">
-        <a href="vas-hub.html" class="back-link">← 허브로 돌아가기</a>
+        <a href="vas-hub.html" class="back-link" data-vas-link>← 허브로 돌아가기</a>
         <button class="btn btn-primary" onclick="undoTheme()" style="padding: 4px 12px; font-size: 12px; height: 28px;">↶ Undo</button>
       </div>
       <h1>VAS 디자인 스튜디오</h1>
@@ -36,7 +36,9 @@
         </select>
       </div>
       <textarea id="aiPrompt" class="prompt-box" readonly></textarea>
+      <label><input type="checkbox" id="includeRagContext"> 동의한 로컬 RAG 맥락 포함 (붙여넣는 서비스로 전달될 수 있음)</label>
       <button class="btn btn-primary" onclick="copyAgentPrompt()" style="width: 100%;">프롬프트 복사 (에이전트에게 전달)</button>
+      <p id="ragPromptStatus">기본 프롬프트만 복사합니다. 필요할 때 로컬 RAG 포함을 선택하세요.</p>
     </div>
 
     <!-- 세부 토큰 조정 (기존 컨트롤러 기능) -->
@@ -47,10 +49,8 @@
       <div class="field">
         <label>폰트 패밀리</label>
         <select id="fontFamily" onchange="update()">
-          <option value="'Pretendard', sans-serif">Pretendard (한글 권장)</option>
-          <option value="'Pretendard', 'Geist', sans-serif">Pretendard + Geist</option>
-          <option value="'Pretendard', 'Geist Mono', sans-serif">Pretendard + Geist Mono</option>
-          <option value="'Geist Mono', 'Pretendard', monospace">Geist Mono</option>
+          <option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">시스템 Sans (한글 권장)</option>
+          <option value="ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace">시스템 Mono</option>
         </select>
       </div>
       <div class="field">
@@ -169,6 +169,13 @@
 
 </div>
 
+<script src="vas-config.js"></script>
+<script src="storage-utils.js"></script>
+<script src="theme-state.js"></script>
+<script src="runtime-client.js"></script>
+<script src="knowledge-index.js"></script>
+<script src="personalization-store.js"></script>
+<script src="rag-lite.js"></script>
 <script src="design-presets.js"></script>
 <script src="design-taste-pack.js"></script>
 <script src="design-profile-control.js"></script>
@@ -176,4 +183,3 @@
 <div class="toast" id="dc-toast"></div>
 </body>
 </html>
-

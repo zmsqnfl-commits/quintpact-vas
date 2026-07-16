@@ -7,6 +7,9 @@
 .temp data/
 .vas_backups/
 scripts/.vas_backups/
+workspace/
+final/
+output/
 
 # Python
 __pycache__/

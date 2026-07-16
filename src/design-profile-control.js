@@ -17,12 +17,12 @@
 
   function getSelectedMode() {
     const select = document.getElementById('tasteProfileMode');
-    const stored = localStorage.getItem(STORAGE_KEY) || AUTO_PROFILE;
+    const stored = VASStorage.readText(STORAGE_KEY, AUTO_PROFILE);
     return normalizeMode(select && select.value ? select.value : stored);
   }
 
   function getStoredMode() {
-    return normalizeMode(localStorage.getItem(STORAGE_KEY) || AUTO_PROFILE);
+    return normalizeMode(VASStorage.readText(STORAGE_KEY, AUTO_PROFILE));
   }
 
   function getManualTasteProfileKey() {
@@ -31,10 +31,14 @@
   }
 
   function getCurrentPresetKey() {
-    return localStorage.getItem('vasCurrentPreset') || 'neobrutal';
+    return VASStorage.readText('vasCurrentPreset', 'neobrutal');
   }
 
   function refreshAgentPrompt() {
+    if (window.refreshDesignPrompt) {
+      window.refreshDesignPrompt();
+      return;
+    }
     const presetKey = getCurrentPresetKey();
     const preset = typeof PRESETS !== 'undefined' ? PRESETS[presetKey] : null;
     const promptBox = document.getElementById('aiPrompt');
@@ -48,7 +52,8 @@
     const mode = normalizeMode(value);
     const select = document.getElementById('tasteProfileMode');
     if (select) select.value = mode;
-    localStorage.setItem(STORAGE_KEY, mode);
+    VASStorage.writeText(STORAGE_KEY, mode);
+    if (window.VASThemeState) window.VASThemeState.commit({ tasteProfileMode: mode });
     refreshAgentPrompt();
   }
 

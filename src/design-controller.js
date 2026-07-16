@@ -1,7 +1,11 @@
 let currentFormat = 'json';
+let currentPreset = 'neobrutal';
+let isHydrating = false;
 
 // 즐겨찾기 상태 (localStorage 기반)
-let favorites = JSON.parse(localStorage.getItem('vasFavorites')) || [];
+let favorites = VASStorage.readJson('vasFavorites', [], function (value) {
+  return Array.isArray(value) && value.every(function (key) { return typeof key === 'string' && PRESETS[key]; });
+});
 
 function toggleFavorite(presetKey, event) {
   event.stopPropagation();
@@ -11,7 +15,7 @@ function toggleFavorite(presetKey, event) {
   } else {
     favorites.push(presetKey);
   }
-  localStorage.setItem('vasFavorites', JSON.stringify(favorites));
+  VASStorage.writeJson('vasFavorites', favorites);
   renderPresets();
 }
 
@@ -40,7 +44,7 @@ function renderPresets() {
   Object.keys(PRESET_CATEGORIES).forEach(catKey => {
     const cat = PRESET_CATEGORIES[catKey];
     let html = `<h3>${cat.label}</h3><div class="preset-grid" style="margin-bottom: 20px;">`;
-    
+
     cat.presets.forEach(key => {
       let isFav = favorites.includes(key);
       let nameDisplay = key.charAt(0).toUpperCase() + key.slice(1);
@@ -51,31 +55,54 @@ function renderPresets() {
                  </span>
                </button>`;
     });
-    
+
     html += `</div>`;
     container.innerHTML += html;
   });
+  syncActivePreset(currentPreset);
 }
 
+function syncActivePreset(name) {
+  document.querySelectorAll('.btn-preset').forEach(function (button) {
+    button.classList.toggle('active', name !== 'custom' && button.dataset.preset === name);
+  });
+}
+
+function setControlsFromTokens(value) {
+  const v = VASStorage.normalizeTheme(value);
+  document.getElementById('colorBg').value = v.colors.background;
+  document.getElementById('colorSurface').value = v.colors.surface;
+  document.getElementById('colorText').value = v.colors.text;
+  document.getElementById('colorPrimary').value = v.colors.primary;
+  document.getElementById('colorBorder').value = v.colors.border;
+  document.getElementById('colorSuccess').value = v.colors.success;
+  document.getElementById('radius').value = v.radius;
+  document.getElementById('padding').value = v.padding;
+  document.getElementById('borderWidth').value = v.borderWidth;
+  document.getElementById('shadow').value = v.shadow;
+  document.getElementById('speed').value = v.speed;
+  document.getElementById('letterSpacing').value = v.letterSpacing;
+  document.getElementById('fontFamily').value = v.fontFamily;
+  document.getElementById('fontSize').value = v.fontSize;
+}
+
+function refreshDesignPrompt() {
+  const preset = PRESETS[currentPreset];
+  const values = getValues();
+  const customDirection = '[Custom Token Direction]\n' + JSON.stringify(values, null, 2);
+  const promptPreset = preset || { prompt: customDirection };
+  document.getElementById('aiPrompt').value = window.composeAgentPrompt
+    ? window.composeAgentPrompt(currentPreset, promptPreset)
+    : promptPreset.prompt;
+}
+
+window.refreshDesignPrompt = refreshDesignPrompt;
+
 function applyPreset(name, element) {
-  document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-  
-  let targetElement = element;
-  if (!targetElement && typeof event !== 'undefined' && event && event.target) {
-    targetElement = event.target;
-  }
-  
-  if (targetElement) {
-    targetElement.classList.add('active');
-  } else {
-    document.querySelectorAll('.btn-preset').forEach(b => {
-      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${name}'`)) {
-        b.classList.add('active');
-      }
-    });
-  }
-  
   const p = PRESETS[name];
+  if (!p) return;
+  currentPreset = name;
+  syncActivePreset(name);
   document.getElementById('colorBg').value = p.bg;
   document.getElementById('colorSurface').value = p.surface;
   document.getElementById('colorText').value = p.text;
@@ -88,15 +115,15 @@ function applyPreset(name, element) {
   document.getElementById('speed').value = p.speed;
   document.getElementById('letterSpacing').value = p.ls;
   document.getElementById('fontFamily').value = p.font;
-  
+
   // Set the AI System Prompt
-  const agentPrompt = window.composeAgentPrompt ? window.composeAgentPrompt(name, p) : p.prompt;
-  document.getElementById('aiPrompt').value = agentPrompt;
-  
-  // 현재 프리셋 이름 저장 (#7 연동)
-  localStorage.setItem('vasCurrentPreset', name);
-  
-  update(false); // history 기록
+  refreshDesignPrompt();
+  update(false, name);
+  if (window.VASPersonalization) {
+    window.VASPersonalization.record({
+      type: 'theme_selected', source: 'design-studio', payload: { preset: name }
+    });
+  }
 }
 
 function getValues() {
@@ -126,10 +153,12 @@ function getValues() {
   };
 }
 
-function update(skipHistory = false) {
-  const v = getValues();
+function update(skipHistory = false, presetOverride) {
+  if (presetOverride) currentPreset = presetOverride;
+  else if (!isHydrating) currentPreset = 'custom';
+  const v = VASStorage.normalizeTheme(getValues());
   const f = document.getElementById('advPreview');
-  
+
   document.getElementById('fsVal').textContent = v.fontSize + 'px';
   document.getElementById('lsVal').textContent = v.letterSpacing.toFixed(2) + 'em';
   document.getElementById('padVal').textContent = v.padding + 'px';
@@ -137,7 +166,7 @@ function update(skipHistory = false) {
   document.getElementById('borderVal').textContent = v.borderWidth + 'px';
   document.getElementById('shadowVal').textContent = v.shadow + 'px';
   document.getElementById('speedVal').textContent = v.speed.toFixed(2) + 's';
-  
+
   // Set CSS Vars for Preview Component
   f.style.setProperty('--p-font', v.fontFamily);
   f.style.setProperty('--p-fs-hero', v.fsHero);
@@ -149,7 +178,7 @@ function update(skipHistory = false) {
   f.style.setProperty('--p-pad', v.padding + 'px');
   f.style.setProperty('--p-radius', v.radius + 'px');
   f.style.setProperty('--p-border-width', v.borderWidth + 'px');
-  
+
   // Custom shadow logic for NeoBrutalism
   if(v.colors.border === '#000000' && v.borderWidth >= 3 && v.shadow === 0 && v.radius === 0) {
      f.style.setProperty('--p-shadow', '6px 6px 0px #000');
@@ -164,15 +193,19 @@ function update(skipHistory = false) {
   f.style.setProperty('--p-text', v.colors.text);
   f.style.setProperty('--p-border-color', v.colors.border);
   f.style.setProperty('--p-success', v.colors.success);
-  
+
   document.querySelector('.preview').style.background = v.colors.background;
-  
-  // Save globally for other HTML layers
-  localStorage.setItem('vasThemeTokens', JSON.stringify(v));
-  localStorage.setItem('vasThemeTokensVersion', '2.5.2');
-  
-  if(!skipHistory) saveHistory(v);
-  
+
+  const state = VASThemeState.commit({
+    preset: currentPreset,
+    tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
+    tokens: v
+  });
+
+  if(!skipHistory) saveHistory(state);
+  syncActivePreset(currentPreset);
+  refreshDesignPrompt();
+
   if(document.getElementById('tokenOutput').classList.contains('show')) {
     renderOutput();
   }
@@ -181,54 +214,49 @@ function update(skipHistory = false) {
 // ========================
 // Undo History Logic (#9)
 // ========================
-let tokenHistory = JSON.parse(localStorage.getItem('vasThemeHistory')) || [];
+function normalizeHistoryEntry(value) {
+  if (VASStorage.isTheme(value)) return { v: 1, preset: 'custom', tokens: VASStorage.normalizeTheme(value) };
+  if (value && typeof value === 'object' && VASStorage.isTheme(value.tokens)) {
+    return { v: 1, preset: value.preset || 'custom', tokens: VASStorage.normalizeTheme(value.tokens) };
+  }
+  return null;
+}
 
-function saveHistory(v) {
+let tokenHistory = VASStorage.readJson('vasThemeHistory', [], function (value) {
+  return Array.isArray(value) && value.every(function (entry) { return Boolean(normalizeHistoryEntry(entry)); });
+}).map(normalizeHistoryEntry);
+
+function saveHistory(state) {
+  const entry = normalizeHistoryEntry(state);
+  if (!entry) return;
   if(tokenHistory.length > 0) {
     const last = tokenHistory[tokenHistory.length - 1];
-    if(JSON.stringify(last) === JSON.stringify(v)) return;
+    if(JSON.stringify(last) === JSON.stringify(entry)) return;
   }
-  tokenHistory.push(v);
+  tokenHistory.push(entry);
   if(tokenHistory.length > 6) tokenHistory.shift(); // 5 + 1
-  localStorage.setItem('vasThemeHistory', JSON.stringify(tokenHistory));
+  VASStorage.writeJson('vasThemeHistory', tokenHistory);
 }
 
 function undoTheme() {
   if(tokenHistory.length > 1) {
     tokenHistory.pop(); // Remove current
     const prev = tokenHistory[tokenHistory.length - 1];
-    localStorage.setItem('vasThemeHistory', JSON.stringify(tokenHistory));
-    
-    if (!prev || !prev.colors) {
+    VASStorage.writeJson('vasThemeHistory', tokenHistory);
+
+    if (!prev || !prev.tokens) {
       showToast('히스토리 데이터가 호환되지 않습니다. 초기화합니다.');
       tokenHistory = [];
-      localStorage.setItem('vasThemeHistory', '[]');
+      VASStorage.writeJson('vasThemeHistory', []);
       return;
     }
-    
+
     try {
-      // Restore inputs
-      document.getElementById('colorBg').value = prev.colors.background || '#ffffff';
-      document.getElementById('colorSurface').value = prev.colors.surface || '#ffffff';
-      document.getElementById('colorText').value = prev.colors.text || '#000000';
-      document.getElementById('colorPrimary').value = prev.colors.primary || '#000000';
-      document.getElementById('colorBorder').value = prev.colors.border || '#000000';
-      if(document.getElementById('colorSuccess') && prev.colors.success) {
-        document.getElementById('colorSuccess').value = prev.colors.success;
-      }
-      
-      document.getElementById('radius').value = prev.radius || 0;
-      document.getElementById('padding').value = prev.padding || 0;
-      document.getElementById('borderWidth').value = prev.borderWidth || 0;
-      document.getElementById('shadow').value = prev.shadow || 0;
-      document.getElementById('speed').value = prev.speed || 0;
-      document.getElementById('letterSpacing').value = prev.letterSpacing || 0;
-      if(prev.fontFamily) document.getElementById('fontFamily').value = prev.fontFamily;
-      if(prev.fontSize) document.getElementById('fontSize').value = prev.fontSize;
-      
-      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-      
-      update(true); // UI 업데이트 (history 기록 제외)
+      currentPreset = PRESETS[prev.preset] ? prev.preset : 'custom';
+      setControlsFromTokens(prev.tokens);
+      isHydrating = true;
+      update(true, currentPreset);
+      isHydrating = false;
       showToast('이전 디자인으로 되돌렸습니다.');
     } catch(e) {
       showToast('Undo 적용 중 오류가 발생했습니다.');
@@ -281,6 +309,11 @@ function downloadJSON() {
   a.download = 'design-tokens.json';
   a.click();
   showToast('디자인 토큰 다운로드 완료!');
+  if (window.VASPersonalization) {
+    window.VASPersonalization.record({
+      type: 'export', source: 'design-studio', payload: { format: 'design-tokens' }
+    });
+  }
 }
 
 function triggerFileInput() {
@@ -301,31 +334,14 @@ function importJSON(file) {
   reader.onload = function(e) {
     try {
       const v = JSON.parse(e.target.result);
-      if (!v.colors || !v.fontSize || v.radius === undefined) {
+      if (!v || typeof v !== 'object' || !v.colors) {
         showToast('유효하지 않은 디자인 토큰 파일입니다.');
         return;
       }
-      
-      // 값 반영
-      document.getElementById('colorBg').value = v.colors.background;
-      document.getElementById('colorSurface').value = v.colors.surface;
-      document.getElementById('colorText').value = v.colors.text;
-      document.getElementById('colorPrimary').value = v.colors.primary;
-      document.getElementById('colorBorder').value = v.colors.border;
-      document.getElementById('colorSuccess').value = v.colors.success || '#10b981';
-      document.getElementById('radius').value = v.radius;
-      document.getElementById('padding').value = v.padding;
-      document.getElementById('borderWidth').value = v.borderWidth;
-      document.getElementById('shadow').value = v.shadow;
-      document.getElementById('speed').value = v.speed;
-      document.getElementById('letterSpacing').value = v.letterSpacing;
-      document.getElementById('fontFamily').value = v.fontFamily;
-      document.getElementById('fontSize').value = v.fontSize;
-      
-      // 프리셋 선택 해제
-      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
-      
-      update();
+
+      currentPreset = 'custom';
+      setControlsFromTokens(VASStorage.normalizeTheme(v));
+      update(false, 'custom');
       showToast('디자인 토큰 성공적으로 복원됨!');
     } catch (err) {
       showToast('파일 읽기 오류 또는 손상된 JSON입니다.');
@@ -336,10 +352,13 @@ function importJSON(file) {
 
 // 드래그 앤 드롭 이벤트 리스너 바인딩
 window.addEventListener('DOMContentLoaded', () => {
-  renderPresets(); // 동적 프리셋 렌더링 호출
-  
-  // 최초 로드 시 현재 상태를 히스토리에 기록하기 위해 호출
-  setTimeout(() => update(false), 100);
+  renderPresets();
+  const state = VASThemeState.init();
+  currentPreset = PRESETS[state.preset] ? state.preset : 'custom';
+  setControlsFromTokens(state.tokens);
+  isHydrating = true;
+  update(false, currentPreset);
+  isHydrating = false;
 
   const dz = document.getElementById('dragZone');
   if (dz) {
@@ -363,9 +382,38 @@ function copyOutput() {
   navigator.clipboard.writeText(document.getElementById('tokenPre').textContent).then(() => showToast(currentFormat.toUpperCase() + ' 코드 복사 완료!'));
 }
 
-function copyAgentPrompt() {
-  const p = document.getElementById('aiPrompt').value;
-  navigator.clipboard.writeText(p).then(() => showToast('에이전트용 프롬프트 복사 완료!'));
+async function copyAgentPrompt() {
+  const basePrompt = document.getElementById('aiPrompt').value;
+  let prompt = basePrompt;
+  const status = document.getElementById('ragPromptStatus');
+  const includeContext = document.getElementById('includeRagContext').checked;
+  if (window.VASPersonalization && includeContext) {
+    try {
+      const taste = VASStorage.readText('vasTasteProfileMode', 'auto');
+      prompt = await window.VASPersonalization.augmentPrompt(
+        basePrompt, 'design ' + currentPreset + ' ' + taste, { limit: 5 }
+      );
+      if (status) status.textContent = prompt === basePrompt
+        ? '연결할 로컬 맥락이 없어 기본 프롬프트를 복사했습니다.'
+        : '로컬 RAG 맥락을 포함해 복사했습니다.';
+      window.VASPersonalization.record({
+        type: 'recommendation_used', source: 'design-studio',
+        payload: { preset: currentPreset, augmented: prompt !== basePrompt }
+      });
+    } catch (error) {
+      if (status) status.textContent = '기본 프롬프트를 복사했습니다.';
+    }
+  } else if (status) {
+    status.textContent = '로컬 맥락 없이 기본 프롬프트를 복사했습니다.';
+  }
+  try {
+    await navigator.clipboard.writeText(prompt);
+  } catch (error) {
+    const helper = document.createElement('textarea');
+    helper.value = prompt; document.body.appendChild(helper); helper.select();
+    document.execCommand('copy'); helper.remove();
+  }
+  showToast('에이전트용 프롬프트 복사 완료!');
 }
 
 function showToast(msg) {
@@ -374,9 +422,6 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-// Init with Neo-Brutalism as the signature system theme default
-applyPreset('neobrutal');
 
 // --- 스플리터 (Resizer) 드래그 로직 ---
 const resizer = document.getElementById('resizer');
@@ -407,4 +452,3 @@ window.addEventListener('mouseup', function(e) {
     document.body.style.userSelect = '';
   }
 });
-
