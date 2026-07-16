@@ -58,10 +58,10 @@ main { width: min(1320px, 92vw); margin: 0 auto; padding: 70px 0 120px; }
 .project-row button { align-self: center; border: 1px solid var(--border); background: var(--text); color: var(--surface); padding: 11px 14px; font: 800 12px/1 var(--font-sans); cursor: pointer; }
 .project-row button:disabled { cursor: wait; opacity: .55; }
 .empty-state { margin: 0; padding: 28px; border: 1px dashed var(--border); color: var(--muted); }
-.privacy-dialog { width: min(620px, 90vw); padding: 0; border: 2px solid var(--border); box-shadow: 10px 10px 0 #000; }
+.privacy-dialog { width: min(560px, 90vw); padding: 0; border: 2px solid var(--border); box-shadow: 10px 10px 0 #000; }
 .privacy-dialog::backdrop { background: rgba(0,0,0,.58); }
-.privacy-dialog form { padding: 34px; }
-.privacy-dialog h2 { margin: 0 0 18px; font-size: 28px; }
+.privacy-dialog form { padding: 30px; }
+.privacy-dialog h2 { margin: 0 0 14px; font-size: 26px; }
 .privacy-dialog p, .privacy-dialog li { line-height: 1.6; }
 .privacy-dialog ul { padding-left: 20px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; }
@@ -78,4 +78,8 @@ main { width: min(1320px, 92vw); margin: 0 auto; padding: 70px 0 120px; }
   .tool-list small { grid-column: 2; }
   .project-row { grid-template-columns: 1fr; }
   .project-row button { justify-self: start; }
+  .privacy-dialog form { padding: 24px; }
+  .privacy-dialog h2 { font-size: 22px; }
+  .dialog-actions { flex-direction: column; }
+  .dialog-actions button { width: 100%; }
 }

@@ -49,10 +49,10 @@
     consent = await VASPersonalization.consent();
     const events = await VASPersonalization.list({ type: filter.value || undefined });
     render(events);
-    document.getElementById('memoryState').textContent = !consent ? '개인화 꺼짐' : paused ? '기록 일시정지' : '기록 중';
+    document.getElementById('memoryState').textContent = !consent ? '저장 안 함' : paused ? '기록 일시정지' : '기록 중';
     document.getElementById('togglePause').textContent = paused ? '기록 다시 시작' : '기록 일시정지';
     document.getElementById('togglePause').disabled = consent !== true;
-    document.getElementById('toggleConsent').textContent = consent === true ? '개인화 끄기' : '개인화 켜기';
+    document.getElementById('toggleConsent').textContent = consent === true ? '기록 저장 끄기' : '기록 저장 켜기';
     document.getElementById('storageLocation').textContent = VASRuntime.isAvailable() ? 'Windows 사용자 로컬' : '현재 브라우저';
   }
 
@@ -63,7 +63,7 @@
     await VASPersonalization.consent(consent !== true); await refresh();
   });
   document.getElementById('togglePause').addEventListener('click', async function () { await VASPersonalization.pause(!paused); await refresh(); });
-  document.getElementById('deleteAll').addEventListener('click', async function () { if (confirm('모든 개인화 기록과 파생 선호도를 완전히 삭제하시겠습니까?')) { await VASPersonalization.clear(); await refresh(); } });
+  document.getElementById('deleteAll').addEventListener('click', async function () { if (confirm('저장된 사용 기록을 모두 지울까요?')) { await VASPersonalization.clear(); await refresh(); } });
   document.getElementById('exportMemory').addEventListener('click', async function () { download('vas-personalization-memory.json', await VASPersonalization.export()); });
   document.getElementById('importMemory').addEventListener('change', async function (event) { const file = event.target.files[0]; if (!file) return; const count = await VASPersonalization.import(await file.text()); alert(count + '건을 가져왔습니다.'); await refresh(); });
   refresh();

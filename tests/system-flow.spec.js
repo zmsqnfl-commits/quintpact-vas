@@ -11,6 +11,10 @@ const importUrl = source('project-import.html');
 test('first visit asks for personalization consent and respects decline', async ({ page }) => {
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#privacyDialog')).toBeVisible();
+  await expect(page.locator('#privacyDialog h2')).toHaveText('내 사용 기록을 저장할까요?');
+  await expect(page.locator('#privacyDialog')).toContainText('이 컴퓨터에만 저장');
+  await expect(page.locator('#declinePersonalization')).toHaveText('저장 안 함');
+  await expect(page.locator('#acceptPersonalization')).toHaveText('저장하고 시작');
   await page.locator('#declinePersonalization').click();
   await expect(page.locator('#privacyDialog')).not.toBeVisible();
   await page.reload({ waitUntil: 'domcontentloaded' });
