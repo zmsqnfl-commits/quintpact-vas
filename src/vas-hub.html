@@ -9,73 +9,89 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="vas-hub.html" data-vas-link>VAS / 2.6</a>
-    <div class="header-actions">
-      <span class="runtime-status" id="runtimeStatus">연결 확인 중</span>
-      <a href="memory-center.html" data-vas-link>내 사용 기록</a>
+    <div class="header-inner">
+      <a class="brand" href="vas-hub.html" data-vas-link><span class="brand-mark">V</span><span>VAS 2.6</span></a>
+      <div class="header-actions">
+        <span class="runtime-status" id="runtimeStatus" aria-live="polite">연결 확인 중</span>
+        <a class="history-link" href="memory-center.html" data-vas-link aria-label="내 사용 기록">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span>내 사용 기록</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <h1>만들거나,<br>가져오거나.</h1>
-      <p>새 프로그램과 기존 프로그램을 같은 흐름으로 분석하고, 기억하고, 개선합니다.</p>
-    </section>
+  <main class="hub-shell">
+    <div class="hub-panel">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>무엇을 도와드릴까요?</h1>
+          <p>새 프로젝트를 시작하거나 기존 프로그램을 안전하게 가져오세요.</p>
+        </div>
 
-    <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle">
-      <div class="section-heading">
-        <h2 id="onboardingTitle">처음이라면 이 순서로</h2>
-        <button type="button" id="dismissOnboarding">확인했어요</button>
-      </div>
-      <ol>
-        <li><strong>01</strong><span>새로 만들거나 기존 폴더를 가져옵니다.</span></li>
-        <li><strong>02</strong><span>디자인과 다음 작업을 선택합니다.</span></li>
-        <li><strong>03</strong><span>RAG 추천과 에이전트 계획으로 작업합니다.</span></li>
-      </ol>
-    </section>
+        <h2 id="startTitle" class="sr-only">프로젝트 시작</h2>
+        <div class="start-grid" aria-labelledby="startTitle">
+          <a class="start-card new" href="client-application.html" data-vas-link data-track="project.new">
+            <span class="action-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M12 12v6M9 15h6"/></svg></span>
+            <span class="start-copy"><strong>새 프로젝트 만들기</strong><small>요구사항을 정리하고 새 작업 공간을 준비합니다.</small></span>
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+          <a class="start-card import" href="project-import.html" data-vas-link data-track="project.import">
+            <span class="action-icon icon-yellow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h5"/></svg></span>
+            <span class="start-copy"><strong>기존 프로그램 가져오기</strong><small>원본은 그대로 두고 안전한 복사본으로 시작합니다.</small></span>
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </section>
 
-    <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" hidden>
-      <div><span>LOCAL / PERSONALIZED</span><h2 id="recommendationTitle">다음 작업 추천</h2><p id="recommendationCopy"></p></div>
-      <a id="recommendationLink" href="knowledge-search.html" data-vas-link>추천 작업 열기 →</a>
-    </section>
+      <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle">
+        <div class="onboarding-heading">
+          <h2 id="onboardingTitle">처음 사용하는 순서</h2>
+          <button type="button" id="dismissOnboarding">안내 숨기기</button>
+        </div>
+        <ol>
+          <li><strong>1</strong><span><b>시작 방식 선택</b><small>새 프로젝트 또는 기존 프로그램을 선택합니다.</small></span></li>
+          <li><strong>2</strong><span><b>디자인과 작업 설정</b><small>원하는 모습과 다음 작업을 정합니다.</small></span></li>
+          <li><strong>3</strong><span><b>추천과 기록으로 이어서 작업</b><small>필요한 문서와 최근 흐름을 다시 찾습니다.</small></span></li>
+        </ol>
+      </section>
 
-    <section class="start-section" aria-labelledby="startTitle">
-      <div class="section-heading">
-        <h2 id="startTitle">프로젝트 시작</h2>
-        <p>원본은 안전하게 보존됩니다.</p>
-      </div>
-      <div class="start-grid">
-        <a class="start-card new" href="client-application.html" data-vas-link data-track="project.new">
-          <span class="card-index">01</span>
-          <div><h3>새 프로젝트 만들기</h3><p>요구사항을 정리하고 새 작업 공간을 준비합니다.</p></div>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-        <a class="start-card import" href="project-import.html" data-vas-link data-track="project.import">
-          <span class="card-index">02</span>
-          <div><h3>기존 프로그램 가져오기</h3><p>폴더를 선택해 읽기 전용 분석부터 시작합니다.</p></div>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-      </div>
-    </section>
+      <section class="tools-section" aria-labelledby="toolsTitle">
+        <div class="section-heading"><h2 id="toolsTitle">작업 도구</h2></div>
+        <div class="tool-list">
+          <a href="design-controller.html" data-vas-link data-track="tool.design">
+            <span class="tool-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4-1 10-10-3-3L5 16zM13 8l3 3M15 4l2-2 3 3-2 2"/></svg></span>
+            <span><strong>디자인 스튜디오</strong><small>화면의 색상과 구성을 정합니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+          <a href="knowledge-search.html" data-vas-link data-track="tool.knowledge">
+            <span class="tool-icon icon-green" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>
+            <span><strong>내부 지식 검색</strong><small>VAS 문서와 프로젝트 내용을 찾습니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+          <a href="memory-center.html" data-vas-link data-track="tool.memory">
+            <span class="tool-icon icon-purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5v5h5M5.5 9a8 8 0 1 1-.5 6"/><path d="M12 7v5l3 2"/></svg></span>
+            <span><strong>내 사용 기록</strong><small>최근 작업과 저장된 기록을 확인합니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </section>
 
-    <section class="tools-section" aria-labelledby="toolsTitle">
-      <div class="section-heading"><h2 id="toolsTitle">작업 도구</h2></div>
-      <div class="tool-list">
-        <a href="design-controller.html" data-vas-link data-track="tool.design"><span>DESIGN</span><strong>디자인 스튜디오</strong><small>18개 프리셋과 토큰</small></a>
-        <a href="knowledge-search.html" data-vas-link data-track="tool.knowledge"><span>SEARCH</span><strong>내부 지식 검색</strong><small>문서와 프로젝트 맥락</small></a>
-        <a href="memory-center.html" data-vas-link data-track="tool.memory"><span>HISTORY</span><strong>내 사용 기록</strong><small>확인·삭제·저장</small></a>
-      </div>
-    </section>
+      <section class="projects-section" aria-labelledby="projectsTitle">
+        <div class="section-heading"><h2 id="projectsTitle">내 프로젝트</h2><button type="button" id="refreshProjects">새로고침</button></div>
+        <div id="projectList" class="project-list">
+          <div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><strong>아직 프로젝트가 없습니다.</strong><span>새 프로젝트를 만들거나 기존 프로그램을 가져와 시작하세요.</span></div>
+        </div>
+      </section>
 
-    <section class="projects-section" aria-labelledby="projectsTitle">
-      <div class="section-heading"><h2 id="projectsTitle">내 프로젝트</h2><button type="button" id="refreshProjects">새로고침</button></div>
-      <div id="projectList" class="project-list"><p class="empty-state">등록된 프로젝트가 없습니다.</p></div>
-    </section>
+      <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" hidden>
+        <span class="recommendation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span>
+        <div><h2 id="recommendationTitle">다음 작업 추천</h2><p id="recommendationCopy"></p></div>
+        <a id="recommendationLink" href="knowledge-search.html" data-vas-link>추천 작업 열기<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
+      </section>
+    </div>
   </main>
 
-  <dialog id="privacyDialog" class="privacy-dialog">
+  <dialog id="privacyDialog" class="privacy-dialog" aria-labelledby="privacyTitle">
     <form method="dialog">
-      <h2>내 사용 기록을 저장할까요?</h2>
+      <h2 id="privacyTitle">내 사용 기록을 저장할까요?</h2>
       <p>자주 쓰는 메뉴와 검색, 선택한 설정을 기억해 다음에 더 편하게 보여드려요.</p>
       <ul><li>기록은 이 컴퓨터에만 저장되고 언제든 지울 수 있어요.</li><li>이름, 연락처, 직접 쓴 글, 비밀번호, API 키와 파일은 저장하지 않아요.</li></ul>
       <div class="dialog-actions">

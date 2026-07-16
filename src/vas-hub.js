@@ -1,17 +1,13 @@
 (function () {
   'use strict';
 
-  const state = VASThemeState.init();
-  const root = document.documentElement;
-  root.style.setProperty('--bg', state.tokens.colors.background);
-  root.style.setProperty('--surface', state.tokens.colors.surface);
-  root.style.setProperty('--text', state.tokens.colors.text);
-  root.style.setProperty('--border', state.tokens.colors.border);
-  root.style.setProperty('--font-sans', state.tokens.fontFamily);
+  VASThemeState.init();
   VASThemeState.decorateLinks(document);
 
   const runtimeStatus = document.getElementById('runtimeStatus');
-  runtimeStatus.textContent = VASRuntime.isAvailable() ? 'LOCAL / 연결됨' : 'WEB / 분석 모드';
+  const runtimeConnected = VASRuntime.isAvailable();
+  runtimeStatus.dataset.connected = String(runtimeConnected);
+  runtimeStatus.textContent = runtimeConnected ? '연결됨' : '웹 분석 모드';
 
   const onboarding = document.getElementById('onboarding');
   onboarding.hidden = VASStorage.readText('vasOnboardingDone', '') === '1';
@@ -122,7 +118,7 @@
         list.append(row);
       });
     } catch (error) {
-      list.innerHTML = '<p class="empty-state">프로젝트 목록을 불러오지 못했습니다.</p>';
+      list.innerHTML = '<p class="empty-state"><strong>프로젝트 목록을 불러오지 못했습니다.</strong><span>잠시 후 새로고침해 주세요.</span></p>';
     }
   }
 
