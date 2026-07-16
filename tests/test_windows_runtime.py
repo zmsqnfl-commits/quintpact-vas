@@ -355,7 +355,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(project["status"], "ready")
         self.assertFalse(project["indexEnabled"])
         target = self.root / "workspace" / "projects" / "새 프로젝트"
-        self.assertEqual(Path(project["path"]), target)
+        self.assertTrue(paths_match(project["path"], target))
         self.assertEqual(
             json.loads((target / "brief.json").read_text(encoding="utf-8-sig"))["goal"],
             "부드러운 사용자 흐름",
