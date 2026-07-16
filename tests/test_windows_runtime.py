@@ -23,6 +23,13 @@ START_SCRIPT = BASE / "scripts" / "Start-VAS.ps1"
 POWERSHELL = shutil.which("powershell.exe")
 
 
+def paths_match(left, right):
+    try:
+        return os.path.samefile(left, right)
+    except OSError:
+        return os.path.normcase(os.path.realpath(left)) == os.path.normcase(os.path.realpath(right))
+
+
 def run_launcher(root, state, port, idle=30):
     command = [
         POWERSHELL,
@@ -52,7 +59,7 @@ def run_launcher(root, state, port, idle=30):
         for candidate in Path(state).glob("runtime-2.6.0-*.json"):
             try:
                 value = json.loads(candidate.read_text(encoding="utf-8-sig"))
-                if Path(value.get("rootPath", "")) == Path(root):
+                if value.get("rootPath") and paths_match(value["rootPath"], root):
                     runtime_path = candidate
                     break
             except (OSError, ValueError):
@@ -132,7 +139,7 @@ class WindowsRuntimeTests(unittest.TestCase):
     def test_01_preferred_port_falls_back_and_server_reuses(self):
         self.assertNotEqual(self.runtime["port"], self.preferred_port)
         self.assertLessEqual(self.runtime["port"], self.preferred_port + 9)
-        self.assertEqual(Path(self.runtime["rootPath"]), self.root)
+        self.assertTrue(paths_match(self.runtime["rootPath"], self.root))
         reused = run_launcher(self.root, self.state, self.preferred_port)
         self.assertEqual(reused["pid"], self.runtime["pid"])
         self.assertEqual(reused["token"], self.runtime["token"])
