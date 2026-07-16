@@ -104,6 +104,21 @@ function Get-VASPythonCommand {
     return $runtime
 }
 
+function Invoke-VASPythonUtf8 {
+    param([string]$File, [string[]]$Arguments)
+    $previous = [Environment]::GetEnvironmentVariable('PYTHONUTF8', 'Process')
+    $previousEncoding = [Console]::OutputEncoding
+    try {
+        [Environment]::SetEnvironmentVariable('PYTHONUTF8', '1', 'Process')
+        [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+        $output = (& $File @Arguments 2>&1 | Out-String).Trim()
+        return [pscustomobject]@{ Output = $output; ExitCode = $LASTEXITCODE }
+    } finally {
+        [Console]::OutputEncoding = $previousEncoding
+        [Environment]::SetEnvironmentVariable('PYTHONUTF8', $previous, 'Process')
+    }
+}
+
 function Invoke-VASMigrationCli {
     param([string]$Root, [string[]]$Arguments)
     $vasRoot = Resolve-VASRoot $Root
@@ -112,8 +127,9 @@ function Invoke-VASMigrationCli {
     $python = Get-VASPythonCommand
     $allArguments = @($script, '--root', $vasRoot) + $Arguments + @('--json')
     $invokeArguments = @($python.Prefix) + $allArguments
-    $output = (& $python.File @invokeArguments 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0) {
+    $execution = Invoke-VASPythonUtf8 $python.File $invokeArguments
+    $output = $execution.Output
+    if ($execution.ExitCode -ne 0) {
         $message = "마이그레이션 명령 실패: $output"
         try {
             $errorResult = $output | ConvertFrom-Json
@@ -133,8 +149,9 @@ function Update-VASProjectKnowledge {
         if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw 'missing knowledge builder' }
         $python = Get-VASPythonCommand
         $arguments = @($python.Prefix) + @($script, '--root', $vasRoot, '--json', 'build')
-        $output = (& $python.File @arguments 2>&1 | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0) { throw 'knowledge build failed' }
+        $execution = Invoke-VASPythonUtf8 $python.File $arguments
+        $output = $execution.Output
+        if ($execution.ExitCode -ne 0) { throw 'knowledge build failed' }
         $result = $output | ConvertFrom-Json
         if ($result.status -ne 'built') { throw 'knowledge build incomplete' }
         if (@($result.warnings).Count -gt 0) { return (@($result.warnings) -join ' ') }
