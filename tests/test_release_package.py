@@ -130,6 +130,10 @@ class ReleasePackageTests(unittest.TestCase):
         for reference in launcher_paths:
             self.assertIn(reference.replace("\\", "/"), payload, f"실행 BAT 누락 대상: {reference}")
         recipient_readme = payload["README.md"].decode("utf-8")
+        quick_start = payload["00-처음-사용하기.txt"].decode("utf-8")
+        self.assertIn("Run-VAS-System.bat", quick_start)
+        self.assertIn("기존 프로젝트 가져오기", quick_start)
+        self.assertIn("workspace\\projects", quick_start)
         self.assertIn("전체 압축 해제", recipient_readme)
         self.assertIn("Python 3.10", recipient_readme)
         self.assertNotIn("npm.cmd", recipient_readme)

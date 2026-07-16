@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 CONFIG = ROOT / "src" / "vas-config.js"
 ROOT_FILES = [
-    "Run-VAS-System.bat", "README.md", "LICENSE", "AUTHORS.md",
+    "Run-VAS-System.bat", "README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
     "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
 ]
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
@@ -142,6 +142,8 @@ def build_windows(stage: Path) -> Path:
         """# VAS 2.6.0 Windows 실행본
 
 ## 시작
+
+먼저 `00-처음-사용하기.txt`를 읽어주세요.
 
 1. ZIP을 새 폴더에 **전체 압축 해제**합니다.
 2. `Run-VAS-System.bat`를 더블클릭합니다.
