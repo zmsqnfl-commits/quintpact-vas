@@ -354,7 +354,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         if status == 200:
             self.assertFalse(result["cancelled"])
             self.assertRegex(result["selection"]["selectionId"], r"^[a-f0-9]{32}$")
-            self.assertEqual(Path(result["selection"]["path"]), self.source_project)
+            self.assertTrue(paths_match(result["selection"]["path"], self.source_project))
     def test_07b_new_project_is_created_and_registered_atomically(self):
         request = {
             "name": "새 프로젝트",
