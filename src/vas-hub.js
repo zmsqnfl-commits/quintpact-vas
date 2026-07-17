@@ -99,7 +99,7 @@
     if (!terms) return;
     let target = { href: 'knowledge-search.html', label: '내부 지식 검색', reason: '최근 검색 흐름을 이어서 확인해 보세요.' };
     if (/(이관|마이그|가져|import|legacy)/i.test(terms)) {
-      target = { href: 'project-import.html', label: '기존 프로그램 가져오기', reason: '최근 가져오기 흐름을 이어서 진행해 보세요.' };
+      target = { href: 'project-import.html', label: '기존 프로그램 AI로 연결', reason: '최근 프로젝트를 안전한 AI 전달팩으로 이어 보세요.' };
     } else if (/(디자인|design|theme|preset|스타일)/i.test(terms)) {
       target = { href: 'design-controller.html', label: '디자인 스튜디오', reason: '최근 디자인 선택을 바탕으로 다음 설정을 이어갈 수 있습니다.' };
     } else if (/(신청|의뢰|brief|form|project|프로젝트)/i.test(terms)) {
@@ -188,7 +188,7 @@
         });
         const exportButton = document.createElement('button');
         exportButton.type = 'button';
-        exportButton.textContent = '안전 ZIP';
+        exportButton.textContent = '보관 ZIP';
         exportButton.addEventListener('click', async function () {
           exportButton.disabled = true;
           try {
@@ -197,14 +197,19 @@
             });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'VAS-2.6.1-handoff.zip';
+            link.download = 'VAS-2.6.2-project-backup.zip';
             link.click();
             URL.revokeObjectURL(link.href);
           } catch (error) {
             meta.textContent = '안전 ZIP을 만들지 못했습니다. 다시 시도해 주세요.';
           } finally { exportButton.disabled = false; }
         });
-        actions.append(continueLink, open, exportButton);
+        const handoffLink = document.createElement('a');
+        handoffLink.href = 'project-import.html?projectId=' + encodeURIComponent(project.projectId);
+        handoffLink.dataset.vasLink = '';
+        handoffLink.textContent = 'AI 전달팩';
+        handoffLink.addEventListener('click', function () { VASProjectContext.set(project); });
+        actions.append(continueLink, handoffLink, open, exportButton);
         row.append(copy, actions);
         VASThemeState.decorateLinks(row);
         if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();

@@ -103,7 +103,7 @@ test('consented local memory produces a transparent next-work recommendation', a
   });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#nextRecommendation')).toBeVisible();
-  await expect(page.locator('#recommendationTitle')).toContainText('기존 프로그램 가져오기');
+  await expect(page.locator('#recommendationTitle')).toContainText('기존 프로그램 AI로 연결');
   await expect(page.locator('#recommendationCopy')).toContainText('이 기기');
 });
 

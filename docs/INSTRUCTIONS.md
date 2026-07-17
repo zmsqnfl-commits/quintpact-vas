@@ -1,4 +1,4 @@
-# VAS 2.6.1 개발 규칙
+# VAS 2.6.2 개발 규칙
 
 - HTML/CSS/Vanilla JS, Python, PowerShell만으로 경량 운영합니다.
 - 파일당 500줄 이하, 외부 CDN·원격 폰트 금지입니다.

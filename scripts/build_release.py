@@ -1,4 +1,4 @@
-"""VAS 2.6.1 재현 가능한 Windows/독립 신청서/Pages 배포 빌더."""
+"""VAS 2.6.2 재현 가능한 Windows/독립 신청서/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -140,7 +140,7 @@ def build_windows(stage: Path) -> Path:
     for dirname in FULL_DIRS:
         copy_tree(ROOT / dirname, root / dirname)
     (root / "README.md").write_text(
-        """# VAS 2.6.1 Windows 실행본
+        """# VAS 2.6.2 Windows 실행본
 
 ## 시작
 
@@ -148,11 +148,11 @@ def build_windows(stage: Path) -> Path:
 
 1. ZIP을 새 폴더에 **전체 압축 해제**합니다.
 2. `Run-VAS-System.bat`를 더블클릭합니다.
-3. 허브에서 새 프로젝트를 만들거나 **기존 프로그램 가져오기**를 선택합니다.
+3. 허브에서 새 프로젝트를 만들거나 **기존 프로그램 AI로 연결**을 선택합니다.
 
 Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램 가져오기에는 Python 3.10 이상이 필요하며, 준비되지 않은 경우 화면에서 설치 안내가 표시됩니다. 신청서·디자인·내부 문서 검색은 Python 없이도 사용할 수 있습니다.
 
-프로젝트는 이 폴더의 `workspace/projects/`에 생성됩니다. 가져오기 전에는 원본을 읽기만 하고, 승인 후 백업·복제·검증한 사본을 등록합니다. 원본 삭제는 자동으로 실행하지 않습니다.
+기존 프로그램은 폴더 선택 → 안전 분석 → 내용 확인 → AI 전달팩 저장 순서로 연결합니다. 코딩 도구에서 원본 폴더를 열고 `VAS-AI-HANDOFF.json`을 첨부한 뒤 복사된 프롬프트를 붙여넣으세요. 원본을 VAS 안에 복사하려는 경우에만 화면 아래 고급 기능을 사용합니다.
 
 개인화 메모리와 프로젝트 RAG는 사용자가 동의한 경우에만 이 기기에서 작동합니다. 비밀 후보와 절대 경로는 제외하거나 가리며 VAS가 외부 서비스로 자동 전송하지 않습니다. RAG 맥락을 넣어 복사한 프롬프트를 외부 AI에 붙여넣으면 그 맥락도 전달될 수 있습니다.
 
@@ -177,6 +177,7 @@ def build_client(stage: Path) -> Path:
             html = re.sub(r'<a class="back-link" id="hubBackLink".*?</a>', '<div class="back-link external-note">공유받은 신청서입니다</div>', html)
             html = re.sub(r'\s*<button[^>]+id="createProjectButton".*?</button>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectNext".*?</a>', "", html)
+            html = re.sub(r'\s*<a[^>]+id="createdProjectHandoff".*?</a>', "", html)
             html = re.sub(r'\s*<script src="(?:runtime-client|personalization-store|rag-lite)\.js"></script>', "", html)
             target.write_text(html, encoding="utf-8")
         else:

@@ -3,87 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.1 — 기존 프로그램 가져오기</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2315171c%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+  <title>VAS 2.6.2 — AI 전달팩</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23171715%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffd200%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="project-import.css">
 </head>
 <body>
   <header class="topbar">
-    <a href="vas-hub.html" data-vas-link>← 허브</a>
-    <strong>기존 프로그램 가져오기</strong>
-    <span id="modeLabel">LOCAL</span>
+    <a href="vas-hub.html" data-vas-link>VAS / AI HANDOFF</a>
+    <span id="modeLabel">WEB / JSON</span>
+    <a href="vas-hub.html" data-vas-link>허브로 돌아가기 →</a>
   </header>
 
-  <main>
-    <aside class="steps" aria-label="가져오기 진행 단계">
+  <main class="handoff-shell">
+    <aside class="steps" aria-label="AI 전달팩 진행 단계">
+      <p class="eyebrow">WORKFLOW 01—04</p>
       <ol>
         <li class="active" data-nav-step="1" aria-current="step"><b>01</b><span>폴더 선택</span></li>
-        <li data-nav-step="2"><b>02</b><span>읽기 전용 분석</span></li>
-        <li data-nav-step="3"><b>03</b><span>가져오기 승인</span></li>
-        <li data-nav-step="4"><b>04</b><span>검증 및 등록</span></li>
+        <li data-nav-step="2"><b>02</b><span>안전 분석</span></li>
+        <li data-nav-step="3"><b>03</b><span>전달 내용 확인</span></li>
+        <li data-nav-step="4"><b>04</b><span>코딩 도구로 보내기</span></li>
       </ol>
-      <p>원본 폴더는 기본적으로 변경하거나 삭제하지 않습니다.</p>
+      <div class="safety-note"><b>READ ONLY</b><p>분석 중 원본 파일을 실행·수정·삭제하지 않습니다.</p></div>
     </aside>
 
     <section class="workspace">
-      <div class="panel active" data-step="1">
-        <p class="step-number">STEP 01</p>
-        <h1>원래 프로그램이 있는<br>폴더를 선택하세요.</h1>
-        <p class="lead">선택 직후에는 파일을 복사하거나 실행하지 않고 구조만 확인합니다.</p>
+      <header class="hero">
+        <p class="eyebrow">VAS 2.6.2 / EXISTING PROJECT</p>
+        <h1>기존 프로그램을<br><em>AI 작업</em>으로 연결합니다.</h1>
+        <p>원본은 그대로 두고, 코덱스·클로드·안티그래피티가 이해할 정보만 안전하게 정리합니다.</p>
+      </header>
+
+      <section class="panel active" data-step="1">
+        <div class="section-title"><span>01</span><h2>프로그램 폴더를 선택하세요.</h2></div>
         <p class="web-note" id="runtimeNotice" hidden></p>
-        <button type="button" class="select-folder" id="selectFolder">폴더 선택</button>
+        <button type="button" class="select-folder" id="selectFolder">
+          <span>폴더 선택</span><small>원본은 읽기만 합니다</small><i aria-hidden="true">↗</i>
+        </button>
         <input type="file" id="folderFallback" webkitdirectory multiple hidden>
-        <div class="selection" id="selection" hidden><span>선택됨</span><strong id="selectedPath"></strong></div>
-        <div class="actions"><button type="button" class="primary" id="analyzeButton" disabled>안전하게 분석하기</button></div>
-      </div>
+        <div class="selection" id="selection" hidden><span>선택됨</span><strong id="selectedPath"></strong><button type="button" id="changeFolder">다시 선택</button></div>
+        <label class="task-field" for="taskRequest"><span>AI에게 맡길 일 <small>선택</small></span><textarea id="taskRequest" maxlength="2000" placeholder="예: 로그인 오류를 고치고 모바일 화면을 정리해 주세요."></textarea></label>
+        <div class="actions"><button type="button" class="primary" id="analyzeButton" disabled>안전하게 분석하기 →</button></div>
+      </section>
 
-      <div class="panel" data-step="2">
-        <p class="step-number">STEP 02</p>
-        <h1>분석 결과</h1>
+      <section class="panel" data-step="2">
+        <div class="section-title"><span>02</span><h2>실행하지 않고 구조만 읽었습니다.</h2></div>
         <div class="analysis-grid" id="analysisGrid"></div>
-        <section class="risk-section"><h2>확인할 항목</h2><ul id="riskList"></ul></section>
-        <p class="web-note" id="webNote" hidden>웹에서는 분석 보고서까지만 제공합니다. 실제 가져오기는 Windows 배포판에서 진행하세요.</p>
-        <div class="actions">
-          <button type="button" id="downloadReport">보고서 저장</button>
-          <button type="button" class="primary" id="configureButton">가져오기 설정</button>
+        <section class="risk-section"><h3>안전 확인</h3><ul id="riskList"></ul></section>
+        <p class="web-note" id="webNote" hidden>웹판은 파일 내용 없이 분석 JSON만 만듭니다. 검토 소스 ZIP은 Windows판에서 사용할 수 있습니다.</p>
+        <div class="actions split-actions">
+          <button type="button" id="configureButton">고급 복사 설정</button>
+          <button type="button" class="primary" id="continueReview">전달 내용 확인 →</button>
         </div>
-      </div>
+      </section>
 
-      <div class="panel" data-step="3">
-        <p class="step-number">STEP 03</p>
-        <h1>가져오기 승인</h1>
-        <div class="form-grid">
-          <label>프로젝트명<input id="projectName" type="text" maxlength="80"></label>
-          <label>가져온 뒤 할 일<select id="migrationGoal"><option value="manage">그대로 관리</option><option value="improve">기능 개선 계획</option><option value="redesign">리디자인 계획</option><option value="upgrade">VAS 업그레이드 계획</option></select></label>
+      <section class="panel" data-step="3">
+        <div class="section-title"><span>03</span><h2>보낼 범위를 직접 확인하세요.</h2></div>
+        <fieldset class="mode-picker">
+          <legend>전달 방식</legend>
+          <label><input type="radio" name="handoffMode" value="metadata" checked><span><b>분석 JSON</b><small>파일 내용 없이 구조·기술·요청만 전달</small></span></label>
+          <label id="sourceModeLabel"><input type="radio" name="handoffMode" value="reviewed-source"><span><b>검토 소스 ZIP</b><small>직접 고른 텍스트 발췌만 함께 전달</small></span></label>
+        </fieldset>
+        <section class="source-review" id="sourceReview" hidden>
+          <div class="review-heading"><h3>함께 보낼 파일</h3><button type="button" id="clearFiles">모두 해제</button></div>
+          <div class="file-list" id="candidateFiles"></div>
+          <p>비밀값 후보·링크·바이너리·대용량 파일은 선택할 수 없습니다.</p>
+        </section>
+        <label class="provider-field">붙여넣을 코딩 도구<select id="provider"><option value="codex">Codex</option><option value="claude">Claude</option><option value="antigravity">Antigravity</option><option value="universal">기타 코딩 도구</option></select></label>
+        <div class="actions handoff-actions">
+          <button type="button" id="copyPrompt">프롬프트 복사</button>
+          <button type="button" id="downloadJson">분석 JSON 저장</button>
+          <button type="button" class="primary" id="exportHandoff">AI 전달팩 만들기 →</button>
         </div>
-        <div class="checks">
-          <label><input type="checkbox" id="preserveGit" checked disabled> Git 이력과 브랜치 보존</label>
-          <label><input type="checkbox" id="createIndex"> 허용된 텍스트 파일을 이 기기에서 색인해 프로젝트 RAG에 연결</label>
-          <label><input type="checkbox" id="confirmCopy"> 원본은 유지되고 검증된 복사본이 생성됨을 확인했습니다.</label>
-        </div>
-        <div class="summary" id="importSummary"></div>
-        <div class="actions"><button type="button" class="primary" id="importButton" disabled>백업 후 가져오기</button></div>
-      </div>
 
-      <div class="panel" data-step="4">
-        <p class="step-number">STEP 04</p>
-        <h1 id="resultTitle">가져오는 중입니다.</h1>
-        <div class="progress"><div id="progressBar"></div></div>
-        <ol class="progress-list" id="progressList"></ol>
-        <div class="result" id="result" hidden>
-          <p id="resultMessage"></p>
-          <div class="actions">
-            <a href="vas-hub.html" data-vas-link>허브로 돌아가기</a>
-            <a href="vas-hub.html" id="nextActionLink" data-vas-link data-vas-project-link>다음 작업 열기</a>
-            <button type="button" id="rollbackButton">가져오기 롤백</button>
+        <details class="advanced" id="advancedMigration">
+          <summary>프로젝트 복사·등록이 필요한 경우 <span>고급 기능</span></summary>
+          <p>원본은 보존하고 <code>workspace/projects</code>에 검증된 복사본을 만듭니다. AI 전달팩만 필요하면 이 단계는 건너뛰세요.</p>
+          <div class="form-grid">
+            <label>프로젝트명<input id="projectName" type="text" maxlength="80"></label>
+            <label>복사 후 할 일<select id="migrationGoal"><option value="manage">그대로 관리</option><option value="improve">기능 개선</option><option value="redesign">리디자인</option><option value="upgrade">VAS 업그레이드</option></select></label>
           </div>
-        </div>
-        <div class="actions" id="retryActions" hidden><button type="button" id="retryImportButton">설정으로 돌아가기</button></div>
-      </div>
+          <div class="checks">
+            <label><input type="checkbox" id="preserveGit" checked disabled> Git 이력과 브랜치 보존</label>
+            <label><input type="checkbox" id="createIndex"> 허용된 텍스트만 프로젝트 RAG에 색인</label>
+            <label><input type="checkbox" id="confirmCopy"> 원본은 유지되고 검증된 복사본이 생성됨을 확인했습니다.</label>
+          </div>
+          <div class="summary" id="importSummary"></div>
+          <div class="actions"><button type="button" class="primary" id="importButton" disabled>백업 후 복사·등록</button></div>
+        </details>
+      </section>
 
+      <section class="panel" data-step="4">
+        <div class="section-title"><span>04</span><h2 id="resultTitle">전달팩이 준비됐습니다.</h2></div>
+        <div class="finish-box"><b>이제 이렇게 하세요</b><ol><li>코딩 도구에서 원본 프로그램 폴더를 엽니다.</li><li><code>VAS-AI-HANDOFF.json</code> 또는 전달 ZIP을 첨부합니다.</li><li>복사한 프롬프트를 붙여넣고 시작합니다.</li></ol></div>
+        <div class="progress" id="migrationProgress" hidden><div id="progressBar"></div></div>
+        <ol class="progress-list" id="progressList"></ol>
+        <div class="result" id="result"><p id="resultMessage">원본 프로그램은 변경되지 않았습니다.</p></div>
+        <div class="actions"><button type="button" id="startAgain">다른 폴더 연결</button><a href="vas-hub.html" data-vas-link>허브로 돌아가기</a><a href="vas-hub.html" id="nextActionLink" data-vas-link data-vas-project-link hidden>다음 작업</a><button type="button" id="rollbackButton" hidden>복사 롤백</button><button type="button" id="retryImportButton" hidden>다시 시도</button></div>
+      </section>
       <div class="error-box" id="errorBox" role="alert" hidden></div>
     </section>
+
+    <aside class="preview" aria-label="AI 전달 내용 미리보기">
+      <div class="preview-head"><span>LIVE PREVIEW</span><div><button type="button" class="active" data-preview="json">JSON</button><button type="button" data-preview="prompt">PROMPT</button></div></div>
+      <pre id="previewContent" tabindex="0">폴더를 분석하면 AI에게 보낼 내용이 여기에 표시됩니다.</pre>
+      <footer><span id="previewStatus">대기 중</span><small>개인화 메모리는 포함하지 않음</small></footer>
+    </aside>
   </main>
 
   <script src="vas-config.js"></script>
@@ -95,6 +120,7 @@
   <script src="rag-lite.js"></script>
   <script src="personalization-store.js"></script>
   <script src="project-rail.js"></script>
+  <script src="agent-handoff-web.js"></script>
   <script src="project-import.js"></script>
 </body>
 </html>

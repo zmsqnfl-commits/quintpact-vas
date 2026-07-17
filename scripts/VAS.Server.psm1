@@ -1,8 +1,7 @@
 ﻿Set-StrictMode -Version 2.0
-$memoryModule = Join-Path $PSScriptRoot 'VAS.Memory.psm1'
-if (-not (Get-Command Get-VASMemoryStatus -ErrorAction SilentlyContinue)) { Import-Module $memoryModule -Force }
-$projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'
-if (-not (Get-Command Get-VASProjectRecords -ErrorAction SilentlyContinue)) { Import-Module $projectsModule -Force }
+$memoryModule = Join-Path $PSScriptRoot 'VAS.Memory.psm1'; if (-not (Get-Command Get-VASMemoryStatus -ErrorAction SilentlyContinue)) { Import-Module $memoryModule -Force }
+$projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'; if (-not (Get-Command Get-VASProjectRecords -ErrorAction SilentlyContinue)) { Import-Module $projectsModule -Force }
+. (Join-Path $PSScriptRoot 'VAS.Server.Handoff.ps1')
 function New-VASSessionToken {
     $bytes = New-Object byte[] 32
     $rng = New-Object Security.Cryptography.RNGCryptoServiceProvider
@@ -134,7 +133,7 @@ function Import-VASMigrationModuleIfAvailable {
     if (Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue) { return $true }
     $path = Join-Path $PSScriptRoot 'VAS.Migration.psm1'
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
-    try { Import-Module $path -Force -DisableNameChecking } catch { return $false }
+    try { Import-Module $path -DisableNameChecking } catch { return $false }
     return [bool](Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue)
 }
 function Get-VASBodyProperty {
@@ -276,7 +275,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.6.1'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.6.2'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
         Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
@@ -377,7 +376,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.6.1-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.6.2-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -412,6 +411,7 @@ function Invoke-VASApiRequest {
     if ($path -in @('/api/folder/select', '/api/migrations/analyze', '/api/migrations/import', '/api/migrations/rollback', '/api/migrations/delete-source') -and $method -eq 'POST') {
         Invoke-VASMigrationRoute $path $Context $State $body; return
     }
+    if ($path -in @('/api/handoffs/preview', '/api/handoffs/export') -and $method -eq 'POST') { Invoke-VASHandoffHttpRoute $path $Context $State $body; return }
     if ($path -eq '/api/shutdown' -and $method -eq 'POST') {
         $State.Shutdown = $true
         Write-VASResponse $Context 200 ([ordered]@{ shuttingDown = $true }); return
@@ -480,7 +480,7 @@ function Start-VASRequestLoop {
                 $context = $listener.EndGetContext($pending)
                 $State.LastActivity = [DateTime]::UtcNow
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.6.1'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.6.2'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

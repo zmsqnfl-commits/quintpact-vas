@@ -1,6 +1,6 @@
 # 마이그레이션 정책
 
-VAS 2.6.1은 기존 프로그램을 `workspace/projects/`에 안전하게 흡수하고, 원본은 기본적으로 보존합니다.
+마이그레이션은 AI 전달팩과 별도인 고급 기능입니다. VAS 2.6.2는 사용자가 선택한 경우에만 기존 프로그램을 `workspace/projects/`에 안전하게 복사하고 원본을 보존합니다.
 
 ## 단계
 
@@ -28,4 +28,4 @@ python scripts/vas-project-import.py import "C:\path\old-project" --name my-proj
 python scripts/vas-project-import.py rollback <job-id>
 ```
 
-정확한 옵션은 `python scripts/vas-project-import.py --help`로 확인합니다. 일반 사용자는 허브의 **기존 프로젝트 가져오기**를 사용합니다.
+정확한 옵션은 `python scripts/vas-project-import.py --help`로 확인합니다. 일반 사용자는 **기존 프로그램 AI로 연결** 화면 아래의 고급 기능을 사용합니다.

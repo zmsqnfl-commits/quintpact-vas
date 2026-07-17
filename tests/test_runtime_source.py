@@ -16,6 +16,10 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
             "scripts/VAS.Server.psm1",
             "scripts/VAS.Memory.psm1",
             "scripts/VAS.Projects.psm1",
+            "scripts/VAS.AgentHandoff.psm1",
+            "scripts/VAS.AgentHandoff.Core.ps1",
+            "scripts/VAS.Server.Handoff.ps1",
+            "scripts/vas_agent_handoff.py",
             "tests/test_windows_runtime.py",
         ):
             lines = (BASE / relative).read_text(encoding="utf-8-sig").splitlines()

@@ -351,5 +351,6 @@ Export-ModuleMember -Function @(
     'Select-VASProjectFolder', 'Analyze-VASProject', 'Import-VASProject',
     'Get-VASMigrationStatus', 'Undo-VASProjectImport',
     'Remove-VASSourceAdvanced', 'Get-VASProjects', 'Get-VASPythonRuntime',
-    'Update-VASProjectKnowledge'
+    'Update-VASProjectKnowledge', 'Resolve-VASSelection', 'Find-VASPythonCommand',
+    'Invoke-VASPythonUtf8'
 )

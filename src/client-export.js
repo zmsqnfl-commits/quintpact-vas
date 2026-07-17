@@ -19,7 +19,7 @@ function collectApplicationData(form, files) {
     const themeState = window.VASThemeState ? window.VASThemeState.get() : null;
     data._meta = {
         schemaVersion: 1,
-        appVersion: window.VASConfig ? window.VASConfig.version : '2.6.1',
+        appVersion: window.VASConfig ? window.VASConfig.version : '2.6.2',
         exportedAt: new Date().toISOString(),
         preset: themeState ? themeState.preset : VASStorage.readText('vasCurrentPreset', 'awwwards'),
         themeTokens: themeState ? themeState.tokens : VASStorage.getDefaultTheme(),
@@ -70,6 +70,9 @@ async function createWorkspaceProject() {
             : 'Workspace created. Open it from My Projects in the hub.';
         button.hidden = true;
         document.getElementById('createdProjectNext').hidden = false;
+        const handoff = document.getElementById('createdProjectHandoff');
+        handoff.href = 'project-import.html?projectId=' + encodeURIComponent(project.projectId);
+        handoff.hidden = false;
         VASProjectContext.decorateLinks(document.getElementById('createdProjectNext').parentNode);
         if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
         if (window.VASProjectRail) VASProjectRail.init().catch(function () {});
