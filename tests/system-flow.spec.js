@@ -128,6 +128,23 @@ test('consented work memory offers a user-confirmed RAG design recommendation', 
     });
   });
   actionContrast.forEach(ratio => expect(ratio).toBeGreaterThanOrEqual(4.5));
+  const designActionLayout = await page.evaluate(() => {
+    const recommendation = document.querySelector('[data-design-memory-suggestion]');
+    const reference = document.querySelector('.design-reference-link');
+    const next = document.querySelector('#nextBtn');
+    const recommendationRect = recommendation.getBoundingClientRect();
+    const referenceRect = reference.getBoundingClientRect();
+    return {
+      separated: recommendationRect.bottom <= referenceRect.top,
+      referenceBackground: getComputedStyle(reference).backgroundColor,
+      nextBackground: getComputedStyle(next).backgroundColor
+    };
+  });
+  expect(designActionLayout).toEqual({
+    separated: true,
+    referenceBackground: 'rgb(17, 17, 17)',
+    nextBackground: 'rgb(17, 17, 17)'
+  });
   await page.locator('[data-design-memory-suggestion]').click();
   await expect(page.locator('#projectDesignPreset')).toHaveValue('linear');
   await expect(page.locator('[data-design-memory-suggestion]')).toContainText('추천 적용됨: Linear');
@@ -143,10 +160,12 @@ test('theme state reaches the new project contract without recoloring the setup 
   await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
   const state = await page.evaluate(() => ({
     primary: VASThemeState.get().tokens.colors.primary,
-    shellAccent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
+    shellAccent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+    shellFocusAccent: getComputedStyle(document.documentElement).getPropertyValue('--vas-accent').trim()
   }));
   expect(state.primary).toBe(expected.primary);
-  expect(state.shellAccent).toBe('#9b6808');
+  expect(state.shellAccent).toBe('#ffd200');
+  expect(state.shellFocusAccent).toBe('#ffd200');
 });
 
 test('project context remains minimal for compatibility', async ({ page }) => {

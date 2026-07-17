@@ -106,12 +106,15 @@
 }
 .setup-start-actions button:last-child { border-right: 0; background: #111; color: #e8e8e5; }
 .setup-start-actions button:hover,
-.setup-start-actions button:focus-visible { background: #9b6808; color: #fff; }
+.setup-start-actions button:focus-visible { background: #ffd200; color: #111; }
 .setup-start-actions button:disabled { opacity: .45; cursor: not-allowed; }
 .setup-start-actions strong { display: block; margin-bottom: 8px; font-size: 15px; }
 .setup-start-actions span { display: block; font-size: 11px; line-height: 1.5; opacity: .82; }
 .setup-start-footnote { margin: 16px 0 0; color: rgb(17 17 17 / 72%); font-size: 11px; line-height: 1.6; }
 .design-memory-suggestion {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
   min-height: 36px;
   margin: 0 0 12px;
   padding: 0;
@@ -121,6 +124,8 @@
   font: 750 12px/1.4 system-ui, sans-serif;
   text-decoration: underline;
   text-underline-offset: 5px;
+  text-align: left;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 .design-memory-suggestion:hover,

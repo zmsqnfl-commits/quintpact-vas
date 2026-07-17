@@ -14,7 +14,7 @@
     const theme = state || VASThemeState.init();
     const tokens = theme.tokens;
     const root = document.documentElement;
-    const accent = theme.preset === 'awwwards' ? '#9b6808' : tokens.colors.primary;
+    const accent = '#ffd200';
     const values = {
       '--vas-bg': tokens.colors.background,
       '--vas-surface': tokens.colors.surface,

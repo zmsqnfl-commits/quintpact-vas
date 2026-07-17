@@ -5,8 +5,8 @@
   --bg-color: #e8e8e5;
   --text-main: #111111;
   --text-muted: #555550;
-  --accent: #9b6808;
-  --accent-foreground: #ffffff;
+  --accent: #ffd200;
+  --accent-foreground: #111111;
   --border: #111111;
   --border-dark: #111111;
   --field-bg: color-mix(in srgb, var(--bg-color) 72%, white 28%);
@@ -30,7 +30,7 @@ button, input, textarea, select { font: inherit; }
 .hero-title h1 { margin: 0; font-size: clamp(44px, 4.25vw, 72px); line-height: .92; letter-spacing: -.07em; font-weight: 650; word-break: keep-all; }
 .hero-title h1 span { display: block; white-space: nowrap; }
 .hero-title p { max-width: 30ch; margin: 26px 0 0; color: color-mix(in srgb, var(--bg-color) 82%, transparent); font-size: 15px; line-height: 1.7; }
-.progress-indicator { color: #bd7c08; font: 42px/1 var(--font-mono); letter-spacing: -.05em; }
+.progress-indicator { color: var(--accent); font: 42px/1 var(--font-mono); letter-spacing: -.05em; }
 .progress-indicator span { color: #777; font-size: 17px; vertical-align: super; }
 
 .form-section { min-width: 0; padding: clamp(44px, 7vw, 96px) clamp(24px, 10vw, 140px) 120px; background: var(--bg-color); }
@@ -71,7 +71,7 @@ input[type="text"]:focus, textarea:focus { outline: 3px solid var(--accent); out
 .btn-prev { border-right: 1px solid var(--border); }
 .btn-next { background: var(--text-main); color: var(--bg-color); text-align: right; }
 .btn-next:hover, .btn-next:focus-visible { background: var(--accent); color: var(--accent-foreground); }
-.btn-next.finish { background: var(--accent); color: var(--accent-foreground); }
+.btn-next.finish { background: var(--text-main); color: var(--bg-color); }
 
 .done-screen { display: none; padding-top: 40px; }
 .done-screen.active { display: block; animation: slideUpFade .5s var(--bezier) forwards; }
@@ -85,8 +85,11 @@ input[type="text"]:focus, textarea:focus { outline: 3px solid var(--accent); out
 .done-info { margin: 12px 0 0 !important; padding: 18px; border-left: 3px solid var(--accent); color: var(--text-main) !important; background: color-mix(in srgb, var(--accent) 9%, transparent); font-size: 14px !important; }
 .design-choice select { width: 100%; min-height: 58px; border: 1px solid var(--border); border-radius: 0; padding: 0 16px; background: transparent; color: inherit; font-weight: 700; }
 .design-choice strong { display: block; margin: 18px 0 12px; max-width: 62ch; font: 700 14px/1.6 var(--font-sans); }
-.design-choice .design-reference-link { display: inline-flex; min-height: 48px; padding: 0 16px; align-items: center; justify-content: space-between; gap: 28px; border: 1px solid var(--border); background: var(--accent); color: var(--accent-foreground); font-weight: 800; text-decoration: none; }
-.design-choice .design-reference-link:hover { background: var(--text-main); color: var(--bg-color); }
+.design-choice .design-memory-suggestion { display: block; width: fit-content; max-width: 100%; margin: 0 0 18px; color: var(--text-muted); text-align: left; overflow-wrap: anywhere; }
+.design-choice .design-reference-link { display: flex; width: fit-content; max-width: 100%; min-height: 48px; padding: 0 16px; align-items: center; justify-content: space-between; gap: 28px; border: 1px solid var(--border); background: var(--text-main); color: var(--bg-color); font-weight: 800; text-decoration: none; }
+.design-choice .design-reference-link span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.design-choice .design-reference-link span:last-child { flex: 0 0 auto; }
+.design-choice .design-reference-link:hover { background: var(--accent); color: var(--accent-foreground); }
 .design-choice .design-reference-link:focus-visible { outline: 3px solid var(--text-main); outline-offset: 3px; }
 .design-choice p { margin: 10px 0 0; color: var(--text-muted); font-size: 12px; }
 .handoff-review { max-height: 340px; margin: 0 0 28px; padding: 22px; overflow: auto; border: 1px solid var(--border); background: color-mix(in srgb, var(--text-main) 4%, transparent); color: inherit; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.65 var(--font-mono); }

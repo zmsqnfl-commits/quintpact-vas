@@ -4,7 +4,7 @@
   --vas-text: #111111;
   --vas-border: #111111;
   --vas-line: rgb(17 17 17 / 28%);
-  --vas-accent: #9b6808;
+  --vas-accent: #ffd200;
   --vas-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   --vas-font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --vas-motion: .5s;
@@ -19,7 +19,7 @@ body { margin: 0; min-width: 0; overflow-x: clip; }
 button, input, select, textarea { font: inherit; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid var(--vas-accent); outline-offset: 3px; }
-::selection { background: var(--vas-accent); color: #fff; }
+::selection { background: var(--vas-accent); color: #111; }
 .vas-mono { font-family: var(--vas-font-mono); font-variant-numeric: tabular-nums; }
 .vas-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
