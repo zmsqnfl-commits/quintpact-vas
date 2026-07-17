@@ -18,9 +18,11 @@ body {
   border-bottom: 1px solid var(--vas-line);
   background: var(--vas-bg);
 }
+.studio-tools { justify-self: end; display: flex; align-items: center; gap: 24px; }
 .studio-topbar a, .studio-topbar button { color: inherit; background: none; border: 0; text-decoration: none; cursor: pointer; }
 .studio-topbar strong { font-size: 15px; }
-.studio-topbar button { justify-self: end; border-bottom: 1px solid currentColor; padding: 3px 0; }
+.studio-topbar button { border-bottom: 1px solid currentColor; padding: 3px 0; }
+.studio-topbar .setup-actions button { border-bottom: 0; }
 .mobile-view-tabs { display: none; }
 
 .app {

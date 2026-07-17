@@ -3,110 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.2 — 프로젝트 허브</title>
+  <title>VAS 2.6.3 — 시작</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
+  <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="vas-hub.css">
-  <link rel="stylesheet" href="vas-hub-components.css">
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="vas-hub.html" data-vas-link>VAS 2.6.2</a>
-      <div class="header-actions">
-        <span class="runtime-status" id="runtimeStatus" aria-live="polite">연결 확인 중</span>
-        <a class="history-link" href="memory-center.html" data-vas-link aria-label="내 사용 기록">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <span>내 사용 기록</span>
-        </a>
+      <a class="brand" href="vas-hub.html" data-vas-link>VAS 2.6.3</a>
+      <div class="setup-actions" aria-label="도움말과 설정">
+        <button type="button" data-setup-help>사용 방법</button>
+        <button type="button" data-setup-settings>설정</button>
       </div>
     </div>
   </header>
 
   <main class="hub-shell">
-    <div class="hub-panel">
-      <section class="hero" data-reveal>
-        <div class="hero-copy">
-          <h1><span>무엇을</span> <span>도와드릴까요?</span></h1>
-          <p>새 프로젝트를 시작하거나 기존 프로그램을 안전하게 가져오세요.</p>
-          <span class="hero-signature" aria-hidden="true">VAS / 2.6.2</span>
-        </div>
+    <section class="hero" data-reveal>
+      <div class="hero-copy">
+        <h1><span>무엇을</span><span>도와드릴까요?</span></h1>
+        <p>새 프로젝트를 시작하거나 기존 프로그램을 안전하게 가져오세요.</p>
+        <span class="hero-signature" aria-hidden="true">VAS / 2.6.3</span>
+      </div>
 
-        <h2 id="startTitle" class="sr-only">프로젝트 시작</h2>
-        <div class="start-grid" aria-labelledby="startTitle">
-          <a class="start-card new" href="client-application.html" data-vas-link data-track="project.new">
-            <span class="action-index" aria-hidden="true">01</span>
-            <span class="start-copy"><strong>새 프로젝트 만들기</strong><small>요구사항을 정리하고 새 작업 공간을 준비합니다.</small></span>
-            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </a>
-          <a class="start-card import" href="project-import.html" data-vas-link data-track="project.import">
-            <span class="action-index" aria-hidden="true">02</span>
-            <span class="start-copy"><strong>기존 프로그램 AI로 연결</strong><small>폴더를 안전하게 분석하고 코딩 도구용 JSON을 만듭니다.</small></span>
-            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </a>
-        </div>
-      </section>
-
-      <section class="privacy-rail" id="privacyRail" aria-labelledby="privacyTitle" hidden>
-        <div><span class="action-index" aria-hidden="true">RAG</span><h2 id="privacyTitle">이 기기에서 작업 흐름을 기억할까요?</h2><p>허용하면 현재 프로젝트의 선택과 검색만 저장해 다음 작업을 추천합니다. 이름·연락처·비밀번호·API 키·파일 내용은 기록하지 않습니다.</p></div>
-        <div class="privacy-rail-actions"><button type="button" id="declinePersonalization">기억하지 않기</button><button type="button" id="acceptPersonalization" class="primary">기억하고 계속</button></div>
-      </section>
-
-      <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle" data-reveal>
-        <div class="onboarding-heading">
-          <h2 id="onboardingTitle">처음 사용하는 순서</h2>
-          <button type="button" id="dismissOnboarding">숨기기</button>
-        </div>
-        <ol>
-          <li><strong>1</strong><span><b>시작 방식 선택</b><small>새 프로젝트를 만들거나 기존 폴더를 AI로 연결합니다.</small></span></li>
-          <li><strong>2</strong><span><b>디자인과 작업 설정</b><small>원하는 모습과 다음 작업을 정합니다.</small></span></li>
-          <li><strong>3</strong><span><b>추천과 기록으로 이어서 작업</b><small>필요한 문서와 최근 흐름을 다시 찾습니다.</small></span></li>
-        </ol>
-      </section>
-
-      <section class="tools-section" aria-labelledby="toolsTitle" data-reveal>
-        <div class="section-heading"><h2 id="toolsTitle">도구 바로가기</h2></div>
-        <div class="tool-list">
-          <a href="design-controller.html" data-vas-link data-vas-project-link data-track="tool.design">
-            <span class="tool-icon icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 20 4-1 10-10-3-3L5 16zM13 8l3 3M15 4l2-2 3 3-2 2"/></svg></span>
-            <span><strong>디자인 스튜디오</strong><small>화면의 색상과 구성을 정합니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </a>
-          <a href="knowledge-search.html" data-vas-link data-vas-project-link data-track="tool.knowledge">
-            <span class="tool-icon icon-green" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></span>
-            <span><strong>내부 지식 검색</strong><small>VAS 문서와 프로젝트 내용을 찾습니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </a>
-          <a href="memory-center.html" data-vas-link data-track="tool.memory">
-            <span class="tool-icon icon-purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5v5h5M5.5 9a8 8 0 1 1-.5 6"/><path d="M12 7v5l3 2"/></svg></span>
-            <span><strong>내 사용 기록</strong><small>최근 작업과 저장된 기록을 확인합니다.</small></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </a>
-        </div>
-      </section>
-
-      <section class="projects-section" aria-labelledby="projectsTitle" data-reveal>
-        <div class="section-heading"><h2 id="projectsTitle">내 프로젝트</h2><button type="button" id="refreshProjects">새로고침</button></div>
-        <div id="projectList" class="project-list">
-          <div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><strong>아직 프로젝트가 없습니다.</strong><span>새 프로젝트를 만들거나 기존 프로그램을 AI로 연결하세요.</span></div>
-        </div>
-      </section>
-
-      <section id="nextRecommendation" class="recommendation" aria-labelledby="recommendationTitle" data-reveal hidden>
-        <span class="recommendation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span>
-        <div><h2 id="recommendationTitle">다음 작업 추천</h2><p id="recommendationCopy"></p></div>
-        <a id="recommendationLink" href="knowledge-search.html" data-vas-link data-vas-project-link>추천 작업 열기<svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
-      </section>
-    </div>
+      <h2 id="startTitle" class="sr-only">시작 방식 선택</h2>
+      <div class="start-grid" aria-labelledby="startTitle">
+        <a class="start-card" href="client-application.html" data-vas-link data-track="project.new">
+          <span class="action-index" aria-hidden="true">01</span>
+          <span class="start-copy"><strong>새 프로젝트 만들기</strong><small>요구사항과 디자인을 정하고 AI 전달 JSON을 만듭니다.</small></span>
+          <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </a>
+        <a class="start-card import" href="project-import.html" data-vas-link data-track="project.import">
+          <span class="action-index" aria-hidden="true">02</span>
+          <span class="start-copy"><strong>기존 프로그램 AI로 연결</strong><small>폴더를 읽기 전용으로 분석하고 AI 전달 JSON을 만듭니다.</small></span>
+          <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </section>
   </main>
 
   <script src="vas-config.js"></script>
   <script src="storage-utils.js"></script>
   <script src="theme-state.js"></script>
   <script src="editorial-theme.js"></script>
-  <script src="runtime-client.js"></script>
-  <script src="project-context.js"></script>
-  <script src="knowledge-index.js"></script>
   <script src="personalization-store.js"></script>
-  <script src="rag-lite.js"></script>
-  <script src="project-rail.js"></script>
+  <script src="setup-tools.js"></script>
   <script src="vas-hub.js"></script>
 </body>
 </html>

@@ -77,6 +77,16 @@ function New-VASHandoffCliRequest {
     if ($format -notin @('json', 'reviewed-zip')) { throw 'HANDOFF_INPUT_INVALID' }
     $approved = @(Get-VASHandoffValue $Body 'approvedFiles' @())
     if ($approved.Count -gt 100) { throw 'HANDOFF_TOO_LARGE' }
+    $context = Get-VASHandoffContext $Root $resolved.project
+    $requestedContext = Get-VASHandoffValue $Body 'context' $null
+    if ($null -ne $requestedContext) {
+        $requestedRequirements = Get-VASHandoffValue $requestedContext 'requirements' $null
+        $requestedDesign = Get-VASHandoffValue $requestedContext 'design' $null
+        if ($null -ne $requestedRequirements) { $context.requirements = $requestedRequirements }
+        if ($null -ne $requestedDesign) { $context.design = $requestedDesign }
+    }
+    $context.rag = [ordered]@{ included = $false; items = @() }
+    $context.preferences = [ordered]@{ included = $false; items = @() }
     return [ordered]@{
         source = $resolved.source
         sourceType = $resolved.sourceType
@@ -84,7 +94,7 @@ function New-VASHandoffCliRequest {
         goal = $resolved.goal
         summary = [string](Get-VASHandoffValue $Body 'summary' '')
         task = Get-VASHandoffValue $Body 'task' ([ordered]@{ request = ''; constraints = @(); acceptanceCriteria = @() })
-        context = Get-VASHandoffContext $Root $resolved.project
+        context = $context
         mode = $mode
         snapshotId = [string](Get-VASHandoffValue $Body 'snapshotId' '')
         format = $format

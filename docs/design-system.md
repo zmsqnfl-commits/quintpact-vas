@@ -1,6 +1,6 @@
 # 디자인 시스템 (Design System)
 
-이 문서는 VAS 2.6.2 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
+이 문서는 VAS 2.6.3 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
 과거의 고정된(하드코딩된) 다크모드 룰은 폐기되었으며, 메인 디자인 시스템과 산출물 생성은 **내장 하이브리드 디자인 스튜디오**를 기준으로 합니다.
 
 ---
@@ -9,7 +9,7 @@
 
 Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/design-controller.html`과 `src/design-presets.js`의 토큰/프리셋** 또는 사용자가 제공한 산출물을 기준으로 삼아야 합니다.
 
-- **비개발자 권장 흐름:** `Run-VAS-System.bat` 실행 → VAS 허브 → 디자인 스튜디오 → 프리셋/토큰 조정 → JSON/CSS/Tailwind 추출.
+- **비개발자 권장 흐름:** `Run-VAS-System.bat` 실행 → 새 프로젝트 또는 기존 프로그램 선택 → 디자인 설정 → `VAS-AI-HANDOFF.json` 저장.
 - **디자인 스튜디오 위치:** `src/design-controller.html`
 - **신규 기본값:** `awwwards` 프리셋과 `Editorial Motion` Taste Profile을 사용합니다.
 - 사용자(팀 리드)가 특정 디자인 시스템, 토큰 JSON, 또는 산출물을 제공하면 해당 파일을 최상위 시각 명세로 간주합니다.

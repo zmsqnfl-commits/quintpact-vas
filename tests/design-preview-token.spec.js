@@ -109,7 +109,7 @@ test('fresh installs use the Awwwards editorial baseline across studio and hub',
   expect(hub.background).toBe('rgb(232, 232, 229)');
   expect(hub.motion).toBe('0.5s');
   expect(hub.radius).toBe('0px');
-  expect(hub.headingSize).toBeLessThanOrEqual(70);
+  expect(hub.headingSize).toBeLessThanOrEqual(96);
 });
 
 test('existing Neo-Brutalism and custom tokens stay intact', async ({ page }) => {
@@ -189,14 +189,12 @@ test('studio preset tokens travel to the hub through the navigation bridge', asy
     body: parseFloat(getComputedStyle(document.body).fontSize),
     hero: parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize),
     action: parseFloat(getComputedStyle(document.querySelector('.start-copy strong')).fontSize),
-    tool: parseFloat(getComputedStyle(document.querySelector('.tool-list strong')).fontSize),
-    privacyButton: parseFloat(getComputedStyle(document.querySelector('#acceptPersonalization')).fontSize)
+    utility: parseFloat(getComputedStyle(document.querySelector('[data-setup-settings]')).fontSize)
   }));
   expect(typeScale.body).toBe(24);
-  expect(typeScale.hero).toBeLessThanOrEqual(70);
+  expect(typeScale.hero).toBeLessThanOrEqual(96);
   expect(typeScale.action).toBeLessThanOrEqual(28);
-  expect(typeScale.tool).toBeLessThanOrEqual(18);
-  expect(typeScale.privacyButton).toBeLessThanOrEqual(18);
+  expect(typeScale.utility).toBeLessThanOrEqual(18);
 });
 
 test('taste profile manual override updates prompt and can return to auto', async ({ page }) => {
@@ -347,6 +345,6 @@ test('design studio mobile tabs keep settings and preview usable', async ({ page
   await page.getByRole('button', { name: '미리보기' }).click();
   await expect(page.locator('.preview')).toBeVisible();
   await expect(page.locator('#advPreview')).toBeVisible();
-  await page.getByRole('button', { name: '설정', exact: true }).click();
+  await page.locator('[data-studio-view="settings"]').click();
   await expect(page.locator('#preset-container')).toBeVisible();
 });

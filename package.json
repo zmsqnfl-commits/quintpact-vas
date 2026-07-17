@@ -1,6 +1,6 @@
 {
   "name": "quintpact-vas",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "private": true,
   "scripts": {
     "version:check": "python scripts/check-version.py",

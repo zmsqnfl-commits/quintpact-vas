@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.2 — 디자인 스튜디오</title>
+  <title>VAS 2.6.3 — 디자인 스튜디오</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
+  <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="design-controller.css">
 </head>
 <body>
   <header class="studio-topbar">
-    <a href="vas-hub.html" data-vas-link>← 허브</a>
+    <a href="vas-hub.html" data-vas-link>← 시작</a>
     <strong>VAS 디자인 스튜디오</strong>
-    <button type="button" onclick="undoTheme()">이전 설정</button>
+    <div class="studio-tools"><div class="setup-actions"><button type="button" data-setup-help>사용 방법</button><button type="button" data-setup-settings>설정</button></div><button type="button" onclick="undoTheme()">이전 설정</button></div>
   </header>
 
   <nav class="mobile-view-tabs" aria-label="모바일 보기 전환">
@@ -23,7 +24,7 @@
   <main class="app" data-mobile-view="settings">
     <aside class="controls" id="controlsPanel" aria-label="디자인 설정">
       <div class="controls-intro">
-        <p class="eyebrow">PROJECT DESIGN / 2.6.2</p>
+        <p class="eyebrow">PROJECT DESIGN / 2.6.3</p>
         <h1>프로젝트의<br>보이는 기준.</h1>
         <p>프리셋을 고르고 필요한 값만 조정하세요. 오른쪽 미리보기에 바로 반영됩니다.</p>
       </div>
@@ -102,7 +103,7 @@
 
   <footer class="studio-applybar">
     <button type="button" class="reset-theme" onclick="undoTheme()">변경 사항 되돌리기</button>
-    <button type="button" class="apply-theme" id="applyProjectTheme">이 프로젝트에 적용하고 계속 <span aria-hidden="true">→</span></button>
+    <button type="button" class="apply-theme" id="applyProjectTheme">설정 저장하고 돌아가기 <span aria-hidden="true">→</span></button>
     <p id="applyProjectStatus" role="status" hidden></p>
   </footer>
 
@@ -116,6 +117,7 @@
   <script src="knowledge-index.js"></script>
   <script src="rag-lite.js"></script>
   <script src="personalization-store.js"></script>
+  <script src="setup-tools.js"></script>
   <script src="project-rail.js"></script>
   <script src="design-presets.js"></script>
   <script src="design-taste-pack.js"></script>

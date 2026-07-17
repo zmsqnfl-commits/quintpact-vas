@@ -22,7 +22,7 @@ test('web AI handoff produces safe stable JSON and provider-only prompt changes'
   await installFolder(page);
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('#selectFolder').click();
-  await page.locator('#taskRequest').fill('모바일 오류를 고쳐 주세요.');
+  await page.locator('#taskRequest').fill('모바일 오류를 고쳐 주세요. contact@example.com api_key=sk-proj-1234567890abcdef');
   await page.locator('#analyzeButton').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
   await expect(page.locator('#analysisGrid')).toContainText('JavaScript/TypeScript');
@@ -30,8 +30,10 @@ test('web AI handoff produces safe stable JSON and provider-only prompt changes'
   const firstJson = await page.locator('#previewContent').textContent();
   expect(firstJson).not.toContain('.env');
   expect(firstJson).not.toContain('C:\\');
+  expect(firstJson).not.toContain('contact@example.com');
+  expect(firstJson).not.toContain('sk-proj-1234567890abcdef');
   await page.locator('#continueReview').click();
-  await expect(page.locator('#sourceModeLabel')).toBeHidden();
+  await expect(page.locator('#handoffDesignPreset')).toHaveValue('awwwards');
   await page.locator('#provider').selectOption('claude');
   await page.locator('[data-preview="prompt"]').click();
   await expect(page.locator('#previewContent')).toContainText('Claude에서 원본 프로젝트 폴더를 연 뒤');
@@ -46,6 +48,7 @@ test('download and clipboard fallback finish without executing hostile file name
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => { document.execCommand = () => true; });
   await page.locator('#selectFolder').click();
+  await page.locator('#taskRequest').fill('안전하게 오류를 고쳐 주세요.');
   await page.locator('#analyzeButton').click();
   await page.locator('#continueReview').click();
   const download = page.waitForEvent('download');

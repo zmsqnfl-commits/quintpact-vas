@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backward-compatible wrapper for the VAS 2.6.2 migration engine."""
+"""Backward-compatible wrapper for the VAS 2.6.3 migration engine."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from vas_project_import import MigrationError, MigrationManager
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="VAS 2.6.2 마이그레이션 호환 명령")
+    parser = argparse.ArgumentParser(description="VAS 2.6.3 마이그레이션 호환 명령")
     parser.add_argument("source", help="원래 프로젝트가 있는 폴더")
     parser.add_argument("--dry-run", action="store_true", help="읽기 전용 분석만 수행")
     parser.add_argument("--delete-source", action="store_true",

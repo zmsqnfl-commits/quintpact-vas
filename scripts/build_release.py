@@ -1,4 +1,4 @@
-"""VAS 2.6.2 재현 가능한 Windows/독립 신청서/Pages 배포 빌더."""
+"""VAS 2.6.3 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -31,10 +31,12 @@ BLOCKED_NAMES.update({"credentials.json", "secrets.json", "service-account.json"
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 CLIENT_ASSETS = [
     "client-application.html", "client-style.css", "client-components.css",
-    "client-print.css", "client-i18n.js", "client-form.js", "client-draft.js",
+    "client-print.css", "client-form.js", "client-draft.js",
     "client-export.js", "client-application-init.js", "vas-config.js",
     "storage-utils.js", "theme-state.js", "editorial-shell.css",
-    "editorial-theme.js", "project-context.js", "project-rail.js",
+    "editorial-theme.js", "setup-tools.css", "setup-tools.js",
+    "design-presets.js", "design-taste-pack.js", "setup-design.js",
+    "agent-handoff-web.js",
 ]
 
 
@@ -140,7 +142,7 @@ def build_windows(stage: Path) -> Path:
     for dirname in FULL_DIRS:
         copy_tree(ROOT / dirname, root / dirname)
     (root / "README.md").write_text(
-        """# VAS 2.6.2 Windows 실행본
+        """# VAS 2.6.3 Windows 실행본
 
 ## 시작
 
@@ -148,13 +150,13 @@ def build_windows(stage: Path) -> Path:
 
 1. ZIP을 새 폴더에 **전체 압축 해제**합니다.
 2. `Run-VAS-System.bat`를 더블클릭합니다.
-3. 허브에서 새 프로젝트를 만들거나 **기존 프로그램 AI로 연결**을 선택합니다.
+3. 시작 화면에서 새 프로젝트를 만들거나 **기존 프로그램 AI로 연결**을 선택합니다.
 
-Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램 가져오기에는 Python 3.10 이상이 필요하며, 준비되지 않은 경우 화면에서 설치 안내가 표시됩니다. 신청서·디자인·내부 문서 검색은 Python 없이도 사용할 수 있습니다.
+Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램 정밀 분석에는 Python 3.10 이상이 필요하며, 준비되지 않은 경우 화면에서 안내합니다. 새 프로젝트 설정은 Python 없이도 사용할 수 있습니다.
 
-기존 프로그램은 폴더 선택 → 안전 분석 → 내용 확인 → AI 전달팩 저장 순서로 연결합니다. 코딩 도구에서 원본 폴더를 열고 `VAS-AI-HANDOFF.json`을 첨부한 뒤 복사된 프롬프트를 붙여넣으세요. 원본을 VAS 안에 복사하려는 경우에만 화면 아래 고급 기능을 사용합니다.
+새 프로젝트와 기존 프로그램 모두 마지막에 `VAS-AI-HANDOFF.json`을 만듭니다. 코딩 도구에서 작업 폴더를 열고 JSON을 첨부한 뒤 복사된 프롬프트를 붙여넣으세요. 이후에는 VAS를 닫아도 됩니다.
 
-개인화 메모리와 프로젝트 RAG는 사용자가 동의한 경우에만 이 기기에서 작동합니다. 비밀 후보와 절대 경로는 제외하거나 가리며 VAS가 외부 서비스로 자동 전송하지 않습니다. RAG 맥락을 넣어 복사한 프롬프트를 외부 AI에 붙여넣으면 그 맥락도 전달될 수 있습니다.
+작업 기억은 사용자가 설정에서 직접 켠 경우에만 이 기기에서 작동합니다. 설정에서 언제든 중지·삭제할 수 있으며 원본 기록은 최종 JSON에 들어가지 않습니다. 비밀 후보와 절대 경로는 항상 제외합니다.
 
 문제가 생기면 BAT 창의 안내를 확인한 뒤 다시 실행하세요. 사용하지 않으면 로컬 서버는 기본 30분 뒤 자동 종료됩니다.
 """,
@@ -175,6 +177,11 @@ def build_client(stage: Path) -> Path:
             html = source.read_text(encoding="utf-8")
             html = html.replace("<body>", '<body data-mode="standalone">', 1)
             html = re.sub(r'<a class="back-link" id="hubBackLink".*?</a>', '<div class="back-link external-note">공유받은 신청서입니다</div>', html)
+            html = re.sub(
+                r'<a href="design-controller\.html".*?</a><p>새 창에서 변경한 값은 이 화면으로 돌아오면 자동 반영됩니다\.</p>',
+                '<p>선택한 디자인 방향이 JSON에 반영됩니다.</p>',
+                html,
+            )
             html = re.sub(r'\s*<button[^>]+id="createProjectButton".*?</button>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectNext".*?</a>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectHandoff".*?</a>', "", html)
@@ -185,7 +192,7 @@ def build_client(stage: Path) -> Path:
     for filename in ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md"):
         shutil.copy2(ROOT / filename, root / filename)
     (root / "README.md").write_text(
-        "# VAS Client Form\n\nZIP을 새 폴더에 전체 압축 해제한 뒤 `index.html`을 여세요. 작성 결과는 JSON으로 저장되며 파일 내용은 업로드되지 않습니다. 초안은 복구를 위해 이 브라우저에 저장되며 화면에서 자동 저장을 끌 수 있고 JSON 저장 뒤 삭제됩니다.\n",
+        "# VAS Setup Form\n\nZIP을 새 폴더에 전체 압축 해제한 뒤 `index.html`을 여세요. 요구사항과 디자인을 확인하면 `VAS-AI-HANDOFF.json`이 만들어집니다. 파일 내용과 연락처는 포함하지 않으며 초안은 JSON 저장 뒤 삭제됩니다.\n",
         encoding="utf-8",
     )
     write_json(root / "manifest.json", manifest_for(root, "client-form", ["index.html"]))

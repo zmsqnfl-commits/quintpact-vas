@@ -154,6 +154,9 @@ function showDone() {
     document.getElementById('navWrap').style.display = 'none';
     const ds = document.getElementById('doneScreen');
     ds.classList.add('active');
+    if (window.VASNewHandoff) window.VASNewHandoff.prepare().catch(function () {
+        document.getElementById('handoffReview').textContent = '최종 내용을 준비하지 못했습니다. 입력 내용을 다시 확인해 주세요.';
+    });
     if (window.VASPersonalization) {
         const selected = name => Array.from(document.querySelectorAll(`[name="${name}"]:checked`)).map(input => input.value || 'selected');
         const capabilities = ['vision', 'audio', 'text', 'auto'].filter(name => document.querySelector(`[name="sense_${name}"]`).checked);

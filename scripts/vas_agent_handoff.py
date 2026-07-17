@@ -23,7 +23,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 1
-VAS_VERSION = "2.6.2"
+VAS_VERSION = "2.6.3"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500
@@ -60,6 +60,8 @@ SECRET_CONTENT = [
     re.compile(r"\b(?:api[_-]?key|access[_-]?token|client[_-]?secret|password)\b\s*[:=]\s*['\"]?[^\s'\"]{8,}", re.I),
     re.compile(r"\b(?:sk|ghp|github_pat|xox[baprs])[-_][A-Za-z0-9_-]{16,}\b"),
     re.compile(r"https?://[^\s/@:]+:[^\s/@]+@", re.I),
+    re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I),
+    re.compile(r"\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4}\b"),
 ]
 ABSOLUTE_PATH = re.compile(r"(?i)(?:[A-Z]:[\\/]|\\\\[^\\\s]+\\[^\\\s]+|/(?:Users|home|var|etc)/)[^\s'\"]*")
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")

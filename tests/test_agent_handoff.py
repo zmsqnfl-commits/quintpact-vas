@@ -1,4 +1,4 @@
-"""Safety and compatibility tests for VAS 2.6.2 AI handoff packages."""
+"""Safety and compatibility tests for VAS 2.6.3 AI handoff packages."""
 from __future__ import annotations
 
 import hashlib
@@ -48,7 +48,7 @@ class AgentHandoffTests(unittest.TestCase):
             "source": str(self.source),
             "projectName": "기존 프로그램",
             "sourceType": "existing",
-            "task": {"request": "C:\\Users\\person\\secret 프로젝트를 고쳐 주세요."},
+            "task": {"request": "C:\\Users\\person\\secret 프로젝트를 고쳐 주세요. contact@example.com 010-1234-5678"},
             "context": {
                 "rag": {"included": True, "items": [{"title": f"항목 {index}", "excerpt": "x" * 1200} for index in range(8)]},
                 "preferences": {"included": False, "items": []},
@@ -68,6 +68,8 @@ class AgentHandoffTests(unittest.TestCase):
         self.assertNotIn(".env", paths)
         self.assertNotIn(str(self.source), encoded)
         self.assertNotIn("never-export-this", encoded)
+        self.assertNotIn("contact@example.com", encoded)
+        self.assertNotIn("010-1234-5678", encoded)
         self.assertIn("[absolute-path]", document["task"]["request"])
         self.assertEqual(len(document["context"]["rag"]["items"]), 5)
         self.assertLessEqual(len(document["context"]["rag"]["items"][0]["excerpt"]), 800)

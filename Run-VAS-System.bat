@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul 2>&1
-title VAS 2.6.2
+title VAS 2.6.3
 cd /d "%~dp0"
 
 if not exist "src\vas-hub.html" goto :missing

@@ -16,7 +16,7 @@ class ClientFormTests(unittest.TestCase):
     def test_required_files_exist(self):
         names = [
             "client-application.html", "client-form.js", "client-draft.js",
-            "client-export.js", "client-i18n.js", "client-application-init.js",
+            "client-export.js", "agent-handoff-web.js", "client-application-init.js",
         ]
         self.assertTrue(all((SRC / name).is_file() for name in names))
 
@@ -55,13 +55,12 @@ class ClientFormTests(unittest.TestCase):
         self.assertNotIn("readAsDataURL", code)
         self.assertNotIn("arrayBuffer", code)
 
-    def test_bilingual_copy_matches_local_json_flow(self):
-        code = self.read("client-i18n.js")
-        self.assertIn("ko:", code)
-        self.assertIn("en:", code)
-        self.assertIn("파일 내용은 업로드되지 않습니다", code)
-        self.assertIn("File contents are not uploaded", code)
-        self.assertNotIn('btnSubmit: "Submit"', code)
+    def test_common_json_contract_is_used(self):
+        code = self.read("agent-handoff-web.js")
+        self.assertIn("buildNew", code)
+        self.assertIn("VAS-AI-HANDOFF.json", code)
+        self.assertIn("sourceType: 'new'", code)
+        self.assertIn("sourceType: 'existing'", code)
 
     def test_standalone_builder_removes_internal_modules(self):
         code = (ROOT / "scripts" / "build_release.py").read_text(encoding="utf-8")

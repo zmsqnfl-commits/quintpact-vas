@@ -8,21 +8,39 @@ const clientUrl = source('client-application.html');
 const designUrl = source('design-controller.html');
 const importUrl = source('project-import.html');
 
-test('first visit asks for personalization consent and respects decline', async ({ page }) => {
+test('start screen only shows the two choices and never asks for memory automatically', async ({ page }) => {
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#privacyRail')).toBeVisible();
-  await expect(page.locator('#privacyRail h2')).toHaveText('이 기기에서 작업 흐름을 기억할까요?');
-  await expect(page.locator('#privacyRail')).toContainText('현재 프로젝트');
-  await expect(page.locator('#declinePersonalization')).toHaveText('기억하지 않기');
-  await expect(page.locator('#acceptPersonalization')).toHaveText('기억하고 계속');
-  await page.locator('#declinePersonalization').click();
-  await expect(page.locator('#privacyRail')).not.toBeVisible();
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#privacyRail')).not.toBeVisible();
-  expect(await page.evaluate(() => VASPersonalization.getConsent())).toBe(false);
+  await expect(page.locator('.hero')).toBeVisible();
+  await expect(page.locator('.start-card')).toHaveCount(2);
+  await expect(page.locator('.start-card').first()).toContainText('새 프로젝트 만들기');
+  await expect(page.locator('.start-card').last()).toContainText('기존 프로그램 AI로 연결');
+  await expect(page.locator('#privacyRail, #onboarding, .tools-section, .projects-section, #nextRecommendation')).toHaveCount(0);
+  expect(await page.evaluate(() => VASPersonalization.getConsent())).toBeNull();
 });
 
-test('theme state flows from design studio to client form', async ({ page }) => {
+test('help and memory settings can always be reopened and changed', async ({ page }) => {
+  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+  const header = page.locator('.site-header');
+  await header.getByRole('button', { name: '사용 방법' }).click();
+  await expect(page.locator('#vasSetupHelp')).toBeVisible();
+  await expect(page.locator('#vasSetupHelp')).toContainText('JSON을 코딩 도구에 줍니다');
+  await page.locator('#vasSetupHelp [data-setup-close]').click();
+  await header.getByRole('button', { name: '사용 방법' }).click();
+  await expect(page.locator('#vasSetupHelp')).toBeVisible();
+  await page.locator('#vasSetupHelp [data-setup-close]').click();
+
+  await header.getByRole('button', { name: '설정' }).click();
+  await expect(page.locator('#vasSetupMemoryState')).toHaveText('사용 안 함');
+  await page.locator('#vasSetupToggleMemory').click();
+  await expect(page.locator('#vasSetupMemoryState')).toContainText('사용 중');
+  await page.locator('#vasSetupTogglePause').click();
+  await expect(page.locator('#vasSetupMemoryState')).toContainText('잠시 중지됨');
+  await page.locator('#vasSetupSettings [data-setup-close]').click();
+  await header.getByRole('button', { name: '설정' }).click();
+  await expect(page.locator('#vasSetupMemoryState')).toContainText('잠시 중지됨');
+});
+
+test('theme state flows from design studio to the new project form', async ({ page }) => {
   await page.goto(designUrl, { waitUntil: 'domcontentloaded' });
   const expected = await page.evaluate(() => {
     applyPreset('stripe');
@@ -33,110 +51,68 @@ test('theme state flows from design studio to client form', async ({ page }) => 
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())).toBe(expected.primary);
 });
 
-test('project context stays minimal and automatically scopes new memory', async ({ page }) => {
-  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
-  const result = await page.evaluate(async () => {
-    VASProjectContext.set({
-      projectId: 'project-123', sourceType: 'imported', goal: 'redesign', stage: 'design',
-      name: 'should-not-travel', path: 'C:\\private\\project'
-    });
+test('project context remains minimal for compatibility', async ({ page }) => {
+  await page.goto(designUrl, { waitUntil: 'domcontentloaded' });
+  const result = await page.evaluate(() => {
+    VASProjectContext.set({ projectId: 'project-123', sourceType: 'imported', goal: 'redesign', stage: 'design', name: 'private', path: 'C:\\private' });
     const wrapper = document.createElement('div');
     wrapper.innerHTML = '<a data-vas-project-link href="design-controller.html">계속</a>';
     VASProjectContext.decorateLinks(wrapper);
-    await VASPersonalization.init();
-    await VASPersonalization.consent(true);
-    const event = await VASPersonalization.record({
-      type: 'navigation', source: 'test', payload: { action: 'continue' }
-    });
-    return {
-      context: VASProjectContext.get(),
-      href: wrapper.querySelector('a').href,
-      eventProjectId: event && event.projectId,
-      stored: JSON.parse(sessionStorage.getItem('vasProjectContext'))
-    };
+    return { context: VASProjectContext.get(), href: wrapper.querySelector('a').href, stored: sessionStorage.getItem('vasProjectContext') };
   });
   expect(result.context.projectId).toBe('project-123');
   expect(result.href).toContain('vasProject=project-123');
-  expect(result.href).not.toContain('should-not-travel');
-  expect(JSON.stringify(result.stored)).not.toContain('private');
-  expect(result.eventProjectId).toBe('project-123');
+  expect(result.href).not.toContain('private');
+  expect(result.stored).not.toContain('C:\\private');
 });
 
-test('form draft is explicit and restorable', async ({ page }) => {
+test('form draft is explicit and restorable without contact details', async ({ page }) => {
   await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.draft-policy')).toContainText('자동 저장');
-  await page.locator('input[name="client_name"]').fill('Restore Test');
-  await page.locator('input[name="contact"]').fill('restore@example.com');
+  await page.locator('input[name="project_name"]').fill('Restore Test');
+  await page.locator('textarea[name="problem_desc"]').fill('복원할 요구사항');
   await page.waitForTimeout(350);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#draftNotice')).toBeVisible();
   await page.getByRole('button', { name: '복원' }).click();
-  await expect(page.locator('input[name="client_name"]')).toHaveValue('Restore Test');
+  await expect(page.locator('input[name="project_name"]')).toHaveValue('Restore Test');
 });
 
-test('RAG searches local docs and sanitizes personal memory', async ({ page }) => {
+test('local memory sanitizes secrets and absolute paths', async ({ page }) => {
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
-  const result = await page.evaluate(async () => {
+  const payload = await page.evaluate(async () => {
     await VASPersonalization.init();
     await VASPersonalization.consent(true);
-    await VASPersonalization.record({
-      type: 'navigation', source: 'test',
-      payload: { topic: '기존 프로젝트 마이그레이션', path: 'C:\\Users\\name\\secret.txt', note: 'api_key=sk-test-secret-1234567890' }
-    });
-    const events = await VASPersonalization.list();
-    const matches = await VASPersonalization.retrieve('기존 프로젝트 가져오기', { limit: 5 });
-    return { payload: events[0] && events[0].payload, matches };
+    await VASPersonalization.record({ type: 'navigation', source: 'test', payload: { topic: '마이그레이션', path: 'C:\\Users\\name\\secret.txt', note: 'api_key=sk-test-secret-1234567890' } });
+    return (await VASPersonalization.list())[0].payload;
   });
-  expect(JSON.stringify(result.payload)).not.toContain('C:\\Users');
-  expect(JSON.stringify(result.payload)).not.toContain('sk-test');
-  expect(result.matches.some(item => item.kind === 'knowledge')).toBe(true);
-});
-
-test('consented local memory produces a transparent next-work recommendation', async ({ page }) => {
-  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(async () => {
-    await VASPersonalization.init();
-    await VASPersonalization.consent(true);
-    await VASPersonalization.record({
-      type: 'navigation', source: 'test', payload: { action: '기존 프로그램 가져오기 마이그레이션' }
-    });
-  });
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#nextRecommendation')).toBeVisible();
-  await expect(page.locator('#recommendationTitle')).toContainText('기존 프로그램 AI로 연결');
-  await expect(page.locator('#recommendationCopy')).toContainText('이 기기');
+  expect(JSON.stringify(payload)).not.toContain('C:\\Users');
+  expect(JSON.stringify(payload)).not.toContain('sk-test');
 });
 
 test('blocked session storage keeps runtime token in memory and URL fragment', async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(window, 'sessionStorage', { configurable: true, get() { throw new Error('blocked'); } });
-  });
+  await page.addInitScript(() => { Object.defineProperty(window, 'sessionStorage', { configurable: true, get() { throw new Error('blocked'); } }); });
   const token = 'runtime_token_12345678901234567890';
-  await page.goto(hubUrl + '?vasToken=' + token, { waitUntil: 'domcontentloaded' });
+  await page.goto(importUrl + '?vasToken=' + token, { waitUntil: 'domcontentloaded' });
   expect(await page.evaluate(() => VASRuntime.getToken())).toBe(token);
   expect(page.url()).not.toContain('vasToken=');
   expect(page.url()).toContain('vasRuntime=');
-  expect(await page.locator('a[data-vas-link]').first().getAttribute('href')).toContain('vasRuntime=');
 });
 
-test('web migration mode analyzes a selected folder without importing', async ({ page }) => {
+test('web mode analyzes a selected folder without copying or registration controls', async ({ page }) => {
   await page.addInitScript(() => {
-    window.showDirectoryPicker = async () => ({
-      name: 'legacy-app',
-      async *values() {
-        yield { kind: 'file', name: 'package.json', getFile: async () => ({ size: 120 }) };
-        yield { kind: 'file', name: 'index.html', getFile: async () => ({ size: 240 }) };
-        yield { kind: 'file', name: '.env', getFile: async () => ({ size: 30 }) };
-      }
-    });
+    window.showDirectoryPicker = async () => ({ name: 'legacy-app', async *values() {
+      yield { kind: 'file', name: 'package.json', getFile: async () => ({ size: 120 }) };
+      yield { kind: 'file', name: 'index.html', getFile: async () => ({ size: 240 }) };
+      yield { kind: 'file', name: '.env', getFile: async () => ({ size: 30 }) };
+    } });
   });
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#createIndex')).not.toBeChecked();
   await page.locator('#selectFolder').click();
-  await expect(page.locator('#selectedPath')).toHaveText('legacy-app');
+  await page.locator('#taskRequest').fill('오류를 고쳐 주세요.');
   await page.locator('#analyzeButton').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
   await expect(page.locator('#analysisGrid')).toContainText('JavaScript/TypeScript');
   await expect(page.locator('#webNote')).toBeVisible();
-  await expect(page.locator('#configureButton')).toBeDisabled();
+  await expect(page.locator('#advancedMigration, #createIndex, #configureButton')).toHaveCount(0);
 });

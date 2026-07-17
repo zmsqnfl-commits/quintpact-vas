@@ -1,224 +1,117 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAS 2.6.2 — 새 프로젝트</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
-    <link rel="stylesheet" href="editorial-shell.css">
-    <link rel="stylesheet" href="client-style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAS 2.6.3 — 새 프로젝트</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
+  <link rel="stylesheet" href="editorial-shell.css">
+  <link rel="stylesheet" href="setup-tools.css">
+  <link rel="stylesheet" href="client-style.css">
 </head>
 <body>
-
-    <div class="layout-wrapper">
-
-        <!-- LEFT: Hero -->
-        <div class="hero-section no-print">
-            <div>
-                <a class="back-link" id="hubBackLink" href="vas-hub.html" data-vas-link data-i18n="backHub">← VAS 허브로 돌아가기</a>
-                <div class="hero-meta" data-i18n="heroMeta">VAS /// Client App</div>
-                <div class="active-theme-label" id="currentThemeDisplay" style="margin-top: 8px; font-size: 13px; font-family: monospace; opacity: 0.5; color: var(--bg-color);">Theme: <span id="themeNameSpan">Custom</span></div>
-                <div class="hero-title">
-                    <h1 data-i18n="heroTitle">\ud504\ub85c\uc81d\ud2b8<br>\uc758\ub8b0 \uc2e0\uccad\uc11c</h1>
-                    <p data-i18n="heroDesc">\uc804\ubb38\uc801\uc778 \uc2dc\uc2a4\ud15c \uc124\uacc4\ub97c \uc704\ud55c<br>\ud504\ub85c\uc81d\ud2b8 \uc694\uad6c\uc0ac\ud56d \uc815\uc758\uc11c</p>
-                </div>
-            </div>
-            <div class="progress-indicator" id="progressText">
-                01<span>/05</span>
-            </div>
-            <div style="align-self:flex-start;">
-                <button type="button" class="vas-btn-clear no-print" onclick="clearForm()" data-i18n="btnClear">\u21ba \uc0c8\ub85c \uc791\uc131\ud558\uae30</button>
-            </div>
+  <div class="layout-wrapper">
+    <aside class="hero-section no-print">
+      <div>
+        <div class="client-topline">
+          <a class="back-link" id="hubBackLink" href="vas-hub.html" data-vas-link>← 시작으로</a>
+          <div class="setup-actions" aria-label="도움말과 설정"><button type="button" data-setup-help>사용 방법</button><button type="button" data-setup-settings>설정</button></div>
         </div>
+        <div class="hero-meta">VAS /// NEW PROJECT</div>
+        <div class="active-theme-label">Design: <span id="themeNameSpan">Awwwards</span></div>
+        <div class="hero-title"><h1>새 프로젝트<br>설정.</h1><p>질문을 하나씩 확인한 뒤 코딩 AI가 바로 읽을 JSON을 만듭니다.</p></div>
+      </div>
+      <div class="progress-indicator" id="progressText">01<span>/05</span></div>
+      <button type="button" class="vas-btn-clear no-print" onclick="clearForm()">↺ 새로 시작</button>
+    </aside>
 
-        <!-- RIGHT: Form -->
-        <div class="form-section">
-            <div class="draft-policy no-print">
-                <span id="draftPolicyText">입력 내용은 복구를 위해 이 브라우저에 자동 저장됩니다.</span>
-                <button type="button" id="draftPolicyToggle" onclick="VASClientDraft.toggle()">자동 저장 끄기</button>
-            </div>
-            <div class="draft-notice no-print" id="draftNotice" hidden>
-                <div><strong>작성 중인 내용이 있습니다.</strong><span id="draftSavedAt"></span></div>
-                <div class="draft-actions">
-                    <button type="button" onclick="VASClientDraft.restore()">복원</button>
-                    <button type="button" onclick="VASClientDraft.discard()">삭제</button>
-                </div>
-            </div>
-            <form id="projectForm">
+    <main class="form-section">
+      <div class="draft-policy no-print"><span id="draftPolicyText">입력 내용은 복구를 위해 이 브라우저에 자동 저장됩니다.</span><button type="button" id="draftPolicyToggle" onclick="VASClientDraft.toggle()">자동 저장 끄기</button></div>
+      <div class="draft-notice no-print" id="draftNotice" hidden><div><strong>작성 중인 내용이 있습니다.</strong><span id="draftSavedAt"></span></div><div class="draft-actions"><button type="button" onclick="VASClientDraft.restore()">복원</button><button type="button" onclick="VASClientDraft.discard()">삭제</button></div></div>
 
-                <!-- Step 1 -->
-                <div class="step active" data-step="1">
-                    <div class="step-header">
-                        <h2 data-i18n="step1Title">Client Info</h2>
-                        <p data-i18n="step1Desc">\uc6d0\ud65c\ud55c \uc18c\ud1b5\uc744 \uc704\ud574 \uae30\ubcf8 \uc815\ubcf4\ub97c \uc785\ub825\ud574 \uc8fc\uc138\uc694.</p>
-                    </div>
-                    <div class="q">
-                        <label for="clientName" data-i18n="labelName">기업명 또는 성함</label>
-                        <input id="clientName" type="text" name="client_name" data-i18n-ph="phName" placeholder="예: 테크솔루션" required autocomplete="organization">
-                    </div>
-                    <div class="q">
-                        <label for="clientContact" data-i18n="labelContact">연락처</label>
-                        <input id="clientContact" type="text" name="contact" data-i18n-ph="phContact" placeholder="예: hello@company.com" required autocomplete="email">
-                    </div>
-                </div>
+      <form id="projectForm">
+        <section class="step active" data-step="1">
+          <div class="step-header"><h2>무엇을 만들까요?</h2><p>프로젝트 이름과 해결하려는 문제부터 알려주세요.</p></div>
+          <div class="q"><label for="projectName">프로젝트 이름</label><input id="projectName" type="text" name="project_name" placeholder="예: 사내 문서 검색" required maxlength="80"></div>
+          <div class="q"><label for="problemDescription">해결할 문제와 원하는 결과</label><textarea id="problemDescription" name="problem_desc" placeholder="현재 불편한 점과 완성됐을 때의 모습을 적어주세요." required maxlength="4000"></textarea></div>
+          <div class="q"><label for="projectReference">참고할 서비스 <small>선택</small></label><input id="projectReference" type="text" name="reference" placeholder="예: Notion AI"></div>
+          <div class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"><span>참고 파일을 선택하면 이름만 화면에 표시하며 최종 JSON에는 넣지 않습니다.</span><div class="file-chips" id="fileChips"></div><input type="file" id="fileInput" multiple hidden onchange="handleFiles(this.files)"></div>
+        </section>
 
-                <!-- Step 2 -->
-                <div class="step" data-step="2">
-                    <div class="step-header">
-                        <h2 data-i18n="step2Title">Project Scope</h2>
-                        <p data-i18n="step2Desc">\ud574\uacb0\ud558\uace0\uc790 \ud558\ub294 \ubb38\uc81c\uc640 \ubaa9\ud45c\ub97c \uc54c\ub824\uc8fc\uc138\uc694.</p>
-                    </div>
-                    <div class="q">
-                        <label for="projectName" data-i18n="labelProject">프로젝트 이름</label>
-                        <input id="projectName" type="text" name="project_name" data-i18n-ph="phProject" placeholder="예: 사내 문서 검색" required maxlength="80">
-                    </div>
-                    <div class="q">
-                        <label for="problemDescription" data-i18n="labelProblem">해결할 문제</label>
-                        <textarea id="problemDescription" name="problem_desc" data-i18n-ph="phProblem" placeholder="현재 불편한 점과 원하는 결과를 적어주세요." required></textarea>
-                    </div>
-                    <div class="q">
-                        <label for="projectReference" data-i18n="labelRef">참고할 서비스나 링크</label>
-                        <input id="projectReference" type="text" name="reference" data-i18n-ph="phRef" placeholder="예: Notion AI">
-                        <div class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                            <span data-i18n="dragDropText">참고 파일을 선택하면 파일명만 기록됩니다. 파일 내용은 업로드되지 않습니다.</span>
-                            <div class="file-chips" id="fileChips"></div>
-                            <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFiles(this.files)">
-                        </div>
-                    </div>
-                </div>
+        <section class="step" data-step="2">
+          <div class="step-header"><h2>어떤 기능이 필요한가요?</h2><p>다룰 데이터와 준비 상태를 선택하세요.</p></div>
+          <div class="q"><label>주요 데이터 유형 <small>여러 개 선택 가능</small></label><div class="blocks">
+            <label class="block"><input type="checkbox" name="sense_vision" value="vision"><span class="bl-content"><span class="index">[ 01 ]</span><span>이미지·영상</span><small>Vision</small></span></label>
+            <label class="block"><input type="checkbox" name="sense_audio" value="audio"><span class="bl-content"><span class="index">[ 02 ]</span><span>음성·소리</span><small>Audio</small></span></label>
+            <label class="block"><input type="checkbox" name="sense_text" value="text"><span class="bl-content"><span class="index">[ 03 ]</span><span>문서·텍스트</span><small>Text</small></span></label>
+            <label class="block"><input type="checkbox" name="sense_auto" value="auto"><span class="bl-content"><span class="index">[ 04 ]</span><span>자동화</span><small>Workflow</small></span></label>
+          </div></div>
+          <div class="q"><label>데이터 준비 상태</label><div class="v-blocks">
+            <label class="v-block"><input type="radio" name="data_status" value="ready" required><span class="vl-content">사용할 데이터가 준비되어 있습니다.</span></label>
+            <label class="v-block"><input type="radio" name="data_status" value="partial"><span class="vl-content">일부만 있고 정리가 필요합니다.</span></label>
+            <label class="v-block"><input type="radio" name="data_status" value="none"><span class="vl-content">데이터 준비부터 함께 정해야 합니다.</span></label>
+          </div></div>
+        </section>
 
-                <!-- Step 3 -->
-                <div class="step" data-step="3">
-                    <div class="step-header">
-                        <h2 data-i18n="step3Title">Features &amp; Data</h2>
-                        <p data-i18n="step3Desc">\ud544\uc694\ud55c \uae30\ub2a5\uc801 \uc694\uc18c\ub4e4\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.</p>
-                    </div>
-                    <div class="q">
-                        <label data-i18n="labelDataTypes">\uc8fc\uc694 \ucde8\uae09 \ub370\uc774\ud130 \uc720\ud615</label>
-                        <div class="blocks">
-                            <label class="block">
-                                <input type="checkbox" name="sense_vision">
-                                <div class="bl-content">
-                                    <span class="index">[ 01 ]</span>
-                                    <span>Vision</span>
-                                    <span style="font-size:12px; color:#666; font-weight:500;" data-i18n="dtVision">\uc774\ubbf8\uc9c0/\ube44\ub514\uc624</span>
-                                </div>
-                            </label>
-                            <label class="block">
-                                <input type="checkbox" name="sense_audio">
-                                <div class="bl-content">
-                                    <span class="index">[ 02 ]</span>
-                                    <span>Audio</span>
-                                    <span style="font-size:12px; color:#666; font-weight:500;" data-i18n="dtAudio">\uc74c\uc131/\uc18c\ub9ac</span>
-                                </div>
-                            </label>
-                            <label class="block">
-                                <input type="checkbox" name="sense_text">
-                                <div class="bl-content">
-                                    <span class="index">[ 03 ]</span>
-                                    <span>Text</span>
-                                    <span style="font-size:12px; color:#666; font-weight:500;" data-i18n="dtText">\uc790\uc5f0\uc5b4/\ubb38\uc11c</span>
-                                </div>
-                            </label>
-                            <label class="block">
-                                <input type="checkbox" name="sense_auto">
-                                <div class="bl-content">
-                                    <span class="index">[ 04 ]</span>
-                                    <span>Auto</span>
-                                    <span style="font-size:12px; color:#666; font-weight:500;" data-i18n="dtAuto">\uc790\ub3d9\ud654 \ub85c\uc9c1</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="q">
-                        <label data-i18n="labelDataStatus">\ub370\uc774\ud130 \ubcf4\uc720 \ud604\ud669</label>
-                        <div class="v-blocks">
-                            <label class="v-block"><input type="radio" name="data_status" value="yes" required><div class="vl-content" data-i18n="dsYes">\uc815\uc81c\ub41c \ub370\uc774\ud130\uac00 \ucda9\ubd84\ud788 \uc900\ube44\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4.</div></label>
-                            <label class="v-block"><input type="radio" name="data_status" value="some"><div class="vl-content" data-i18n="dsSome">\uc77c\ubd80 \ub370\uc774\ud130\uac00 \uc788\uc73c\ub098 \uac00\uacf5\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.</div></label>
-                            <label class="v-block"><input type="radio" name="data_status" value="no"><div class="vl-content" data-i18n="dsNo">\ub370\uc774\ud130 \uc218\uc9d1\ubd80\ud130 \ud568\uaed8 \ub17c\uc758\ud574\uc57c \ud569\ub2c8\ub2e4.</div></label>
-                        </div>
-                    </div>
-                </div>
+        <section class="step" data-step="3">
+          <div class="step-header"><h2>어디에서 사용할까요?</h2><p>프로그램이 주로 실행될 환경을 선택하세요.</p></div>
+          <div class="q"><div class="blocks">
+            <label class="block"><input type="checkbox" name="env_web" value="web"><span class="bl-content"><span class="index">[ WEB ]</span><span>웹</span><small>브라우저</small></span></label>
+            <label class="block"><input type="checkbox" name="env_mobile" value="mobile"><span class="bl-content"><span class="index">[ APP ]</span><span>모바일</span><small>스마트폰 앱</small></span></label>
+            <label class="block"><input type="checkbox" name="env_windows" value="windows"><span class="bl-content"><span class="index">[ PC ]</span><span>데스크톱</span><small>설치형 프로그램</small></span></label>
+            <label class="block"><input type="checkbox" name="env_edge" value="edge"><span class="bl-content"><span class="index">[ EDGE ]</span><span>사내 환경</span><small>내부망·장비</small></span></label>
+          </div></div>
+        </section>
 
-                <!-- Step 4 -->
-                <div class="step" data-step="4">
-                    <div class="step-header">
-                        <h2 data-i18n="step4Title">Environment</h2>
-                        <p data-i18n="step4Desc">\uc2dc\uc2a4\ud15c\uc774 \uad6c\ub3d9\ub420 \uba54\uc778 \ud50c\ub7ab\ud3fc\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.</p>
-                    </div>
-                    <div class="q">
-                        <div class="blocks">
-                            <label class="block"><input type="checkbox" name="env_web"><div class="bl-content"><span class="index">[ WEB ]</span><span data-i18n="envWeb">Web SaaS</span><span style="font-size:12px; color:#666; font-weight:500;" data-i18n="envWebDesc">\uc778\ud130\ub137 \ube0c\ub77c\uc6b0\uc800 \uc811\uc18d</span></div></label>
-                            <label class="block"><input type="checkbox" name="env_mobile"><div class="bl-content"><span class="index">[ APP ]</span><span data-i18n="envMobile">Mobile App</span><span style="font-size:12px; color:#666; font-weight:500;" data-i18n="envMobileDesc">\uc2a4\ub9c8\ud2b8\ud3f0 \uc5b4\ud50c\ub9ac\ucf00\uc774\uc158</span></div></label>
-                            <label class="block"><input type="checkbox" name="env_windows"><div class="bl-content"><span class="index">[ PC ]</span><span data-i18n="envPc">Desktop</span><span style="font-size:12px; color:#666; font-weight:500;" data-i18n="envPcDesc">PC \uc124\uce58\ud615 \ud504\ub85c\uadf8\ub7a8</span></div></label>
-                            <label class="block"><input type="checkbox" name="env_edge"><div class="bl-content"><span class="index">[ EDGE ]</span><span data-i18n="envEdge">On-Premise</span><span style="font-size:12px; color:#666; font-weight:500;" data-i18n="envEdgeDesc">\uc0ac\ub0b4 \ub9dd \ubc0f \ud558\ub4dc\uc6e8\uc5b4 \uad6c\ucd95</span></div></label>
-                        </div>
-                    </div>
-                </div>
+        <section class="step" data-step="4">
+          <div class="step-header"><h2>범위를 정해볼까요?</h2><p>일정과 예산은 AI가 현실적인 작업 순서를 잡는 데 사용합니다.</p></div>
+          <div class="q"><label for="projectDeadline">희망 일정 <small>선택</small></label><input id="projectDeadline" type="text" name="deadline" placeholder="예: 3개월 내"></div>
+          <div class="q"><label>예상 범위</label><div class="v-blocks">
+            <label class="v-block"><input type="radio" name="budget" value="mvp" required><span class="vl-content">핵심 기능부터 빠르게 만들기</span></label>
+            <label class="v-block"><input type="radio" name="budget" value="product"><span class="vl-content">실제로 운영할 완성도까지 만들기</span></label>
+            <label class="v-block"><input type="radio" name="budget" value="enterprise"><span class="vl-content">조직용 보안·관리 기능까지 포함하기</span></label>
+            <label class="v-block"><input type="radio" name="budget" value="unknown"><span class="vl-content">요구사항을 보고 AI가 범위를 제안하기</span></label>
+          </div></div>
+          <div class="q"><label for="projectExtra">추가로 꼭 지켜야 할 것 <small>선택</small></label><textarea id="projectExtra" name="extra" placeholder="사용 기술, 보안, 납기 등 중요한 조건을 적어주세요." maxlength="2000"></textarea></div>
+        </section>
 
-                <!-- Step 5 -->
-                <div class="step" data-step="5">
-                    <div class="step-header">
-                        <h2 data-i18n="step5Title">Timeline &amp; Budget</h2>
-                        <p data-i18n="step5Desc">\ud604\uc2e4\uc801\uc778 \ub9ac\uc18c\uc2a4 \ud50c\ub798\ub2dd\uc744 \uc704\ud574 \ubc94\uc704\ub97c \uc54c\ub824\uc8fc\uc138\uc694.</p>
-                    </div>
-                    <div class="q">
-                        <label for="projectDeadline" data-i18n="labelDeadline">희망 일정</label>
-                        <input id="projectDeadline" type="text" name="deadline" data-i18n-ph="phDeadline" placeholder="예: 3개월 내">
-                    </div>
-                    <div class="q">
-                        <label data-i18n="labelBudget">\uc608\uc0c1 \uac00\uc6a9 \uc608\uc0b0</label>
-                        <div class="v-blocks">
-                            <label class="v-block"><input type="radio" name="budget" value="low" required><div class="vl-content" data-i18n="bgLow">~ 500\ub9cc \uc6d0 (MVP \uc218\uc900)</div></label>
-                            <label class="v-block"><input type="radio" name="budget" value="mid"><div class="vl-content" data-i18n="bgMid">500\ub9cc ~ 2,000\ub9cc \uc6d0 (\uc0c1\uc6a9\ud654)</div></label>
-                            <label class="v-block"><input type="radio" name="budget" value="high"><div class="vl-content" data-i18n="bgHigh">2,000\ub9cc \uc6d0 \uc774\uc0c1 (\uc5d4\ud130\ud504\ub77c\uc774\uc988)</div></label>
-                            <label class="v-block"><input type="radio" name="budget" value="unknown"><div class="vl-content" data-i18n="bgUnknown">\uc694\uad6c\uc0ac\ud56d \uc815\uc758 \ud6c4 \uacac\uc801 \uc0b0\ucd9c \ud76c\ub9dd</div></label>
-                        </div>
-                    </div>
-                    <div class="q">
-                        <label for="projectExtra" data-i18n="labelExtra">추가 내용</label>
-                        <textarea id="projectExtra" name="extra" data-i18n-ph="phExtra" placeholder="추가로 전할 내용이 있다면 적어주세요."></textarea>
-                    </div>
-                </div>
+        <section class="step" data-step="5">
+          <div class="step-header"><h2>디자인을 정합니다.</h2><p>기본 방향을 고르거나 디자인 스튜디오에서 세부 값을 조정하세요.</p></div>
+          <div class="q design-choice"><label for="projectDesignPreset">디자인 방향</label><select id="projectDesignPreset"></select><strong id="projectDesignSummary"></strong><a href="design-controller.html" target="_blank" rel="noopener" data-vas-link>세부 디자인 설정 열기 ↗</a><p>새 창에서 변경한 값은 이 화면으로 돌아오면 자동 반영됩니다.</p></div>
+        </section>
 
-                <!-- Nav -->
-                <div class="nav-btns no-print" id="navWrap">
-                    <button type="button" class="btn btn-prev" id="prevBtn" onclick="changeStep(-1)" data-i18n="btnBack">Back</button>
-                    <button type="button" class="btn btn-next" id="nextBtn" onclick="changeStep(1)" data-i18n="btnNext">Next Step</button>
-                </div>
+        <div class="nav-btns no-print" id="navWrap"><button type="button" class="btn btn-prev" id="prevBtn" onclick="changeStep(-1)">이전</button><button type="button" class="btn btn-next" id="nextBtn" onclick="changeStep(1)">다음</button></div>
 
-                <!-- Done Screen -->
-                <div class="done-screen" id="doneScreen">
-                    <div class="done-graphic">DONE.</div>
-                    <p data-i18n="doneDesc">작성 내용이 완료되었습니다. JSON 파일로 저장한 뒤 담당자에게 전달해 주세요. 첨부 파일은 별도로 전달해 주세요.</p>
-                    <div class="done-btns no-print">
-                        <button type="button" class="btn action-btn" id="createProjectButton" onclick="createWorkspaceProject()" data-i18n="btnCreateProject" hidden>이 내용으로 작업공간 만들기</button>
-                        <a class="btn action-btn" id="createdProjectNext" href="design-controller.html" data-vas-link data-vas-project-link data-i18n="btnContinueDesign" hidden>디자인 설정 이어가기</a>
-                        <a class="btn action-btn" id="createdProjectHandoff" href="project-import.html" data-vas-link hidden>AI 전달팩 만들기</a>
-                        <button type="button" class="btn action-btn" onclick="exportJson()" data-i18n="btnJson">JSON 파일 저장</button>
-                        <p id="projectCreateStatus" class="done-info" role="status" hidden></p>
-                        <button type="button" class="btn" onclick="goBackFromDone()" data-i18n="btnBackToForm" style="margin-top: 16px; border-color: transparent; text-align: center; justify-content: center; color: var(--text-muted);">\u2190 Back to Form</button>
-                    </div>
-                </div>
+        <section class="done-screen" id="doneScreen">
+          <div class="done-graphic">READY.</div>
+          <p>아래 내용을 확인한 뒤 JSON을 저장하고 코딩 도구에 전달하세요. 이 작업이 끝나면 VAS를 닫아도 됩니다.</p>
+          <pre class="handoff-review" id="handoffReview" tabindex="0">최종 내용을 준비하고 있습니다.</pre>
+          <div class="done-btns no-print">
+            <button type="button" class="btn action-btn" id="downloadHandoff" onclick="exportJson()">JSON 저장</button>
+            <button type="button" class="btn action-btn" id="copyNewPrompt" onclick="copyNewProjectPrompt()">프롬프트 복사</button>
+            <button type="button" class="btn" onclick="clearForm()">새 작업 시작</button>
+            <button type="button" class="btn" data-setup-settings>설정 다시 하기</button>
+            <button type="button" class="btn" onclick="goBackFromDone()">← 내용 수정</button>
+            <p id="handoffStatus" class="done-info" role="status" hidden></p>
+          </div>
+        </section>
+      </form>
+    </main>
+  </div>
 
-            </form>
-        </div>
-    </div>
-
-<script src="vas-config.js"></script>
-<script src="storage-utils.js"></script>
-<script src="theme-state.js"></script>
-<script src="editorial-theme.js"></script>
-<script src="runtime-client.js"></script>
-<script src="project-context.js"></script>
-<script src="rag-lite.js"></script>
-<script src="personalization-store.js"></script>
-<script src="project-rail.js"></script>
-<script src="client-i18n.js"></script>
-<script src="client-form.js"></script>
-<script src="client-draft.js"></script>
-<script src="client-export.js"></script>
-<script src="client-application-init.js"></script>
-
+  <script src="vas-config.js"></script>
+  <script src="storage-utils.js"></script>
+  <script src="theme-state.js"></script>
+  <script src="editorial-theme.js"></script>
+  <script src="personalization-store.js"></script>
+  <script src="setup-tools.js"></script>
+  <script src="design-presets.js"></script>
+  <script src="design-taste-pack.js"></script>
+  <script src="setup-design.js"></script>
+  <script src="agent-handoff-web.js"></script>
+  <script src="client-form.js"></script>
+  <script src="client-draft.js"></script>
+  <script src="client-export.js"></script>
+  <script src="client-application-init.js"></script>
 </body>
 </html>

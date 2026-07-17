@@ -4,59 +4,37 @@
 
 - 일반 사용자: `Run-VAS-System.bat` 더블클릭
 - 수동 실행: `powershell -ExecutionPolicy Bypass -File scripts/Start-VAS.ps1`
-- 종료: 사용하지 않으면 기본 30분 뒤 자동 종료; 즉시 종료는 인증된 `/api/shutdown` 사용
+- 사용하지 않으면 로컬 서버는 기본 30분 뒤 종료됩니다.
 
-Windows판의 AI 전달 분석·검토 소스 ZIP·기존 프로젝트 복사는 Python 3.10 이상을 사용합니다. Python이 없으면 화면에서 안내하며 웹판의 내용 없는 분석 JSON과 나머지 기능은 계속 사용할 수 있습니다.
-
-서버는 `127.0.0.1`에만 바인딩하고, 시작할 때 만든 세션 토큰과 동일 출처 요청만 허용합니다. 토큰을 URL에서 받은 뒤 세션 저장소로 옮기고 주소에서는 제거합니다.
+Windows 정밀 폴더 분석에는 Python 3.10 이상을 사용합니다. 웹판은 파일 내용 없이 이름·크기·구조만 분석합니다.
 
 ## 저장과 복구
 
-- 프로젝트: `workspace/projects/`
-- 가져오기 작업·프로젝트 등록·프로젝트 RAG: `workspace/.vas/`
 - 코어 체크포인트: `.vas_backups/checkpoint_*.zip` 최신 10개
-- 가져오기 복구본: `.vas_backups/migrations/` (사용자가 정리하기 전까지 보존)
-- Windows 개인화 메모리·런타임 세션: `%LOCALAPPDATA%\QUINTPACT\VAS\`
-- 브라우저 전용 개인화 메모리: IndexedDB
-
-가져오기 전 체크포인트와 파일 해시를 생성합니다. 실패한 작업은 staging을 제거하며 완료 작업은 작업 ID로 되돌릴 수 있습니다.
+- Windows 작업 기억: `%LOCALAPPDATA%\QUINTPACT\VAS\`
+- 브라우저 작업 기억: IndexedDB
+- 기존 프로젝트·가져오기 자료: `workspace/`에 그대로 보존
 
 ## 개인정보
 
-- 기본값은 수집 안 함입니다.
+- 기본값은 작업 기억 사용 안 함입니다.
 - 동의 전 이벤트를 기록하지 않습니다.
-- 비밀값, 파일 내용, 절대 경로, 파일명은 이벤트에 저장하지 않습니다.
-- 새 프로젝트 RAG는 연락처·이름·원본 brief를 제외한 `rag-context.json`만 색인합니다.
-- 가져온 프로젝트 RAG는 가져오기 때 별도로 선택한 경우에만 허용된 텍스트를 로컬 색인합니다.
-- 프로젝트 지식 API는 `projectId`가 없으면 거부하며 다른 프로젝트의 결과를 섞지 않습니다.
-- 기록은 사용자가 직접 일시정지·삭제·내보내기·가져오기 합니다.
-- 자동 만료나 조용한 삭제를 하지 않습니다.
-- 신청서 초안은 복구를 위해 브라우저에 자동 저장됨을 화면에 표시하며, 사용자가 끄거나 삭제할 수 있고 JSON 저장·작업공간 생성 뒤에는 지웁니다.
+- 설정에서 사용·중지·삭제·전체 초기화를 언제든 실행할 수 있습니다.
+- 비밀값, 파일 내용, 절대 경로, 파일명은 작업 기억에 저장하지 않습니다.
+- 최종 JSON에는 연락처와 작업 기억 원본을 넣지 않습니다.
+- 신청서 초안은 복구용으로만 브라우저에 저장하며 JSON 저장 뒤 삭제합니다.
 
 ## 검증
 
 ```powershell
-npm.cmd ci
-python -m pip install -r tests/requirements-dev.txt
 npm.cmd run knowledge:check
 npm.cmd run test:python
 npm.cmd run test:browser
 npm.cmd run test:package
 ```
 
-`npm.cmd run test:release`에는 10회 반복이 포함되므로 사용자가 명시한 릴리스 검증에서만 실행합니다.
-
-## 프로젝트 인계
-
-허브의 **AI 전달팩**은 코딩 도구용 분석 JSON과 선택적 검토 발췌를 만듭니다. **보관 ZIP**은 `project.json`, 정제 요구사항, 디자인 토큰, RAG 제목·키워드·상대 경로, 해시만 포함합니다. 어느 쪽에도 `.env`, 절대 경로, 개인화 메모리 이벤트를 넣지 않습니다.
+`npm.cmd run test:release`의 10회 반복은 명시적 요청 때만 실행합니다.
 
 ## 배포
 
-`npm.cmd run release:build` 후 `dist/SHA256SUMS.txt`와 각 ZIP 내부 `manifest.json`을 확인합니다. 배포 ZIP에는 `.git`, `workspace`, 백업, 캐시, 테스트 결과, 환경 변수, 개인화 데이터가 들어가면 안 됩니다.
-
-## 장애 확인 순서
-
-1. `Run-VAS-System.bat`의 오류 문구를 확인합니다.
-2. `/health`가 응답하는지 확인합니다.
-3. `npm.cmd run test:python`으로 파일·API 계약을 확인합니다.
-4. 가져오기 실패는 작업 ID로 rollback하고 원본 해시가 유지됐는지 확인합니다.
+`npm.cmd run release:build` 후 `dist/SHA256SUMS.txt`와 ZIP의 `manifest.json`을 확인합니다. `.git`, `workspace`, 백업, 캐시, 환경 변수, 작업 기억은 배포에서 제외합니다.

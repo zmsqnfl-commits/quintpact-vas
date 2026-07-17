@@ -47,8 +47,11 @@
 
   async function toggleRag(rail) {
     const status = await VASPersonalization.status();
-    if (status.consent !== true) await VASPersonalization.consent(true);
-    else await VASPersonalization.pause(!status.paused);
+    if (status.consent !== true) {
+      if (global.VASSetupTools) await global.VASSetupTools.openSettings();
+      return;
+    }
+    await VASPersonalization.pause(!status.paused);
     await renderStatus(rail);
   }
 

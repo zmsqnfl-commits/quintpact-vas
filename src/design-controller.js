@@ -414,7 +414,10 @@ async function applyProjectTheme() {
   const context = VASProjectContext.get();
   if (!context) {
     showToast('공통 디자인 설정으로 저장했습니다.');
-    navigateWithProject('vas-hub.html');
+    if (window.opener) {
+      window.close();
+      setTimeout(function () { navigateWithProject('vas-hub.html'); }, 150);
+    } else navigateWithProject('vas-hub.html');
     return;
   }
   if (!VASRuntime.isAvailable()) {
