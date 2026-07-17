@@ -124,7 +124,10 @@ class ReleasePackageTests(unittest.TestCase):
             WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"]
         )
         self.assertIn("src/vas-hub.html", payload)
-        launcher = payload["Run-VAS-System.bat"].decode("utf-8", errors="replace")
+        launcher_bytes = payload["Run-VAS-System.bat"]
+        self.assertIn(b"\r\n", launcher_bytes)
+        self.assertNotIn(b"\n", launcher_bytes.replace(b"\r\n", b""))
+        launcher = launcher_bytes.decode("utf-8", errors="replace")
         launcher_paths = set(re.findall(r"(?:src|scripts)[\\/][A-Za-z0-9_.-]+", launcher, re.I))
         self.assertTrue(launcher_paths, "실행 BAT의 로컬 진입 대상이 없습니다.")
         for reference in launcher_paths:

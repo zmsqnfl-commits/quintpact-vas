@@ -20,7 +20,11 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
         ):
             lines = (BASE / relative).read_text(encoding="utf-8-sig").splitlines()
             self.assertLessEqual(len(lines), 500, relative)
-        launcher = (BASE / "Run-VAS-System.bat").read_text(encoding="utf-8-sig")
+        launcher_bytes = (BASE / "Run-VAS-System.bat").read_bytes()
+        self.assertIn(b"\r\n", launcher_bytes)
+        self.assertNotIn(b"\n", launcher_bytes.replace(b"\r\n", b""))
+        self.assertIn("*.bat -text", (BASE / ".gitattributes").read_text(encoding="utf-8"))
+        launcher = launcher_bytes.decode("utf-8-sig")
         self.assertIn(":fallback", launcher)
         self.assertIn("src\\vas-hub.html", launcher)
 
