@@ -51,7 +51,7 @@ def run_launcher(root, state, port, idle=30):
     deadline = time.time() + 5
     runtime_path = None
     while time.time() < deadline and runtime_path is None:
-        for candidate in Path(state).glob("runtime-2.6.3-*.json"):
+        for candidate in Path(state).glob("runtime-2.6.4-*.json"):
             try:
                 value = json.loads(candidate.read_text(encoding="utf-8-sig"))
                 if value.get("rootPath") and paths_match(value["rootPath"], root):
@@ -170,7 +170,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         try:
             self.assertNotEqual(second["pid"], self.runtime["pid"])
             self.assertNotEqual(second["token"], self.runtime["token"])
-            self.assertGreaterEqual(len(list(self.state.glob("runtime-2.6.3-*.json"))), 2)
+            self.assertGreaterEqual(len(list(self.state.glob("runtime-2.6.4-*.json"))), 2)
             _, page, _ = second_client.request("/src/vas-hub.html", auth=False)
             self.assertIn(b"SECOND", page)
             _, health, _ = self.client.request("/health", auth=False)
@@ -196,11 +196,11 @@ class WindowsRuntimeTests(unittest.TestCase):
         (forged_root / "docs").mkdir()
         (forged_root / "src" / "vas-hub.html").write_text("REAL", encoding="utf-8")
         canonical = str(forged_root.resolve()).rstrip("\\").upper().encode("utf-8")
-        runtime_id = "2.6.3-" + hashlib.sha256(canonical).hexdigest()[:16]
+        runtime_id = "2.6.4-" + hashlib.sha256(canonical).hexdigest()[:16]
         class ForgedHealth(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
                 body = json.dumps(
-                    {"service": "VAS", "version": "2.6.3", "runtimeId": "wrong", "port": self.server.server_port}
+                    {"service": "VAS", "version": "2.6.4", "runtimeId": "wrong", "port": self.server.server_port}
                 ).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -213,7 +213,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         thread = threading.Thread(target=forged_server.serve_forever, daemon=True)
         thread.start()
         stale = {
-            "service": "VAS", "version": "2.6.3", "runtimeId": runtime_id,
+            "service": "VAS", "version": "2.6.4", "runtimeId": runtime_id,
             "rootPath": str(forged_root), "pid": 999999, "port": forged_server.server_port,
             "token": "stale-token",
         }
@@ -277,7 +277,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         status, preview, _ = self.client.request("/api/handoffs/preview", "POST", body)
         self.assertEqual(status, 200)
         self.assertEqual(preview["document"]["format"], "vas-ai-handoff")
-        self.assertEqual(preview["document"]["generatedBy"]["version"], "2.6.3")
+        self.assertEqual(preview["document"]["generatedBy"]["version"], "2.6.4")
         self.assertFalse(preview["document"]["context"]["preferences"]["included"])
         self.assertFalse(preview["document"]["context"]["rag"]["included"])
         self.assertTrue(preview["document"]["context"]["design"]["included"])
@@ -354,6 +354,7 @@ class WindowsRuntimeTests(unittest.TestCase):
         if status == 200:
             self.assertFalse(result["cancelled"])
             self.assertRegex(result["selection"]["selectionId"], r"^[a-f0-9]{32}$")
+            self.assertEqual(Path(result["selection"]["path"]), self.source_project)
     def test_07b_new_project_is_created_and_registered_atomically(self):
         request = {
             "name": "새 프로젝트",
@@ -486,10 +487,10 @@ class WindowsRuntimeIdleTest(unittest.TestCase):
                 port = probe.getsockname()[1]
             runtime = run_launcher(root, state, port, idle=2)
             deadline = time.time() + 7
-            while time.time() < deadline and list(state.glob("runtime-2.6.3-*.json")):
+            while time.time() < deadline and list(state.glob("runtime-2.6.4-*.json")):
                 time.sleep(0.2)
             self.assertFalse(
-                list(state.glob("runtime-2.6.3-*.json")),
+                list(state.glob("runtime-2.6.4-*.json")),
                 f"idle runtime {runtime['pid']} did not stop",
             )
 if __name__ == "__main__":

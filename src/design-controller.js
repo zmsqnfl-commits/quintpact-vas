@@ -32,14 +32,21 @@ function renderPresets() {
       presetButton.type = 'button';
       presetButton.className = 'btn-preset';
       presetButton.dataset.preset = key;
-      presetButton.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+      const presetName = key.charAt(0).toUpperCase() + key.slice(1);
+      const presetLabel = document.createElement('strong');
+      const presetDescription = document.createElement('span');
+      presetLabel.textContent = presetName;
+      presetDescription.textContent = typeof PRESET_DESCRIPTIONS !== 'undefined' && PRESET_DESCRIPTIONS[key]
+        ? PRESET_DESCRIPTIONS[key]
+        : '디자인 프리셋';
+      presetButton.append(presetLabel, presetDescription);
       presetButton.addEventListener('click', function () { applyPreset(key, presetButton); });
       const favoriteButton = document.createElement('button');
       favoriteButton.type = 'button';
       favoriteButton.className = 'favorite-toggle';
-      favoriteButton.setAttribute('aria-label', presetButton.textContent + ' 즐겨찾기');
+      favoriteButton.setAttribute('aria-label', presetName + ' 즐겨찾기');
       favoriteButton.setAttribute('aria-pressed', String(favorites.includes(key)));
-      favoriteButton.textContent = favorites.includes(key) ? '−' : '+';
+      favoriteButton.textContent = favorites.includes(key) ? '★' : '☆';
       favoriteButton.addEventListener('click', function (event) { toggleFavorite(key, event); });
       row.append(presetButton, favoriteButton);
       grid.append(row);

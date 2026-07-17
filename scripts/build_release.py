@@ -1,4 +1,4 @@
-"""VAS 2.6.3 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.6.4 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -36,7 +36,8 @@ CLIENT_ASSETS = [
     "storage-utils.js", "theme-state.js", "editorial-shell.css",
     "editorial-theme.js", "setup-tools.css", "setup-tools.js",
     "design-presets.js", "design-taste-pack.js", "setup-design.js",
-    "agent-handoff-web.js",
+    "agent-contract.js", "handoff-workflow.js", "agent-handoff-web.js",
+    "handoff-context-review.js", "ai-result-import.js", "handoff-loop.css",
 ]
 
 
@@ -142,7 +143,7 @@ def build_windows(stage: Path) -> Path:
     for dirname in FULL_DIRS:
         copy_tree(ROOT / dirname, root / dirname)
     (root / "README.md").write_text(
-        """# VAS 2.6.3 Windows 실행본
+        """# VAS 2.6.4 Windows 실행본
 
 ## 시작
 
@@ -152,11 +153,11 @@ def build_windows(stage: Path) -> Path:
 2. `Run-VAS-System.bat`를 더블클릭합니다.
 3. 시작 화면에서 새 프로젝트를 만들거나 **기존 프로그램 AI로 연결**을 선택합니다.
 
-Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램 정밀 분석에는 Python 3.10 이상이 필요하며, 준비되지 않은 경우 화면에서 안내합니다. 새 프로젝트 설정은 Python 없이도 사용할 수 있습니다.
+Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램은 폴더 위치만 프롬프트에 넣으며 실제 파일 분석은 코딩 AI가 담당합니다.
 
-새 프로젝트와 기존 프로그램 모두 마지막에 `VAS-AI-HANDOFF.json`을 만듭니다. 코딩 도구에서 작업 폴더를 열고 JSON을 첨부한 뒤 복사된 프롬프트를 붙여넣으세요. 이후에는 VAS를 닫아도 됩니다.
+새 프로젝트와 기존 프로그램 모두 마지막에 코딩 AI용 프롬프트를 만듭니다. 코딩 도구에서 실제 작업 폴더를 열고 복사된 프롬프트를 붙여넣으세요. `VAS-AI-HANDOFF.json` 저장은 선택입니다.
 
-작업 기억은 사용자가 설정에서 직접 켠 경우에만 이 기기에서 작동합니다. 설정에서 언제든 중지·삭제할 수 있으며 원본 기록은 최종 JSON에 들어가지 않습니다. 비밀 후보와 절대 경로는 항상 제외합니다.
+작업 기억은 사용자가 설정에서 직접 켠 경우에만 이 기기에서 작동합니다. 설정에서 언제든 중지·삭제할 수 있으며 원본 기록과 폴더 위치는 최종 JSON에 들어가지 않습니다. 비밀 후보도 제외합니다.
 
 문제가 생기면 BAT 창의 안내를 확인한 뒤 다시 실행하세요. 사용하지 않으면 로컬 서버는 기본 30분 뒤 자동 종료됩니다.
 """,
@@ -178,7 +179,7 @@ def build_client(stage: Path) -> Path:
             html = html.replace("<body>", '<body data-mode="standalone">', 1)
             html = re.sub(r'<a class="back-link" id="hubBackLink".*?</a>', '<div class="back-link external-note">공유받은 신청서입니다</div>', html)
             html = re.sub(
-                r'<a href="design-controller\.html".*?</a><p>새 창에서 변경한 값은 이 화면으로 돌아오면 자동 반영됩니다\.</p>',
+                r'<a class="design-reference-link"[^>]*>.*?</a>\s*<p>.*?</p>',
                 '<p>선택한 디자인 방향이 JSON에 반영됩니다.</p>',
                 html,
             )

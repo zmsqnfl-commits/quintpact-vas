@@ -7,6 +7,10 @@
 var currentLang = 'ko';
 var cur = 1;
 const total = 5;
+const i18n = {
+    ko: { btnNext: '다음', btnSubmit: '내용 확인' },
+    en: { btnNext: 'Next', btnSubmit: 'Review' }
+};
 
 /* 언어 전환 */
 function setLang(lang) {
@@ -36,8 +40,9 @@ function updateUI() {
     document.getElementById('progressText').innerHTML = `0${cur}<span>/0${total}</span>`;
 
     const prevBtn = document.getElementById('prevBtn');
-    prevBtn.style.opacity = cur === 1 ? '0' : '1';
-    prevBtn.style.pointerEvents = cur === 1 ? 'none' : 'auto';
+    const navWrap = document.getElementById('navWrap');
+    prevBtn.hidden = cur === 1;
+    navWrap.classList.toggle('only-next', cur === 1);
 
     const nextBtn = document.getElementById('nextBtn');
     if (cur === total) {
@@ -117,6 +122,7 @@ function changeStep(dir) {
     if (dir === 1) {
         const currentStepEl = document.querySelector(`[data-step="${cur}"]`);
         if (!validateCurrentStep(currentStepEl)) return;
+        if (cur === total && window.VASHandoffContextReview && !VASHandoffContextReview.ensureReviewed()) return;
     }
 
     cur += dir;
@@ -137,6 +143,7 @@ function changeStep(dir) {
         nextStep.style.transform = 'translateY(0)';
         const firstInput = nextStep.querySelector('input, textarea');
         if (firstInput) firstInput.focus();
+        if (cur === total && window.VASHandoffContextReview) VASHandoffContextReview.refresh();
     }, 350);
 
     updateUI();
@@ -175,7 +182,7 @@ function showDone() {
 /* 완료 화면 → 폼으로 복귀 */
 function goBackFromDone() {
     document.getElementById('doneScreen').classList.remove('active');
-    document.getElementById('navWrap').style.display = 'flex';
+    document.getElementById('navWrap').style.display = '';
     cur = total;
     const lastStep = document.querySelector(`.step[data-step="${total}"]`);
     lastStep.classList.add('active');
@@ -193,6 +200,7 @@ function clearForm() {
         : 'Clear all and start over?';
     if (confirm(msg)) {
         if (window.VASClientDraft) window.VASClientDraft.clear();
+        if (window.VASHandoffWorkflow) window.VASHandoffWorkflow.clearCurrent();
         document.getElementById('projectForm').reset();
         location.reload();
     }

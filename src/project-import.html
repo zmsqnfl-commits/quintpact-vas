@@ -3,74 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.3 — 기존 프로그램 AI 연결</title>
+  <title>VAS 2.6.4 — 기존 프로그램 AI 연결</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23171715%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffd200%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="project-import.css">
+  <link rel="stylesheet" href="handoff-loop.css">
 </head>
 <body>
   <header class="topbar">
     <a href="vas-hub.html" data-vas-link>VAS / AI HANDOFF</a>
     <div class="setup-actions"><button type="button" data-setup-help>사용 방법</button><button type="button" data-setup-settings>설정</button></div>
-    <span id="modeLabel">WEB / JSON</span>
     <a href="vas-hub.html" data-vas-link>시작으로 →</a>
   </header>
 
   <main class="handoff-shell">
-    <aside class="steps" aria-label="AI 전달 JSON 진행 단계">
-      <p class="eyebrow">WORKFLOW 01—04</p>
+    <aside class="steps" aria-label="코딩 AI 인계 진행 단계">
+      <p class="eyebrow">WORKFLOW 01—03</p>
       <ol>
-        <li class="active" data-nav-step="1" aria-current="step"><b>01</b><span>폴더 선택</span></li>
-        <li data-nav-step="2"><b>02</b><span>안전 분석</span></li>
-        <li data-nav-step="3"><b>03</b><span>설정·확인</span></li>
-        <li data-nav-step="4"><b>04</b><span>AI에 전달</span></li>
+        <li class="active" data-nav-step="1" aria-current="step"><b>01</b><span>작업 작성</span></li>
+        <li data-nav-step="2"><b>02</b><span>디자인·확인</span></li>
+        <li data-nav-step="3"><b>03</b><span>AI에 전달</span></li>
       </ol>
-      <div class="safety-note"><b>READ ONLY</b><p>원본 파일을 실행·수정·삭제하지 않습니다.</p></div>
+      <div class="safety-note"><b>INTENT ONLY</b><p>VAS는 구조를 추정하지 않습니다. 실제 소스 분석은 코딩 AI가 담당합니다.</p></div>
     </aside>
 
     <section class="workspace">
-      <header class="hero"><p class="eyebrow">VAS 2.6.3 / EXISTING PROJECT</p><h1>기존 프로그램을<br><em>AI 작업</em>으로 연결합니다.</h1><p>원본은 그대로 두고 코딩 도구가 이해할 구조와 설정만 JSON으로 정리합니다.</p></header>
+      <header class="hero"><p class="eyebrow">VAS 2.6.4 / EXISTING PROJECT</p><h1>기존 프로그램의<br><em>작업 지시</em>를 만듭니다.</h1><p>VAS는 해야 할 일과 디자인만 정리합니다. 실제 프로젝트 구조와 기술 스택은 Codex가 원본 폴더에서 직접 확인합니다.</p></header>
 
       <section class="panel active" data-step="1">
-        <div class="section-title"><span>01</span><h2>프로그램 폴더를 선택하세요.</h2></div>
-        <p class="web-note" id="runtimeNotice" hidden></p>
-        <button type="button" class="select-folder" id="selectFolder"><span>폴더 선택</span><small>원본은 읽기만 합니다</small><i aria-hidden="true">↗</i></button>
-        <input type="file" id="folderFallback" webkitdirectory multiple hidden>
-        <div class="selection" id="selection" hidden><span>선택됨</span><strong id="selectedPath"></strong><button type="button" id="changeFolder">다시 선택</button></div>
+        <div class="section-title"><span>01</span><h2>AI에게 맡길 작업을 적어주세요.</h2></div>
+        <p class="web-note">폴더 내부는 분석하지 않습니다. 선택한 위치만 복사할 프롬프트에 넣어 Codex가 실제 원본을 찾게 합니다.</p>
+        <div class="result-import-callout"><div><strong>이전 AI 작업을 이어서 하나요?</strong><p>VAS-AI-RESULT.json을 불러오면 남은 작업과 실패한 테스트를 다음 인계에 연결합니다.</p></div><button type="button" data-result-import>이전 결과 불러오기</button></div>
+        <p class="loop-status" id="existingLoopStatus" role="status" hidden></p>
+        <div class="location-field">
+          <label for="folderPath">작업할 폴더 위치</label>
+          <div class="location-control"><input id="folderPath" maxlength="1000" placeholder="예: Z:\프로젝트\회사 홈페이지" required><button type="button" id="selectFolder">폴더 위치</button></div>
+          <small id="runtimeNotice">버튼은 위치만 가져오며 폴더 내부를 읽지 않습니다.</small>
+        </div>
+        <label class="task-field" for="projectName"><span>프로젝트 이름</span><input id="projectName" maxlength="80" placeholder="예: 회사 홈페이지" required></label>
         <label class="task-field" for="taskRequest"><span>AI에게 맡길 일</span><textarea id="taskRequest" maxlength="2000" placeholder="예: 로그인 오류를 고치고 모바일 화면을 정리해 주세요." required></textarea></label>
-        <div class="actions"><button type="button" class="primary" id="analyzeButton" disabled>안전하게 분석하기 →</button></div>
+        <div class="actions"><button type="button" class="primary" id="continueSettings">디자인과 전달 설정 →</button></div>
       </section>
 
       <section class="panel" data-step="2">
-        <div class="section-title"><span>02</span><h2>실행하지 않고 구조만 읽었습니다.</h2></div>
-        <div class="analysis-grid" id="analysisGrid"></div>
-        <section class="risk-section"><h3>안전 확인</h3><ul id="riskList"></ul></section>
-        <p class="web-note" id="webNote" hidden>웹판은 파일 내용 없이 이름·크기·구조만 분석합니다.</p>
-        <div class="actions"><button type="button" class="primary" id="continueReview">설정과 전달 내용 확인 →</button></div>
+        <div class="section-title"><span>02</span><h2>디자인과 전달 내용을 확인하세요.</h2></div>
+        <div class="handoff-design">
+          <label for="handoffDesignPreset">디자인 방향</label><select id="handoffDesignPreset"></select>
+          <strong id="handoffDesignSummary" aria-live="polite"></strong>
+          <a class="design-reference-link" href="design-controller.html" target="_blank" rel="noopener" data-vas-link data-design-reference><span data-design-reference-label>디자인 예시·설정 보기</span><span aria-hidden="true">↗</span></a>
+          <p class="design-reference-note">새 창에서 실제 화면 예시를 보고 세부 값을 바꿀 수 있습니다.</p>
+        </div>
+        <label class="provider-field">사용할 코딩 도구<select id="provider"><option value="codex">Codex</option><option value="claude">Claude</option><option value="antigravity">Antigravity</option><option value="universal">기타 코딩 도구</option></select></label>
+        <div id="existingProjectContextReview"></div>
+        <p class="web-note">오른쪽 PROMPT가 실제 전달 내용입니다. JSON은 설정을 보관하거나 함께 전달할 때만 사용하면 됩니다.</p>
+        <div class="actions handoff-actions"><button type="button" data-result-import>이전 결과 불러오기</button><button type="button" id="downloadJson">JSON 저장</button><button type="button" class="primary" id="copyPrompt">Codex용 프롬프트 복사 →</button></div>
       </section>
 
       <section class="panel" data-step="3">
-        <div class="section-title"><span>03</span><h2>마지막 설정을 확인하세요.</h2></div>
-        <div class="handoff-design">
-          <label for="handoffDesignPreset">디자인 방향</label><select id="handoffDesignPreset"></select>
-          <strong id="handoffDesignSummary"></strong>
-          <a href="design-controller.html" target="_blank" rel="noopener" data-vas-link>세부 디자인 설정 열기 ↗</a>
-        </div>
-        <label class="provider-field">사용할 코딩 도구<select id="provider"><option value="codex">Codex</option><option value="claude">Claude</option><option value="antigravity">Antigravity</option><option value="universal">기타 코딩 도구</option></select></label>
-        <div class="actions handoff-actions"><button type="button" id="copyPrompt">프롬프트 미리 복사</button><button type="button" class="primary" id="downloadJson">JSON 만들기 →</button></div>
-      </section>
-
-      <section class="panel" data-step="4">
-        <div class="section-title"><span>04</span><h2>AI 전달 준비가 끝났습니다.</h2></div>
-        <div class="finish-box"><b>이제 이렇게 하세요</b><ol><li>코딩 도구에서 원본 프로그램 폴더를 엽니다.</li><li><code>VAS-AI-HANDOFF.json</code>을 첨부합니다.</li><li>복사한 프롬프트를 붙여넣습니다.</li></ol></div>
-        <div class="result"><p id="resultMessage">JSON을 만들었습니다. 이제 VAS를 닫아도 됩니다.</p></div>
-        <div class="actions finish-actions"><button type="button" id="downloadAgain">JSON 다시 저장</button><button type="button" id="copyPromptAgain">프롬프트 복사</button><a href="vas-hub.html" data-vas-link>새 작업 시작</a><button type="button" data-setup-settings>설정 다시 하기</button></div>
+        <div class="section-title"><span>03</span><h2>코딩 AI에 붙여넣으면 됩니다.</h2></div>
+        <div class="finish-box"><b>이제 이렇게 하세요</b><ol><li>Codex·Claude·Antigravity에서 실제 원본 프로젝트 폴더를 엽니다.</li><li>복사한 프롬프트를 채팅에 붙여넣습니다.</li><li>필요하면 <code>VAS-AI-HANDOFF.json</code>도 프로젝트 최상위 폴더에 저장합니다.</li></ol></div>
+        <div class="result"><p id="resultMessage">프롬프트를 복사했습니다. VAS는 닫아도 됩니다.</p></div>
+        <div class="actions finish-actions"><button type="button" class="primary" id="copyPromptAgain">프롬프트 다시 복사</button><button type="button" id="downloadAgain">JSON 저장</button><button type="button" data-result-import>AI 결과 불러오기</button><a href="vas-hub.html" data-vas-link>새 작업 시작</a><button type="button" data-setup-settings>설정 다시 하기</button></div>
       </section>
       <div class="error-box" id="errorBox" role="alert" hidden></div>
     </section>
 
-    <aside class="preview" aria-label="AI 전달 내용 미리보기"><div class="preview-head"><span>LIVE PREVIEW</span><div><button type="button" class="active" data-preview="json">JSON</button><button type="button" data-preview="prompt">PROMPT</button></div></div><pre id="previewContent" tabindex="0">폴더를 분석하면 AI에게 보낼 내용이 여기에 표시됩니다.</pre><footer><span id="previewStatus">대기 중</span><small>작업 기억·비밀값·절대 경로 제외</small></footer></aside>
+    <aside class="preview" aria-label="AI 전달 프롬프트 미리보기"><div class="preview-head"><span>LIVE PROMPT</span></div><pre id="previewContent" tabindex="0">폴더 위치와 작업 내용을 적으면 코딩 AI에 붙여넣을 프롬프트가 표시됩니다.</pre><footer><span id="previewStatus">작성 대기</span><small>JSON 저장은 선택 · 실제 분석은 코딩 AI</small></footer></aside>
   </main>
 
   <script src="vas-config.js"></script>
@@ -78,12 +77,17 @@
   <script src="theme-state.js"></script>
   <script src="editorial-theme.js"></script>
   <script src="runtime-client.js"></script>
+  <script src="rag-lite.js"></script>
   <script src="personalization-store.js"></script>
   <script src="setup-tools.js"></script>
   <script src="design-presets.js"></script>
   <script src="design-taste-pack.js"></script>
   <script src="setup-design.js"></script>
+  <script src="agent-contract.js"></script>
+  <script src="handoff-workflow.js"></script>
   <script src="agent-handoff-web.js"></script>
+  <script src="handoff-context-review.js"></script>
+  <script src="ai-result-import.js"></script>
   <script src="project-import.js"></script>
 </body>
 </html>

@@ -17,6 +17,8 @@ class ClientFormTests(unittest.TestCase):
         names = [
             "client-application.html", "client-form.js", "client-draft.js",
             "client-export.js", "agent-handoff-web.js", "client-application-init.js",
+            "agent-contract.js", "handoff-workflow.js", "handoff-context-review.js",
+            "ai-result-import.js", "handoff-loop.css",
         ]
         self.assertTrue(all((SRC / name).is_file() for name in names))
 
@@ -31,6 +33,8 @@ class ClientFormTests(unittest.TestCase):
         self.assertTrue(all(not item.startswith(("http://", "https://")) for item in scripts))
         self.assertLess(scripts.index("storage-utils.js"), scripts.index("theme-state.js"))
         self.assertLess(scripts.index("client-form.js"), scripts.index("client-draft.js"))
+        self.assertLess(scripts.index("agent-contract.js"), scripts.index("agent-handoff-web.js"))
+        self.assertLess(scripts.index("handoff-workflow.js"), scripts.index("ai-result-import.js"))
 
     def test_form_navigation_and_validation_exist(self):
         code = self.read("client-form.js")
@@ -59,14 +63,20 @@ class ClientFormTests(unittest.TestCase):
         code = self.read("agent-handoff-web.js")
         self.assertIn("buildNew", code)
         self.assertIn("VAS-AI-HANDOFF.json", code)
-        self.assertIn("sourceType: 'new'", code)
-        self.assertIn("sourceType: 'existing'", code)
+        self.assertIn("baseDocument(projectName, requirements.problem, context, 'new', options)", code)
+        self.assertIn("baseDocument(projectName, task, context, 'existing', options)", code)
+        self.assertIn("projectStructureInferred: false", code)
+        self.assertIn("RBG(Read Before Generate)", code)
+        self.assertIn("VAS-AI-RESULT.json", code)
+        self.assertIn("schemaVersion: 3", code)
 
     def test_standalone_builder_removes_internal_modules(self):
         code = (ROOT / "scripts" / "build_release.py").read_text(encoding="utf-8")
         for name in ["runtime-client", "personalization-store", "rag-lite"]:
             self.assertIn(name, code)
         self.assertIn('data-mode="standalone"', code)
+        for name in ["agent-contract.js", "handoff-workflow.js", "ai-result-import.js", "handoff-loop.css"]:
+            self.assertIn(name, code)
 
     def test_source_form_is_under_line_limit(self):
         self.assertLessEqual(len(self.read("client-application.html").splitlines()), 500)

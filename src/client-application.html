@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.3 — 새 프로젝트</title>
+  <title>VAS 2.6.4 — 새 프로젝트</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="client-style.css">
+  <link rel="stylesheet" href="handoff-loop.css">
 </head>
 <body>
   <div class="layout-wrapper">
@@ -19,7 +20,7 @@
         </div>
         <div class="hero-meta">VAS /// NEW PROJECT</div>
         <div class="active-theme-label">Design: <span id="themeNameSpan">Awwwards</span></div>
-        <div class="hero-title"><h1>새 프로젝트<br>설정.</h1><p>질문을 하나씩 확인한 뒤 코딩 AI가 바로 읽을 JSON을 만듭니다.</p></div>
+        <div class="hero-title"><h1><span>새 프로젝트</span><span>설정.</span></h1><p>질문을 하나씩 확인한 뒤 코딩 AI가 바로 읽을 JSON을 만듭니다.</p></div>
       </div>
       <div class="progress-indicator" id="progressText">01<span>/05</span></div>
       <button type="button" class="vas-btn-clear no-print" onclick="clearForm()">↺ 새로 시작</button>
@@ -35,7 +36,10 @@
           <div class="q"><label for="projectName">프로젝트 이름</label><input id="projectName" type="text" name="project_name" placeholder="예: 사내 문서 검색" required maxlength="80"></div>
           <div class="q"><label for="problemDescription">해결할 문제와 원하는 결과</label><textarea id="problemDescription" name="problem_desc" placeholder="현재 불편한 점과 완성됐을 때의 모습을 적어주세요." required maxlength="4000"></textarea></div>
           <div class="q"><label for="projectReference">참고할 서비스 <small>선택</small></label><input id="projectReference" type="text" name="reference" placeholder="예: Notion AI"></div>
-          <div class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"><span>참고 파일을 선택하면 이름만 화면에 표시하며 최종 JSON에는 넣지 않습니다.</span><div class="file-chips" id="fileChips"></div><input type="file" id="fileInput" multiple hidden onchange="handleFiles(this.files)"></div>
+          <div class="result-import-callout"><div><strong>이전 AI 작업을 이어서 하나요?</strong><p>VAS-AI-RESULT.json이 있으면 남은 작업과 실패한 테스트를 다음 인계에 연결합니다.</p></div><button type="button" data-result-import>이전 결과 불러오기</button></div>
+          <p class="loop-status" id="newLoopStatus" role="status" hidden></p>
+          <button type="button" class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"><span>참고 파일을 선택하면 이름만 화면에 표시하며 최종 JSON에는 넣지 않습니다.</span></button>
+          <input type="file" id="fileInput" multiple hidden onchange="handleFiles(this.files)"><div class="file-chips" id="fileChips"></div>
         </section>
 
         <section class="step" data-step="2">
@@ -77,7 +81,8 @@
 
         <section class="step" data-step="5">
           <div class="step-header"><h2>디자인을 정합니다.</h2><p>기본 방향을 고르거나 디자인 스튜디오에서 세부 값을 조정하세요.</p></div>
-          <div class="q design-choice"><label for="projectDesignPreset">디자인 방향</label><select id="projectDesignPreset"></select><strong id="projectDesignSummary"></strong><a href="design-controller.html" target="_blank" rel="noopener" data-vas-link>세부 디자인 설정 열기 ↗</a><p>새 창에서 변경한 값은 이 화면으로 돌아오면 자동 반영됩니다.</p></div>
+          <div class="q design-choice"><label for="projectDesignPreset">디자인 방향</label><select id="projectDesignPreset"></select><strong id="projectDesignSummary" aria-live="polite"></strong><a class="design-reference-link" href="design-controller.html" target="_blank" rel="noopener" data-vas-link data-design-reference><span data-design-reference-label>디자인 예시·설정 보기</span><span aria-hidden="true">↗</span></a><p>새 창에서 실제 화면 예시를 보고 바꾸면 이 화면에 자동 반영됩니다.</p></div>
+          <div id="newProjectContextReview"></div>
         </section>
 
         <div class="nav-btns no-print" id="navWrap"><button type="button" class="btn btn-prev" id="prevBtn" onclick="changeStep(-1)">이전</button><button type="button" class="btn btn-next" id="nextBtn" onclick="changeStep(1)">다음</button></div>
@@ -89,6 +94,7 @@
           <div class="done-btns no-print">
             <button type="button" class="btn action-btn" id="downloadHandoff" onclick="exportJson()">JSON 저장</button>
             <button type="button" class="btn action-btn" id="copyNewPrompt" onclick="copyNewProjectPrompt()">프롬프트 복사</button>
+            <button type="button" class="btn action-btn" data-result-import>AI 결과 불러오기</button>
             <button type="button" class="btn" onclick="clearForm()">새 작업 시작</button>
             <button type="button" class="btn" data-setup-settings>설정 다시 하기</button>
             <button type="button" class="btn" onclick="goBackFromDone()">← 내용 수정</button>
@@ -101,14 +107,20 @@
 
   <script src="vas-config.js"></script>
   <script src="storage-utils.js"></script>
+  <script src="runtime-client.js"></script>
   <script src="theme-state.js"></script>
   <script src="editorial-theme.js"></script>
+  <script src="rag-lite.js"></script>
   <script src="personalization-store.js"></script>
   <script src="setup-tools.js"></script>
   <script src="design-presets.js"></script>
   <script src="design-taste-pack.js"></script>
   <script src="setup-design.js"></script>
+  <script src="agent-contract.js"></script>
+  <script src="handoff-workflow.js"></script>
   <script src="agent-handoff-web.js"></script>
+  <script src="handoff-context-review.js"></script>
+  <script src="ai-result-import.js"></script>
   <script src="client-form.js"></script>
   <script src="client-draft.js"></script>
   <script src="client-export.js"></script>

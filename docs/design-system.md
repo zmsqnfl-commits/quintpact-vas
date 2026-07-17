@@ -1,6 +1,6 @@
 # 디자인 시스템 (Design System)
 
-이 문서는 VAS 2.6.3 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
+이 문서는 VAS 2.6.4 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
 과거의 고정된(하드코딩된) 다크모드 룰은 폐기되었으며, 메인 디자인 시스템과 산출물 생성은 **내장 하이브리드 디자인 스튜디오**를 기준으로 합니다.
 
 ---
@@ -43,4 +43,6 @@ Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/desi
 
 - 새 저장소는 `awwwards`로 시작합니다.
 - 기존 저장소의 색상·간격·프리셋은 자동 전환하지 않습니다.
-- 허브와 연결 화면은 `VASThemeState`의 토큰을 사용하고, URL 상태 브리지로 선택값을 이어갑니다.
+- VAS 허브·설정 화면은 warm gray·near black·황갈색의 Awwwards Editorial 셸을 유지합니다.
+- 프로젝트 프리셋은 VAS 화면 색을 뒤집지 않고 JSON·프롬프트·디자인 예시에만 반영합니다.
+- `VASThemeState` URL 브리지로 선택값은 화면 사이에 이어갑니다.

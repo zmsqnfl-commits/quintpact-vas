@@ -218,7 +218,7 @@ require({config}); require({rag}); require({store});
 
     def test_project_events_record_categories_without_user_names(self):
         project_import = (SRC / "project-import.js").read_text(encoding="utf-8")
-        marker = project_import.index("action: 'handoff_analyzed'")
+        marker = project_import.index("action: 'handoff_prompt_prepared'")
         start = project_import.rindex("VASPersonalization.record", 0, marker)
         event_block = project_import[start:project_import.index("});", start)]
         self.assertNotIn("projectName", event_block)

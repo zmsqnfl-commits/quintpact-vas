@@ -1,4 +1,4 @@
-"""VAS 2.6.3 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
+"""VAS 2.6.4 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
 from __future__ import annotations
 
 import ast
@@ -33,8 +33,8 @@ js_files = sorted(SRC.glob("*.js"))
 package = json.loads(text(ROOT / "package.json"))
 config = text(SRC / "vas-config.js")
 
-check("01 package version", package.get("version") == "2.6.3")
-check("02 runtime version", "version: '2.6.3'" in config or 'version: "2.6.3"' in config)
+check("01 package version", package.get("version") == "2.6.4")
+check("02 runtime version", "version: '2.6.4'" in config or 'version: "2.6.4"' in config)
 check("03 public entrypoints", all((ROOT / item).exists() for item in [
     "Run-VAS-System.bat", "src/vas-hub.html", "src/client-application.html",
 ]))
@@ -80,10 +80,13 @@ rag = text(SRC / "rag-lite.js")
 check("13 local RAG contract", all(token in rag for token in ["retrieve", "recommend", "augmentPrompt"]))
 check("14 generated knowledge index", (SRC / "knowledge-index.js").exists())
 
-runtime_pages = ["project-import.html", "knowledge-search.html", "memory-center.html"]
+runtime_pages = ["knowledge-search.html", "memory-center.html"]
 hub = text(SRC / "vas-hub.html")
 check("15 setup and compatibility wiring", all("runtime-client.js" in text(SRC / page) for page in runtime_pages)
-      and "runtime-client.js" not in hub and hub.count('class="start-card') == 2)
+      and "runtime-client.js" in hub and "runtime-client.js" in text(SRC / "project-import.html")
+      and "runtime-client.js" in text(SRC / "client-application.html")
+      and all("rag-lite.js" in text(SRC / page) for page in ["client-application.html", "project-import.html"])
+      and hub.count('class="start-card') == 2)
 check("16 migration engine files", all((ROOT / item).exists() for item in [
     "scripts/vas_project_import.py", "scripts/vas-project-import.py", "scripts/VAS.Migration.psm1",
 ]))

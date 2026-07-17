@@ -25,6 +25,7 @@ async function reachDone(page) {
   await page.locator('#nextBtn').click();
   await waitStep(page, 5);
   await page.locator('#projectDesignPreset').selectOption('awwwards');
+  await page.locator('[data-context-confirm]').click();
   await page.locator('#nextBtn').click();
   await expect(page.locator('#doneScreen')).toHaveClass(/active/);
 }

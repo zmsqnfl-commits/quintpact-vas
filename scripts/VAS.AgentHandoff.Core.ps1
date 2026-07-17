@@ -82,10 +82,19 @@ function New-VASHandoffCliRequest {
     if ($null -ne $requestedContext) {
         $requestedRequirements = Get-VASHandoffValue $requestedContext 'requirements' $null
         $requestedDesign = Get-VASHandoffValue $requestedContext 'design' $null
+        $requestedRag = Get-VASHandoffValue $requestedContext 'rag' $null
+        $requestedContinuation = Get-VASHandoffValue $requestedContext 'continuation' $null
         if ($null -ne $requestedRequirements) { $context.requirements = $requestedRequirements }
         if ($null -ne $requestedDesign) { $context.design = $requestedDesign }
+        if ($null -ne $requestedContinuation) { $context.continuation = $requestedContinuation }
+        if ($null -ne $requestedRag) {
+            $approvedRag = @(Get-VASHandoffValue $requestedRag 'items' @() | Where-Object {
+                [bool](Get-VASHandoffValue $_ 'userApproved' $false)
+            } | Select-Object -First 3)
+            $context.rag = [ordered]@{ included = ($approvedRag.Count -gt 0); items = $approvedRag }
+        }
     }
-    $context.rag = [ordered]@{ included = $false; items = @() }
+    if ($null -eq $context.rag) { $context.rag = [ordered]@{ included = $false; items = @() } }
     $context.preferences = [ordered]@{ included = $false; items = @() }
     return [ordered]@{
         source = $resolved.source
@@ -95,6 +104,8 @@ function New-VASHandoffCliRequest {
         summary = [string](Get-VASHandoffValue $Body 'summary' '')
         task = Get-VASHandoffValue $Body 'task' ([ordered]@{ request = ''; constraints = @(); acceptanceCriteria = @() })
         context = $context
+        workflow = Get-VASHandoffValue $Body 'workflow' ([ordered]@{ iteration = 1; parentResultId = $null })
+        ragReviewed = [bool](Get-VASHandoffValue $Body 'ragReviewed' $true)
         mode = $mode
         snapshotId = [string](Get-VASHandoffValue $Body 'snapshotId' '')
         format = $format

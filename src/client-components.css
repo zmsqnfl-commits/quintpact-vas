@@ -1,11 +1,13 @@
-.drag-drop-zone { display: block; margin-top: 18px; border: 1px dashed color-mix(in srgb, var(--border) 58%, transparent); border-radius: 0; padding: 28px 18px; background: transparent; text-align: left; cursor: pointer; transition: border-color .3s, padding .3s; }
-.drag-drop-zone:hover, .drag-drop-zone.dragover { border-color: var(--accent); padding-left: 26px; }
+.drag-drop-zone { position: relative; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; min-height: 86px; margin-top: 18px; border: 1px dashed color-mix(in srgb, var(--border) 72%, transparent); border-radius: 0; padding: 20px 22px; background: var(--field-bg, transparent); color: inherit; text-align: left; cursor: pointer; transition: border-color .25s, background .25s; }
+.drag-drop-zone::after { content: "파일 선택 +"; min-width: 96px; padding: 11px 13px; border: 1px solid var(--border); color: var(--text-main); text-align: center; font-size: 12px; font-weight: 800; }
+.drag-drop-zone:hover, .drag-drop-zone.dragover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--field-bg, transparent)); }
+.drag-drop-zone:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .drag-drop-zone > span { color: var(--text-muted); font-size: 13px; line-height: 1.6; pointer-events: none; }
 .file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .file-chip { display: inline-flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding: 5px 0; font-size: 12px; }
 .file-chip button { border: 0; background: none; color: inherit; cursor: pointer; }
 .vas-btn-clear { width: fit-content; border: 0; border-bottom: 1px solid currentColor; padding: 4px 0; background: transparent; color: inherit; cursor: pointer; font-size: 12px; opacity: .7; }
-.draft-policy, .draft-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 14px 0; border-bottom: 1px solid color-mix(in srgb, var(--border-dark) 35%, transparent); font-size: 12px; line-height: 1.5; }
+.draft-policy, .draft-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; padding: 13px 15px; border: 1px solid color-mix(in srgb, var(--border-dark) 45%, transparent); background: color-mix(in srgb, var(--bg-color) 78%, white 22%); font-size: 12px; line-height: 1.5; }
 .draft-policy button { flex: none; border: 0; border-bottom: 1px solid currentColor; padding: 3px 0; background: transparent; cursor: pointer; font-weight: 700; }
 .draft-notice { border-top: 1px solid var(--border-dark); border-bottom-color: var(--border-dark); }
 .draft-notice[hidden] { display: none; }
@@ -18,4 +20,6 @@
   .draft-notice { align-items: stretch; flex-direction: column; }
   .draft-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .draft-actions button { width: 100%; }
+  .drag-drop-zone { grid-template-columns: 1fr; }
+  .drag-drop-zone::after { width: 100%; }
 }

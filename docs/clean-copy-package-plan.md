@@ -2,8 +2,8 @@
 
 `python scripts/build_release.py`가 `dist/`에 아래 결과를 만듭니다.
 
-- `VAS-2.6.3-windows.zip`: 로컬 서버·폴더 분석·선택형 작업 기억 포함 전체 실행본
-- `VAS-Client-Form-2.6.3.zip`: 외부 공유용 독립 설정 폼
+- `VAS-2.6.4-windows.zip`: 로컬 서버·프롬프트 생성·선택형 작업 기억 포함 전체 실행본
+- `VAS-Client-Form-2.6.4.zip`: 외부 공유용 독립 설정 폼
 - `pages/`: GitHub Pages용 정적 허브
 - `release-manifest.json`, `SHA256SUMS.txt`: 파일 목록과 검증 해시
 

@@ -26,6 +26,14 @@ test('design preview reflects preset tokens', async ({ page }) => {
 
   await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
 
+  await expect(page.locator('.p-stat-card')).toHaveCount(3);
+  await expect(page.locator('.p-profile')).toHaveCount(1);
+  await expect(page.locator('.btn-preset[data-preset="awwwards"] span')).toContainText('잡지처럼');
+  const presetColumns = await page.locator('.preset-grid').first().evaluate(element =>
+    getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
+  );
+  expect(presetColumns).toBe(2);
+
   const result = await page.evaluate(({ requiredSections, requiredPreviewPresets }) => {
     const optionValues = [...document.querySelectorAll('#fontFamily option')].map(option => option.value);
     const unsupportedFonts = Object.entries(PRESETS)
@@ -98,16 +106,16 @@ test('fresh installs use the Awwwards editorial baseline across studio and hub',
     const rootStyle = getComputedStyle(document.documentElement);
     const headingSize = parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize);
     return {
-      preset: document.documentElement.dataset.preset,
+      preset: document.documentElement.dataset.shellPreset,
       background: getComputedStyle(document.body).backgroundColor,
       motion: rootStyle.getPropertyValue('--motion').trim(),
-      radius: rootStyle.getPropertyValue('--radius').trim(),
+      radius: getComputedStyle(document.querySelector('.start-card')).borderRadius,
       headingSize
     };
   });
   expect(hub.preset).toBe('awwwards');
   expect(hub.background).toBe('rgb(232, 232, 229)');
-  expect(hub.motion).toBe('0.5s');
+  expect(parseFloat(hub.motion)).toBe(0.5);
   expect(hub.radius).toBe('0px');
   expect(hub.headingSize).toBeLessThanOrEqual(96);
 });
@@ -152,7 +160,7 @@ test('existing Neo-Brutalism and custom tokens stay intact', async ({ page }) =>
   expect(preserved.tokens.colors.primary).toBe('#123456');
 });
 
-test('studio preset tokens travel to the hub through the navigation bridge', async ({ page }) => {
+test('studio preset tokens travel through the hub without restyling the setup shell', async ({ page }) => {
   await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
   const encoded = await page.evaluate(() => {
     applyPreset('linear');
@@ -160,21 +168,20 @@ test('studio preset tokens travel to the hub through the navigation bridge', asy
   });
   await page.goto(`${hubUrl}#vas=${encoded}`, { waitUntil: 'domcontentloaded' });
   const result = await page.evaluate(() => {
-    const style = getComputedStyle(document.documentElement);
+    const state = VASThemeState.get();
     return {
-      preset: document.documentElement.dataset.preset,
+      preset: state.preset,
+      shellPreset: document.documentElement.dataset.shellPreset,
       background: getComputedStyle(document.body).backgroundColor,
-      primary: style.getPropertyValue('--primary').trim(),
-      accent: style.getPropertyValue('--editorial-accent').trim(),
-      padding: style.getPropertyValue('--space').trim(),
-      radius: style.getPropertyValue('--radius').trim(),
-      shadow: style.getPropertyValue('--shadow-size').trim(),
-      motion: style.getPropertyValue('--motion').trim()
+      primary: state.tokens.colors.primary,
+      hubActionColor: getComputedStyle(document.querySelector('.start-card.import strong')).color,
+      motion: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--motion'))
     };
   });
   expect(result).toEqual({
-    preset: 'linear', background: 'rgb(11, 12, 15)', primary: '#6f7db8', accent: '#6f7db8',
-    padding: '24px', radius: '8px', shadow: '20px', motion: '0.2s'
+    preset: 'linear', shellPreset: 'awwwards', background: 'rgb(232, 232, 229)', primary: '#6f7db8',
+    hubActionColor: 'rgb(155, 104, 8)',
+    motion: 0.5
   });
 
   const largeTypeState = await page.evaluate(() => {
@@ -186,12 +193,14 @@ test('studio preset tokens travel to the hub through the navigation bridge', asy
   await page.goto(`${hubUrl}#vas=${largeTypeState}`, { waitUntil: 'domcontentloaded' });
   await page.reload({ waitUntil: 'domcontentloaded' });
   const typeScale = await page.evaluate(() => ({
+    stored: VASThemeState.get().tokens.fontSize,
     body: parseFloat(getComputedStyle(document.body).fontSize),
     hero: parseFloat(getComputedStyle(document.querySelector('.hero h1')).fontSize),
     action: parseFloat(getComputedStyle(document.querySelector('.start-copy strong')).fontSize),
-    utility: parseFloat(getComputedStyle(document.querySelector('[data-setup-settings]')).fontSize)
+    utility: parseFloat(getComputedStyle(document.querySelector('[data-setup-help]')).fontSize)
   }));
-  expect(typeScale.body).toBe(24);
+  expect(typeScale.stored).toBe(24);
+  expect(typeScale.body).toBe(16);
   expect(typeScale.hero).toBeLessThanOrEqual(96);
   expect(typeScale.action).toBeLessThanOrEqual(28);
   expect(typeScale.utility).toBeLessThanOrEqual(18);

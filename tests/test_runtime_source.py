@@ -32,6 +32,11 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
         self.assertIn(":fallback", launcher)
         self.assertIn("src\\vas-hub.html", launcher)
 
+    def test_folder_picker_starts_from_this_pc_with_a_real_path(self):
+        source = (BASE / "scripts" / "VAS.Migration.psm1").read_text(encoding="utf-8-sig")
+        self.assertIn("RootFolder = [Environment+SpecialFolder]::MyComputer", source)
+        self.assertIn("$dialog.SelectedPath = $initialPath", source)
+
     @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
     def test_conflict_mapping_never_echoes_source_path(self):
         command = (

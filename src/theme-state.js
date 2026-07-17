@@ -82,7 +82,7 @@
     VASStorage.writeJson('vasThemeTokens', state.tokens);
     VASStorage.writeText('vasCurrentPreset', state.preset);
     VASStorage.writeText('vasTasteProfileMode', state.tasteProfileMode);
-    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.6.3');
+    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.6.4');
     VASStorage.writeJson('vasThemeStateMeta', { v: STATE_VERSION, preset: state.preset });
   }
 
@@ -117,9 +117,10 @@
     const scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll('a[data-vas-link], a[href$=".html"]').forEach(function (link) {
       const raw = link.getAttribute('href');
-      if (!raw || /^(https?:|mailto:|javascript:)/i.test(raw)) return;
+      if (!raw || /^(mailto:|javascript:)/i.test(raw)) return;
       try {
         const url = new URL(raw, global.location.href);
+        if (/^https?:$/.test(url.protocol) && url.origin !== global.location.origin) return;
         const fragments = new URLSearchParams(url.hash.replace(/^#/, ''));
         fragments.set(HASH_KEY, state);
         url.hash = fragments.toString();

@@ -263,11 +263,32 @@ function Select-VASProjectFolder {
     $selected = $Path
     if ([string]::IsNullOrWhiteSpace($selected)) {
         Add-Type -AssemblyName System.Windows.Forms
+        Add-Type -AssemblyName System.Drawing
         $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+        $owner = New-Object System.Windows.Forms.Form
         $dialog.Description = '원래 프로젝트가 있는 폴더를 선택하세요'
         $dialog.ShowNewFolderButton = $false
-        if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { return $null }
-        $selected = $dialog.SelectedPath
+        $dialog.RootFolder = [Environment+SpecialFolder]::MyComputer
+        $initialPath = Split-Path -Parent (Resolve-VASRoot $Root)
+        if (Test-Path -LiteralPath $initialPath -PathType Container) {
+            $dialog.SelectedPath = $initialPath
+        }
+        $owner.Text = 'VAS 폴더 선택'
+        $owner.ShowInTaskbar = $false
+        $owner.TopMost = $true
+        $owner.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+        $owner.Size = New-Object System.Drawing.Size(1, 1)
+        $owner.Opacity = 0
+        try {
+            $owner.Show()
+            $owner.Activate()
+            if ($dialog.ShowDialog($owner) -ne [System.Windows.Forms.DialogResult]::OK) { return $null }
+            $selected = $dialog.SelectedPath
+        } finally {
+            $dialog.Dispose()
+            $owner.Close()
+            $owner.Dispose()
+        }
     }
     if (-not (Test-Path -LiteralPath $selected -PathType Container)) { throw "폴더가 존재하지 않습니다: $selected" }
     $fullPath = (Get-Item -LiteralPath $selected -Force).FullName

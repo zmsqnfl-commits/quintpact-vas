@@ -1,4 +1,4 @@
-"""Safety and compatibility tests for VAS 2.6.3 AI handoff packages."""
+"""Safety and compatibility tests for VAS 2.6.4 AI handoff packages."""
 from __future__ import annotations
 
 import hashlib
@@ -50,20 +50,29 @@ class AgentHandoffTests(unittest.TestCase):
             "sourceType": "existing",
             "task": {"request": "C:\\Users\\person\\secret 프로젝트를 고쳐 주세요. contact@example.com 010-1234-5678"},
             "context": {
-                "rag": {"included": True, "items": [{"title": f"항목 {index}", "excerpt": "x" * 1200} for index in range(8)]},
+                "rag": {"included": True, "items": [{
+                    "sourceId": f"memory-{index}", "sourceKind": "memory",
+                    "title": f"항목 {index}", "summary": "x" * 1200,
+                    "reason": "현재 작업과 관련", "userApproved": index != 0,
+                } for index in range(8)]},
                 "preferences": {"included": False, "items": []},
             },
         }
         request.update(extra)
         return request
 
-    def test_preview_detects_stack_without_git_secret_or_absolute_path(self) -> None:
+    def test_preview_omits_guessed_structure_and_sensitive_values(self) -> None:
         result = build_preview(self.request())
         document = result["document"]
         encoded = json.dumps(document, ensure_ascii=False)
-        paths = [item["path"] for item in document["inventory"]["files"]]
-        self.assertIn("JavaScript/TypeScript", document["analysis"]["stacks"])
-        self.assertIn("React", [name.title() for name in document["analysis"]["frameworks"]])
+        paths = [item["path"] for item in result["candidateFiles"]]
+        self.assertNotIn("analysis", document)
+        self.assertNotIn("inventory", document)
+        self.assertEqual(document["schemaVersion"], 3)
+        self.assertRegex(document["workflow"]["handoffId"], r"^h_[a-f0-9]{32}$")
+        self.assertEqual(document["workflow"]["iteration"], 1)
+        self.assertFalse(document["security"]["projectStructureInferred"])
+        self.assertFalse(document["security"]["technologyStackInferred"])
         self.assertFalse(any(path.startswith(".git/") or path.startswith("node_modules/") for path in paths))
         self.assertNotIn(".env", paths)
         self.assertNotIn(str(self.source), encoded)
@@ -71,16 +80,20 @@ class AgentHandoffTests(unittest.TestCase):
         self.assertNotIn("contact@example.com", encoded)
         self.assertNotIn("010-1234-5678", encoded)
         self.assertIn("[absolute-path]", document["task"]["request"])
-        self.assertEqual(len(document["context"]["rag"]["items"]), 5)
-        self.assertLessEqual(len(document["context"]["rag"]["items"][0]["excerpt"]), 800)
+        self.assertEqual(len(document["context"]["rag"]["items"]), 3)
+        self.assertTrue(all(item["userApproved"] for item in document["context"]["rag"]["items"]))
+        self.assertLessEqual(len(document["context"]["rag"]["items"][0]["summary"]), 400)
+        self.assertNotIn("excerpt", document["context"]["rag"]["items"][0])
+        self.assertTrue(document["qualityGate"]["ragReviewed"])
+        self.assertTrue(document["security"]["approvedContextOnly"])
         self.assertTrue(document["security"]["sourceUnchanged"])
         self.assertFalse(document["security"]["projectCodeExecuted"])
 
-    def test_malformed_manifest_is_warning_free_and_analysis_continues(self) -> None:
+    def test_malformed_manifest_is_not_parsed_or_inferred(self) -> None:
         (self.source / "package.json").write_text("{broken", encoding="utf-8")
         result = build_preview(self.request())
-        self.assertIn("package.json", result["document"]["analysis"]["manifests"])
-        self.assertEqual(result["document"]["analysis"]["dependencies"], [])
+        self.assertNotIn("analysis", result["document"])
+        self.assertIn("실제 파일", result["pasteText"])
 
     def test_cp949_reviewed_zip_is_deterministic_and_verifiable(self) -> None:
         legacy = self.source / "src" / "legacy.txt"

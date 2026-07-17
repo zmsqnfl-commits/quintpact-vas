@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.6.3 — 디자인 스튜디오</title>
+  <title>VAS 2.6.4 — 디자인 스튜디오</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
@@ -24,9 +24,9 @@
   <main class="app" data-mobile-view="settings">
     <aside class="controls" id="controlsPanel" aria-label="디자인 설정">
       <div class="controls-intro">
-        <p class="eyebrow">PROJECT DESIGN / 2.6.3</p>
-        <h1>프로젝트의<br>보이는 기준.</h1>
-        <p>프리셋을 고르고 필요한 값만 조정하세요. 오른쪽 미리보기에 바로 반영됩니다.</p>
+        <p class="eyebrow">PROJECT DESIGN / 2.6.4</p>
+        <h1>VAS 디자인<br>스튜디오</h1>
+        <p>프리셋을 고르면 오른쪽의 실제 구성 요소가 바로 바뀝니다.</p>
       </div>
 
       <section class="group" id="preset-container" aria-labelledby="presetTitle">
@@ -84,19 +84,20 @@
     <section class="preview" aria-labelledby="previewTitle">
       <div class="preview-heading"><span class="eyebrow">LIVE PREVIEW</span><h2 id="previewTitle">디자인 미리보기</h2></div>
       <div class="adv-preview" id="advPreview">
-        <div class="p-editorial-copy">
-          <span class="p-index">01 / PROJECT</span>
-          <h2>무엇을<br>만들까요?</h2>
-          <p>아이디어를 구조화하고 필요한 정보를 연결해, 다음 작업이 자연스럽게 이어지도록 만듭니다.</p>
-          <button type="button" class="p-btn">지금 시작하기 →</button>
+        <div class="p-hero">
+          <h2>Design System Core<span>디자인 시스템 코어</span></h2>
+          <p>큰 제목, 버튼, 정보 카드와 입력 화면이 선택한 디자인에서 어떻게 보이는지 확인하세요.</p>
+          <button type="button" class="p-btn">시작하기</button>
         </div>
-        <ol class="p-flow" aria-label="프로젝트 흐름">
-          <li><span>01</span><strong>프로젝트 흐름</strong><i>→</i></li>
-          <li><span>02</span><strong>요구사항 정리</strong><i>→</i></li>
-          <li><span>03</span><strong>디자인 적용</strong><i>→</i></li>
-          <li><span>04</span><strong>다음 작업 추천</strong><i>→</i></li>
-        </ol>
-        <div class="p-footnote"><span>VAS / EDITORIAL MOTION</span><p>표현은 과감하게, 흐름은 분명하게.</p></div>
+        <div class="p-grid">
+          <article class="p-stat-card"><span class="label">전체 사용자</span><strong class="value">24,592</strong><span class="trend">+12.5%</span></article>
+          <article class="p-stat-card"><span class="label">이번 달 작업</span><strong class="value">124</strong><span class="trend">+8.2%</span></article>
+          <article class="p-stat-card"><span class="label">완료율</span><strong class="value">92%</strong><span class="trend">+3.4%</span></article>
+        </div>
+        <div class="p-profile">
+          <div class="p-avatar" aria-hidden="true"></div>
+          <div class="p-profile-info"><h3>프로젝트 설정</h3><p>선택한 프리셋의 글자, 색상, 선, 여백과 모서리를 함께 확인합니다.</p><input type="text" class="p-input" value="로그인 화면을 더 읽기 쉽게 정리해 주세요." aria-label="미리보기 입력창"></div>
+        </div>
       </div>
     </section>
   </main>

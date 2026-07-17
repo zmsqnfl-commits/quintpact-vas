@@ -13,6 +13,27 @@ const PRESET_CATEGORIES = {
 const SYSTEM_SANS = VASStorage.SYSTEM_SANS;
 const SYSTEM_MONO = VASStorage.SYSTEM_MONO;
 
+const PRESET_DESCRIPTIONS = Object.freeze({
+  vercel: '흑백 대비가 선명한 개발 도구형 디자인',
+  linear: '차분한 어두운 화면의 업무 도구형 디자인',
+  stripe: '여백과 부드러운 깊이를 살린 신뢰감 있는 디자인',
+  apple: '큰 글자와 넓은 여백을 쓰는 부드러운 프리미엄 디자인',
+  neobrutal: '굵은 선과 강한 색으로 시선을 끄는 각진 디자인',
+  awwwards: '잡지처럼 큰 제목과 비대칭 구성을 쓰는 편집형 디자인',
+  untitled: '읽기 쉽고 정돈된 기업용 서비스 디자인',
+  shadcn: '군더더기 없이 단정한 개발자 도구형 디자인',
+  glow: '어두운 배경에 은은한 빛을 쓰는 미래형 디자인',
+  google: '둥근 모양과 부드러운 색을 쓰는 친근한 디자인',
+  ant: '표와 정보가 많은 업무 화면에 맞는 디자인',
+  carbon: '격자와 직선을 강조한 산업·기술 도구형 디자인',
+  spotify: '콘텐츠가 돋보이는 선명한 어두운 디자인',
+  discord: '정보가 많아도 편안하게 읽히는 커뮤니티형 디자인',
+  airbnb: '따뜻한 여백과 사진 중심의 친근한 서비스 디자인',
+  notion: '문서처럼 조용하고 단순한 작업 공간 디자인',
+  github: '코드와 변경 내역을 읽기 좋은 개발 도구형 디자인',
+  figma: '도구와 작업 영역을 촘촘하게 배치한 편집기형 디자인'
+});
+
 const PRESETS = {
   vercel: {
     bg: '#ffffff', surface: '#ffffff', text: '#000000', primary: '#000000', border: '#eaeaea',
