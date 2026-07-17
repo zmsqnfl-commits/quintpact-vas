@@ -50,7 +50,7 @@ function Write-VASError {
 }
 function Read-VASJsonBody {
     param([Net.HttpListenerRequest]$Request, [int]$MaximumBytes = 5242880)
-    if ($Request.ContentLength64 -gt $MaximumBytes) { throw '요청 본문이 너무 큽니다.' }
+    if (-not $Request.HasEntityBody -or $Request.ContentLength64 -eq 0) { return [pscustomobject]@{} }; if ($Request.ContentLength64 -gt $MaximumBytes) { throw '요청 본문이 너무 큽니다.' }
     $memory = New-Object IO.MemoryStream
     $buffer = New-Object byte[] 8192
     try {
@@ -262,7 +262,7 @@ function Invoke-VASApiRequest {
     $path = $request.Url.AbsolutePath.TrimEnd('/').ToLowerInvariant()
     $method = $request.HttpMethod.ToUpperInvariant()
     $body = $null
-    if ($method -in @('POST', 'PUT', 'PATCH')) { $body = Read-VASJsonBody $request }
+    if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) { $body = Read-VASJsonBody $request }
     if ($path -eq '/api/heartbeat' -and $method -eq 'POST') {
         Write-VASResponse $Context 200 ([ordered]@{ ok = $true; serverTime = [DateTime]::UtcNow.ToString('o') }); return
     }

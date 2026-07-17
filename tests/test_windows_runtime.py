@@ -1,5 +1,4 @@
 """Windows PowerShell 5.1 VAS localhost runtime integration tests."""
-
 import json
 import hashlib
 import http.server
@@ -18,17 +17,14 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-
 BASE = Path(__file__).resolve().parents[1]
 START_SCRIPT = BASE / "scripts" / "Start-VAS.ps1"
 POWERSHELL = shutil.which("powershell.exe")
-
 def paths_match(left, right):
     try:
         return os.path.samefile(left, right)
     except OSError:
         return os.path.normcase(os.path.realpath(left)) == os.path.normcase(os.path.realpath(right))
-
 def run_launcher(root, state, port, idle=30):
     command = [
         POWERSHELL,
@@ -67,12 +63,10 @@ def run_launcher(root, state, port, idle=30):
     if runtime_path is None:
         raise AssertionError("root-scoped runtime file was not created")
     return json.loads(runtime_path.read_text(encoding="utf-8-sig"))
-
 class RuntimeClient:
     def __init__(self, runtime):
         self.base = f"http://127.0.0.1:{runtime['port']}"
         self.token = runtime["token"]
-
     def request(self, path, method="GET", data=None, auth=True, origin=None):
         body = None if data is None else json.dumps(data).encode("utf-8")
         headers = {}
@@ -87,7 +81,6 @@ class RuntimeClient:
             content_type = response.headers.get("Content-Type", "")
             value = json.loads(raw.decode("utf-8")) if "json" in content_type else raw
             return response.status, value, response.headers
-
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
 class WindowsRuntimeTests(unittest.TestCase):
     @classmethod
@@ -130,7 +123,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         cls.source_project = Path(cls.temp.name) / "legacy-project"
         cls.source_project.mkdir()
         (cls.source_project / "README.md").write_text("# Legacy\n", encoding="utf-8")
-
         blocker = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         blocker.bind(("127.0.0.1", 0))
         blocker.listen(1)
@@ -140,7 +132,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         finally:
             blocker.close()
         cls.client = RuntimeClient(cls.runtime)
-
     @classmethod
     def tearDownClass(cls):
         try:
@@ -149,7 +140,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             pass
         time.sleep(0.5)
         cls.temp.cleanup()
-
     def test_01_preferred_port_falls_back_and_server_reuses(self):
         self.assertNotEqual(self.runtime["port"], self.preferred_port)
         self.assertLessEqual(self.runtime["port"], self.preferred_port + 9)
@@ -157,7 +147,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         reused = run_launcher(self.root, self.state, self.preferred_port)
         self.assertEqual(reused["pid"], self.runtime["pid"])
         self.assertEqual(reused["token"], self.runtime["token"])
-
     def test_02_health_static_content_and_headers(self):
         status, health, headers = self.client.request("/health", auth=False)
         self.assertEqual((status, health["service"]), (200, "VAS"))
@@ -168,7 +157,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(headers["X-Frame-Options"], "DENY")
         self.assertIn("default-src 'self'", headers["Content-Security-Policy"])
-
     def test_02b_two_vas_copies_run_independently(self):
         second_root = Path(self.temp.name) / "second-copy"
         (second_root / "src").mkdir(parents=True)
@@ -189,14 +177,12 @@ class WindowsRuntimeTests(unittest.TestCase):
             self.assertEqual(health["service"], "VAS")
             self.client.request("/api/memory/events", "DELETE")
             clients = [self.client, second_client]
-
             def add_event(index):
                 return clients[index % 2].request(
                     "/api/memory/events",
                     "POST",
                     {"type": "concurrency.test", "payload": {"index": index}},
                 )[1]["accepted"]
-
             with ThreadPoolExecutor(max_workers=8) as pool:
                 self.assertTrue(all(pool.map(add_event, range(20))))
             _, shared, _ = self.client.request("/api/memory/events?type=concurrency.test")
@@ -204,7 +190,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             self.client.request("/api/memory/events", "DELETE")
         finally:
             second_client.request("/api/shutdown", "POST", {})
-
     def test_02c_stale_runtime_cannot_reuse_another_service(self):
         forged_root = Path(self.temp.name) / "forged-runtime-copy"
         (forged_root / "src").mkdir(parents=True)
@@ -212,7 +197,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         (forged_root / "src" / "vas-hub.html").write_text("REAL", encoding="utf-8")
         canonical = str(forged_root.resolve()).rstrip("\\").upper().encode("utf-8")
         runtime_id = "2.6.1-" + hashlib.sha256(canonical).hexdigest()[:16]
-
         class ForgedHealth(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
                 body = json.dumps(
@@ -223,10 +207,8 @@ class WindowsRuntimeTests(unittest.TestCase):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-
             def log_message(self, _format, *_args):
                 pass
-
         forged_server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), ForgedHealth)
         thread = threading.Thread(target=forged_server.serve_forever, daemon=True)
         thread.start()
@@ -249,7 +231,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             forged_server.shutdown()
             forged_server.server_close()
             thread.join(timeout=2)
-
     def test_03_api_requires_token_and_same_origin(self):
         with self.assertRaises(urllib.error.HTTPError) as missing:
             self.client.request("/api/memory/status", auth=False)
@@ -259,7 +240,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             self.client.request("/api/memory/status", origin="http://evil.invalid")
         self.assertEqual(cross_origin.exception.code, 403)
         cross_origin.exception.close()
-
     def test_04_traversal_and_static_writes_are_blocked(self):
         with self.assertRaises(urllib.error.HTTPError) as traversal:
             self.client.request("/src/..%2fdocs%2fguide.md", auth=False)
@@ -269,7 +249,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             self.client.request("/src/vas-hub.html", method="POST", data={}, auth=False)
         self.assertEqual(write_attempt.exception.code, 405)
         write_attempt.exception.close()
-
     def test_05_read_only_file_and_fixed_knowledge_endpoints(self):
         query = urllib.parse.urlencode({"scope": "docs", "path": "guide.md"})
         status, result, _ = self.client.request(f"/api/files/read?{query}")
@@ -286,7 +265,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertIsInstance(runtime_status["capabilities"]["projectImport"]["available"], bool)
         self.assertIn(runtime_status["capabilities"]["projectImport"]["reason"], (None, "python-unavailable", "python-version-unsupported", "migration-module-unavailable"))
         self.assertIsInstance(runtime_status["capabilities"]["python"]["available"], bool)
-
     def test_06_memory_crud_pause_export_import_and_redaction(self):
         event = {
             "type": "form.complete",
@@ -316,12 +294,10 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(saved["payload"]["comment"], "[redacted]")
         for key in ("database", "cloud", "github", "google", "slack", "jwt"):
             self.assertEqual(saved["payload"][key], "[redacted]", key)
-
         updated = dict(event)
         updated["payload"] = {"choice": "vercel"}
         status, result, _ = self.client.request(f"/api/memory/events/{saved['id']}", "PUT", updated)
         self.assertEqual(result["event"]["payload"]["choice"], "vercel")
-
         self.client.request("/api/memory/pause", "POST", {"paused": True})
         _, skipped, _ = self.client.request("/api/memory/events", "POST", event)
         self.assertFalse(skipped["accepted"])
@@ -343,14 +319,12 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(imported_events["events"][0]["payload"]["note"], "[redacted]")
         _, memory_status, _ = self.client.request("/api/memory/status")
         self.assertEqual(memory_status["retention"], "until-explicit-delete")
-
         memory_path = self.state / "memory.json"
         memory_path.write_text("{broken-json", encoding="utf-8")
         _, recovered, _ = self.client.request("/api/memory/status")
         self.assertEqual(recovered["count"], 0)
         self.assertTrue(recovered["recoveredFrom"].startswith("memory.corrupt-"))
         self.assertTrue(list(self.state.glob("memory.corrupt-*.json")))
-
     def test_07_folder_selection_returns_opaque_id_when_module_exists(self):
         status, result, _ = self.client.request(
             "/api/folder/select", "POST", {"path": str(self.source_project)}
@@ -358,7 +332,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         if status == 200:
             self.assertFalse(result["cancelled"])
             self.assertRegex(result["selection"]["selectionId"], r"^[a-f0-9]{32}$")
-
     def test_07b_new_project_is_created_and_registered_atomically(self):
         request = {
             "name": "새 프로젝트",
@@ -392,7 +365,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         _, projects, _ = self.client.request("/api/projects")
         self.assertIn(project["projectId"], [item["projectId"] for item in projects["projects"]])
         self.assertTrue(all("path" not in item and "source" not in item for item in projects["projects"]))
-
         status, themed, _ = self.client.request(
             "/api/projects/theme", "POST", {
                 "projectId": project["projectId"],
@@ -405,7 +377,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             json.loads((target / "design-tokens.json").read_text(encoding="utf-8-sig"))["preset"],
             "awwwards",
         )
-
         status, archive_bytes, headers = self.client.request(
             "/api/projects/export", "POST", {"projectId": project["projectId"]}
         )
@@ -420,7 +391,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             joined = b"\n".join(archive.read(name) for name in sorted(names))
             self.assertNotIn(b"private@example.com", joined)
             self.assertNotIn(b"brief.json", joined)
-
         try:
             self.client.request("/api/projects/create", "POST", request)
             self.fail("duplicate project must fail")
@@ -429,7 +399,6 @@ class WindowsRuntimeTests(unittest.TestCase):
             payload = json.loads(error.read().decode("utf-8"))
             error.close()
         self.assertEqual(payload["code"], "project_conflict")
-
         try:
             self.client.request(
                 "/api/projects/create",
@@ -443,12 +412,19 @@ class WindowsRuntimeTests(unittest.TestCase):
             error.close()
         self.assertEqual(payload["code"], "project_path_forbidden")
         self.assertFalse((self.root / "workspace" / "projects" / "unsafe").exists())
-
     def test_08_heartbeat(self):
+        with socket.create_connection(("127.0.0.1", self.runtime["port"]), timeout=2) as probe:
+            raw_request = (
+                f"POST /api/heartbeat HTTP/1.1\r\nHost: 127.0.0.1:{self.runtime['port']}\r\n"
+                f"Origin: {self.runtime['baseUrl']}\r\nX-VAS-Token: {self.runtime['token']}\r\n"
+                "Content-Length: 0\r\nConnection: keep-alive\r\n\r\n"
+            ).encode("ascii")
+            probe.sendall(raw_request)
+            probe.settimeout(3)
+            self.assertIn(b"200 OK", probe.recv(4096))
         status, result, _ = self.client.request("/api/heartbeat", "POST", {})
         self.assertEqual(status, 200)
         self.assertTrue(result["ok"])
-
     def test_09_migration_errors_are_actionable_and_path_safe(self):
         try:
             self.client.request(
@@ -462,7 +438,6 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(payload["code"], "selection_invalid")
         self.assertIn("다시 선택", payload["error"])
         self.assertNotIn(str(self.temp.name), json.dumps(payload, ensure_ascii=False))
-
         try:
             self.client.request(
                 "/api/migrations/import",
@@ -495,6 +470,5 @@ class WindowsRuntimeIdleTest(unittest.TestCase):
                 list(state.glob("runtime-2.6.1-*.json")),
                 f"idle runtime {runtime['pid']} did not stop",
             )
-
 if __name__ == "__main__":
     unittest.main(verbosity=2)
