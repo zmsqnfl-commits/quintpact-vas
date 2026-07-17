@@ -12,7 +12,7 @@ async function prepareExisting(page, name = '레거시 앱') {
   await page.locator('#taskRequest').fill('모바일 오류를 고쳐 주세요. contact@example.com api_key=sk-proj-1234567890abcdef');
   await page.locator('#continueSettings').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
-  await page.locator('[data-context-confirm]').click();
+  await expect(page.locator('[data-context-confirm], [data-result-import]')).toHaveCount(0);
 }
 
 test('existing handoff uses a self-contained prompt without guessing project structure', async ({ page }) => {
@@ -22,7 +22,9 @@ test('existing handoff uses a self-contained prompt without guessing project str
   await expect(page.locator('#previewContent')).toContainText('Z:\\work\\legacy-app');
   await expect(page.locator('#previewContent')).toContainText('실제 파일을 직접 읽어 판단하세요');
   await expect(page.locator('#previewContent')).toContainText('모바일 오류를 고쳐 주세요');
-  await expect(page.locator('#previewContent')).toContainText('VAS-AI-RESULT.json');
+  await expect(page.locator('#previewContent')).not.toContainText('VAS-AI-RESULT.json');
+  await expect(page.locator('#previewContent')).not.toContainText('handoffId');
+  await expect(page.locator('#previewContent')).not.toContainText('승인된 작업 기억');
   const prompt = await page.locator('#previewContent').textContent();
   expect(prompt).not.toContain('contact@example.com');
   expect(prompt).not.toContain('sk-proj-1234567890abcdef');
@@ -51,9 +53,11 @@ test('JSON remains optional and copied prompt completes the flow', async ({ page
   expect(document.security.projectStructureInferred).toBe(false);
   expect(document.security.technologyStackInferred).toBe(false);
   expect(JSON.stringify(document)).not.toContain('Z:\\work\\legacy-app');
+  expect(document.assistantGuide.pasteText).not.toContain('VAS-AI-RESULT.json');
   await page.locator('#copyPrompt').click();
   await expect(page.locator('[data-step="3"]')).toHaveClass(/active/);
   await expect(page.locator('#resultMessage')).toContainText('프롬프트를 복사했습니다');
+  expect(await page.evaluate(() => localStorage.getItem('vasHandoffReceipts.v1'))).toBeNull();
   expect(await page.locator('img').count()).toBe(0);
 });
 

@@ -12,12 +12,4 @@
     if (!reduced) root.classList.add('motion-ready');
     requestAnimationFrame(function () { hero.classList.add('is-visible'); });
   }
-
-  document.querySelectorAll('[data-track]').forEach(function (link) {
-    link.addEventListener('click', function () {
-      if (window.VASPersonalization) {
-        VASPersonalization.record({ type: 'navigation', source: 'start', payload: { target: link.dataset.track } });
-      }
-    });
-  });
 })();

@@ -34,7 +34,15 @@ class ClientFormTests(unittest.TestCase):
         self.assertLess(scripts.index("storage-utils.js"), scripts.index("theme-state.js"))
         self.assertLess(scripts.index("client-form.js"), scripts.index("client-draft.js"))
         self.assertLess(scripts.index("agent-contract.js"), scripts.index("agent-handoff-web.js"))
-        self.assertLess(scripts.index("handoff-workflow.js"), scripts.index("ai-result-import.js"))
+        self.assertNotIn("handoff-context-review.js", scripts)
+        self.assertNotIn("ai-result-import.js", scripts)
+
+    def test_optional_repeat_and_rag_reviews_are_hidden_from_default_flow(self):
+        for name in ["client-application.html", "project-import.html"]:
+            html = self.read(name)
+            self.assertNotIn("data-result-import", html)
+            self.assertNotIn("ContextReview", html)
+            self.assertNotIn("이전 AI 작업", html)
 
     def test_form_navigation_and_validation_exist(self):
         code = self.read("client-form.js")
@@ -67,7 +75,9 @@ class ClientFormTests(unittest.TestCase):
         self.assertIn("baseDocument(projectName, task, context, 'existing', options)", code)
         self.assertIn("projectStructureInferred: false", code)
         self.assertIn("RBG(Read Before Generate)", code)
-        self.assertIn("VAS-AI-RESULT.json", code)
+        self.assertNotIn("VAS-AI-RESULT.json", code)
+        for hidden_instruction in ["- handoffId:", "- payloadSha256:", "승인된 작업 기억(RAG):", "이전 작업 연결:"]:
+            self.assertNotIn(hidden_instruction, code)
         self.assertIn("schemaVersion: 3", code)
 
     def test_standalone_builder_removes_internal_modules(self):
@@ -75,8 +85,9 @@ class ClientFormTests(unittest.TestCase):
         for name in ["runtime-client", "personalization-store", "rag-lite"]:
             self.assertIn(name, code)
         self.assertIn('data-mode="standalone"', code)
-        for name in ["agent-contract.js", "handoff-workflow.js", "ai-result-import.js", "handoff-loop.css"]:
-            self.assertIn(name, code)
+        self.assertIn("agent-contract.js", code)
+        for name in ["handoff-workflow.js", "handoff-context-review.js", "ai-result-import.js", "handoff-loop.css"]:
+            self.assertNotIn(f'    "{name}"', code)
 
     def test_source_form_is_under_line_limit(self):
         self.assertLessEqual(len(self.read("client-application.html").splitlines()), 500)

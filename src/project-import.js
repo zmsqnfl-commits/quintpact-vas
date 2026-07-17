@@ -12,6 +12,16 @@
   VASThemeState.decorateLinks(document);
   VASSetupDesign.mount('handoffDesignPreset', 'handoffDesignSummary');
 
+  function focusStep(panel) {
+    if (!panel) return;
+    const target = panel.querySelector('input:not([type="hidden"]), textarea, select, button, a[href]');
+    if (target) target.focus();
+    else {
+      const heading = panel.querySelector('h2');
+      if (heading) { heading.tabIndex = -1; heading.focus(); }
+    }
+  }
+
   function go(next) {
     step = next;
     document.querySelectorAll('[data-step]').forEach(function (panel) { panel.classList.toggle('active', Number(panel.dataset.step) === step); });
@@ -22,6 +32,7 @@
     });
     document.querySelector('.workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
     saveDraft();
+    window.setTimeout(function () { focusStep(document.querySelector('[data-step="' + step + '"]')); }, 0);
   }
 
   function showError(error) {
@@ -29,23 +40,27 @@
     box.textContent = error && error.message ? error.message : String(error);
     box.hidden = false;
   }
-  function clearError() { document.getElementById('errorBox').hidden = true; }
-
-  function showLoopStatus(message) {
-    const status = document.getElementById('existingLoopStatus');
-    if (!status) return;
-    status.hidden = false;
-    status.textContent = message;
+  function clearError() {
+    document.getElementById('errorBox').hidden = true;
+    document.querySelectorAll('[aria-invalid="true"]').forEach(function (field) {
+      field.removeAttribute('aria-invalid'); field.removeAttribute('aria-describedby');
+    });
+  }
+  function invalid(field, message) {
+    field.setAttribute('aria-invalid', 'true');
+    field.setAttribute('aria-describedby', 'errorBox');
+    field.focus();
+    showError(new Error(message));
+    return false;
   }
 
   function taskContext() {
     const request = document.getElementById('taskRequest').value.trim();
-    const linked = window.VASHandoffWorkflow && VASHandoffWorkflow.current();
     return {
       requirements: { included: Boolean(request), value: { request: request } },
       design: VASSetupDesign.context(),
-      rag: window.VASHandoffContextReview ? VASHandoffContextReview.context() : { included: false, items: [] },
-      continuation: linked ? linked.context : { included: false }, preferences: { included: false, items: [] }
+      rag: { included: false, items: [] },
+      continuation: { included: false }, preferences: { included: false, items: [] }
     };
   }
 
@@ -64,11 +79,10 @@
     preview.document.task.request = request;
     preview.document.context.requirements = { included: Boolean(request), value: { request: request } };
     preview.document.context.design = VASSetupDesign.context();
-    preview.document.context.rag = window.VASHandoffContextReview ? VASHandoffContextReview.context() : { included: false, items: [] };
-    const linked = window.VASHandoffWorkflow && VASHandoffWorkflow.current();
-    preview.document.context.continuation = linked ? linked.context : { included: false };
+    preview.document.context.rag = { included: false, items: [] };
+    preview.document.context.continuation = { included: false };
     preview.document.context.preferences = { included: false, items: [] };
-    preview.document.qualityGate.ragReviewed = window.VASHandoffContextReview ? VASHandoffContextReview.isReviewed() : true;
+    preview.document.qualityGate.ragReviewed = true;
     preview.document.assistantGuide.target = document.getElementById('provider').value;
     preview.document.assistantGuide.pasteText = VASAgentHandoffWeb.prompt(preview.document, preview.document.assistantGuide.target);
   }
@@ -109,18 +123,15 @@
     const folder = document.getElementById('folderPath');
     const name = document.getElementById('projectName');
     const task = document.getElementById('taskRequest');
-    if (!folder.value.trim()) { folder.focus(); showError(new Error('작업할 폴더 위치를 선택하거나 붙여넣어 주세요.')); return false; }
-    if (!/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) { folder.focus(); showError(new Error('드라이브부터 시작하는 전체 폴더 위치를 적어주세요.')); return false; }
-    if (!name.value.trim()) { name.focus(); showError(new Error('프로젝트 이름을 적어주세요.')); return false; }
-    if (!task.value.trim()) { task.focus(); showError(new Error('AI에게 맡길 일을 한 줄 이상 적어주세요.')); return false; }
-    const linked = window.VASHandoffWorkflow && VASHandoffWorkflow.current();
+    if (!folder.value.trim()) return invalid(folder, '작업할 폴더 위치를 선택하거나 붙여넣어 주세요.');
+    if (!/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) return invalid(folder, '드라이브부터 시작하는 전체 폴더 위치를 적어주세요.');
+    if (!name.value.trim()) return invalid(name, '프로젝트 이름을 적어주세요.');
+    if (!task.value.trim()) return invalid(task, 'AI에게 맡길 일을 한 줄 이상 적어주세요.');
     preview = await VASAgentHandoffWeb.buildExisting(name.value, task.value, taskContext(), {
-      rag: window.VASHandoffContextReview ? VASHandoffContextReview.context() : { included: false, items: [] },
-      ragReviewed: window.VASHandoffContextReview ? VASHandoffContextReview.isReviewed() : true,
-      continuation: linked ? linked.context : { included: false }, workflow: linked ? linked.workflow : null
+      rag: { included: false, items: [] }, ragReviewed: true,
+      continuation: { included: false }
     });
     renderPreview();
-    if (window.VASPersonalization) VASPersonalization.record({ type: 'navigation', source: 'project-import', payload: { action: 'handoff_prompt_prepared' } });
     return true;
   }
 
@@ -128,24 +139,17 @@
     try {
       if (await prepare()) {
         go(2);
-        if (window.VASHandoffContextReview) await VASHandoffContextReview.refresh();
       }
     } catch (error) { showError(error); }
-  }
-
-  function reviewReady() {
-    return !window.VASHandoffContextReview || VASHandoffContextReview.ensureReviewed();
   }
 
   async function saveJson() {
     clearError();
     try {
       if (!preview && !await prepare()) return;
-      if (!reviewReady()) return;
       syncDesign();
       await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
       VASAgentHandoffWeb.save(preview.document, 'VAS-AI-HANDOFF.json');
-      if (window.VASHandoffWorkflow) VASHandoffWorkflow.remember(preview.document);
       document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 폴더 위치가 포함된 프롬프트를 코딩 AI에 붙여넣으세요.';
     } catch (error) { showError(error); }
   }
@@ -154,10 +158,8 @@
     clearError();
     try {
       if (!preview && !await prepare()) return;
-      if (!reviewReady()) return;
       syncDesign();
       await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
-      if (window.VASHandoffWorkflow) VASHandoffWorkflow.remember(preview.document);
       await VASAgentHandoffWeb.copy(currentPrompt());
       document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. 프롬프트에 적힌 폴더 위치를 코딩 AI가 확인합니다.';
       if (advance !== false) go(3);
@@ -173,6 +175,8 @@
   document.getElementById('downloadAgain').addEventListener('click', saveJson);
   document.getElementById('copyPrompt').addEventListener('click', function () { copyPrompt(true); });
   document.getElementById('copyPromptAgain').addEventListener('click', function () { copyPrompt(false); });
+  document.getElementById('editWork').addEventListener('click', function () { go(1); });
+  document.getElementById('editSettings').addEventListener('click', function () { go(2); });
   document.getElementById('provider').addEventListener('change', renderPreview);
   function saveDraft() {
     if (!window.VASHandoffWorkflow) return;
@@ -184,31 +188,19 @@
   ['folderPath', 'projectName', 'taskRequest'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', function () {
       preview = null; saveDraft(); renderPreview();
-      if (window.VASHandoffContextReview) VASHandoffContextReview.invalidate();
+      clearError();
     });
   });
   document.getElementById('handoffDesignPreset').addEventListener('change', function () {
-    if (window.VASHandoffContextReview) VASHandoffContextReview.invalidate();
     setTimeout(renderPreview, 0);
-  });
-  if (window.VASHandoffContextReview) VASHandoffContextReview.mount('existingProjectContextReview', {
-    query: function () { return document.getElementById('taskRequest').value + ' ' + VASSetupDesign.context().preset; },
-    onChange: function () { renderPreview(); }
-  });
-  if (window.VASAIResultImport) VASAIResultImport.init({
-    sourceType: 'existing',
-    onAccepted: function (state) {
-      preview = null;
-      const message = 'AI 결과를 연결했습니다. 다음 인계는 ' + state.workflow.iteration + '번째 작업입니다.';
-      showLoopStatus(message + ' 작업 지시를 확인해 주세요.');
-      document.getElementById('resultMessage').textContent = message;
-    }
   });
   const draft = window.VASHandoffWorkflow && VASHandoffWorkflow.readImportDraft();
   if (draft) {
     document.getElementById('folderPath').value = draft.folderPath || '';
     document.getElementById('projectName').value = draft.projectName || '';
     document.getElementById('taskRequest').value = draft.taskRequest || '';
+    const restoredStep = Number(draft.step) === 1 ? 1 : 2;
+    if (restoredStep === 2) prepare().then(function (ready) { if (ready) go(2); }).catch(showError);
   }
   window.addEventListener('focus', renderPreview);
 })();

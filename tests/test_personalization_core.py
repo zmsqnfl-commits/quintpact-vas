@@ -216,17 +216,10 @@ require({config}); require({rag}); require({store});
         for key in legacy:
             self.assertNotIn(key, combined)
 
-    def test_project_events_record_categories_without_user_names(self):
-        project_import = (SRC / "project-import.js").read_text(encoding="utf-8")
-        marker = project_import.index("action: 'handoff_prompt_prepared'")
-        start = project_import.rindex("VASPersonalization.record", 0, marker)
-        event_block = project_import[start:project_import.index("});", start)]
-        self.assertNotIn("projectName", event_block)
-
-        for name in ["client-export.js", "vas-hub.js"]:
+    def test_default_handoff_does_not_write_work_memory_events(self):
+        for name in ["project-import.js", "client-export.js", "vas-hub.js"]:
             text = (SRC / name).read_text(encoding="utf-8")
-            self.assertNotIn("source: 'client-application', projectId", text)
-            self.assertNotIn("source: 'hub', projectId", text)
+            self.assertNotIn("VASPersonalization.record", text)
 
 
 if __name__ == "__main__":

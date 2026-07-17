@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
@@ -25,7 +26,7 @@ async function reachDone(page) {
   await page.locator('#nextBtn').click();
   await waitStep(page, 5);
   await page.locator('#projectDesignPreset').selectOption('awwwards');
-  await page.locator('[data-context-confirm]').click();
+  await expect(page.locator('[data-context-confirm], [data-result-import]')).toHaveCount(0);
   await page.locator('#nextBtn').click();
   await expect(page.locator('#doneScreen')).toHaveClass(/active/);
 }
@@ -46,13 +47,17 @@ test('new project flow is step-by-step and safely renders file names', async ({ 
 
 test('new project produces the common safe VAS-AI-HANDOFF.json', async ({ page }) => {
   await reachDone(page);
-  await expect(page.locator('#handoffReview')).toContainText('"sourceType": "new"');
-  await expect(page.locator('#handoffReview')).toContainText('"preset": "awwwards"');
+  await expect(page.locator('#handoffReview')).toContainText('사용 중인 코딩 도구에서 새 프로젝트를 만들 빈 폴더를 여세요');
+  await expect(page.locator('#handoffReview')).toContainText('Preset: awwwards');
+  await expect(page.locator('#handoffReview')).not.toContainText('VAS-AI-RESULT.json');
   const download = page.waitForEvent('download');
   await page.locator('#downloadHandoff').click();
   const result = await download;
   expect(result.suggestedFilename()).toBe('VAS-AI-HANDOFF.json');
-  const body = await page.locator('#handoffReview').textContent();
+  const document = JSON.parse(fs.readFileSync(await result.path(), 'utf8'));
+  expect(document.project.sourceType).toBe('new');
+  expect(document.context.design.preset).toBe('awwwards');
+  const body = JSON.stringify(document);
   expect(body).not.toContain('contact@example.com');
   expect(body).not.toContain('sk-proj-1234567890abcdef');
   expect(body).toContain('[contact]');

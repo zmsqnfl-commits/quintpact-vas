@@ -347,14 +347,17 @@ class WindowsRuntimeTests(unittest.TestCase):
         self.assertEqual(recovered["count"], 0)
         self.assertTrue(recovered["recoveredFrom"].startswith("memory.corrupt-"))
         self.assertTrue(list(self.state.glob("memory.corrupt-*.json")))
-    def test_07_folder_selection_returns_opaque_id_when_module_exists(self):
-        status, result, _ = self.client.request(
-            "/api/folder/select", "POST", {"path": str(self.source_project)}
-        )
+    def test_07_folder_selection_does_not_persist_default_path(self):
+        selection_store = self.root / "workspace" / ".vas" / "selections.json"
+        before = selection_store.read_bytes() if selection_store.exists() else None
+        status, result, _ = self.client.request("/api/folder/select", "POST", {"path": str(self.source_project)})
         if status == 200:
             self.assertFalse(result["cancelled"])
-            self.assertRegex(result["selection"]["selectionId"], r"^[a-f0-9]{32}$")
+            self.assertNotIn("selectionId", result["selection"])
             self.assertTrue(paths_match(result["selection"]["path"], self.source_project))
+            after = selection_store.read_bytes() if selection_store.exists() else None; self.assertEqual(before, after)
+            _, legacy, _ = self.client.request("/api/migrations/select", "POST", {"path": str(self.source_project)})
+            self.assertRegex(legacy["selection"]["selectionId"], r"^[a-f0-9]{32}$")
     def test_07b_new_project_is_created_and_registered_atomically(self):
         request = {
             "name": "새 프로젝트",

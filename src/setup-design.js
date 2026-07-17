@@ -140,10 +140,15 @@
   }
 
   function refresh() {
+    VASThemeState.sync();
     mounts.forEach(refreshMount);
     return Promise.all(mounts.map(refreshRecommendation));
   }
 
   global.addEventListener('focus', refresh);
+  global.addEventListener('pageshow', refresh);
+  global.addEventListener('vas-theme-state', function () {
+    mounts.forEach(refreshMount);
+  });
   global.VASSetupDesign = Object.freeze({ mount: mount, apply: apply, context: context, refresh: refresh });
 })(window);

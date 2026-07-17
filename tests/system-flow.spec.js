@@ -14,9 +14,19 @@ test('start screen only shows the two choices and never asks for memory automati
   await expect(page.locator('.hero')).toBeVisible();
   await expect(page.locator('.start-card')).toHaveCount(2);
   await expect(page.locator('.start-card').first()).toContainText('새 프로젝트 만들기');
+  await expect(page.locator('.start-card').first()).toContainText('코딩 AI용 프롬프트');
   await expect(page.locator('.start-card').last()).toContainText('기존 프로그램 AI로 연결');
   await expect(page.locator('#privacyRail, #onboarding, .tools-section, .projects-section, #nextRecommendation')).toHaveCount(0);
   expect(await page.evaluate(() => VASPersonalization.getConsent())).toBeNull();
+});
+
+test('declining work memory does not record the start navigation', async ({ page }) => {
+  await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('.start-card:not(.import)').click();
+  await page.locator('#vasStartWithoutMemory').click();
+  await page.waitForFunction(() => typeof VASPersonalization !== 'undefined');
+  const events = await page.evaluate(async () => VASPersonalization.list());
+  expect(events).toEqual([]);
 });
 
 test('both start choices require an explicit work-memory decision', async ({ page }) => {
@@ -168,6 +178,21 @@ test('theme state reaches the new project contract without recoloring the setup 
   expect(state.shellFocusAccent).toBe('#ffd200');
 });
 
+test('studio changes update the open form badge and survive reload', async ({ page, context }) => {
+  await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const studio = await context.newPage();
+  await studio.goto(designUrl + '?return=client-application.html', { waitUntil: 'domcontentloaded' });
+  await studio.evaluate(() => applyPreset('linear'));
+  await expect(page.locator('#projectDesignPreset')).toHaveValue('linear');
+  await expect(page.locator('#themeNameSpan')).toHaveText('Linear');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#projectDesignPreset')).toHaveValue('linear');
+  await expect(page.locator('#themeNameSpan')).toHaveText('Linear');
+  await studio.close();
+});
+
 test('project context remains minimal for compatibility', async ({ page }) => {
   await page.goto(designUrl, { waitUntil: 'domcontentloaded' });
   const result = await page.evaluate(() => {
@@ -191,11 +216,27 @@ test('form draft is explicit and restorable without contact details', async ({ p
   await expect(page.locator('.draft-policy')).toContainText('자동 저장');
   await page.locator('input[name="project_name"]').fill('Restore Test');
   await page.locator('textarea[name="problem_desc"]').fill('복원할 요구사항');
+  await page.locator('#nextBtn').click();
+  await expect(page.locator('.step[data-step="2"]')).toHaveClass(/active/);
   await page.waitForTimeout(350);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#draftNotice')).toBeVisible();
   await page.getByRole('button', { name: '복원' }).click();
   await expect(page.locator('input[name="project_name"]')).toHaveValue('Restore Test');
+  await expect(page.locator('.step[data-step="2"]')).toHaveClass(/active/);
+});
+
+test('required fields expose an accessible error and focus the first problem', async ({ page }) => {
+  await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#nextBtn').click();
+  await expect(page.locator('#projectName')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('[role="alert"]')).toBeVisible();
+  await expect(page.locator('#projectName')).toBeFocused();
+
+  await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('#continueSettings').click();
+  await expect(page.locator('#folderPath')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator('#folderPath')).toBeFocused();
 });
 
 test('new project fields and choices remain visually explicit', async ({ page }) => {
@@ -244,6 +285,18 @@ test('blocked session storage keeps runtime token in memory and URL fragment', a
   expect(await page.evaluate(() => VASRuntime.getToken())).toBe(token);
   expect(page.url()).not.toContain('vasToken=');
   expect(page.url()).toContain('vasRuntime=');
+});
+
+test('runtime token decorates links inside a detached wrapper', async ({ page }) => {
+  const token = 'runtime_token_12345678901234567890';
+  await page.goto(hubUrl + '?vasToken=' + token, { waitUntil: 'domcontentloaded' });
+  const href = await page.evaluate(() => {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = '<a href="project-import.html">계속</a>';
+    VASRuntime.preserveTokenInLinks(wrapper);
+    return wrapper.querySelector('a').href;
+  });
+  expect(href).toContain('vasRuntime=' + token);
 });
 
 test('start screen carries the BAT runtime into the folder picker flow', async ({ page }) => {

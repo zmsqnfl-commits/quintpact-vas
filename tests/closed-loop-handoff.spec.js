@@ -9,12 +9,20 @@ const clientUrl = pathToFileURL(path.join(root, 'client-application.html')).href
 
 async function prepareExisting(page) {
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-result-import], .context-review')).toHaveCount(0);
   await page.locator('#folderPath').fill('Z:\\work\\legacy-app');
   await page.locator('#projectName').fill('legacy-app');
   await page.locator('#taskRequest').fill('모바일 오류를 고쳐 주세요.');
   await page.locator('#continueSettings').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
-  await page.locator('[data-context-confirm]').click();
+}
+
+async function openCompatibilityResultImport(page) {
+  await page.addScriptTag({ path: path.join(root, 'ai-result-import.js') });
+  await page.evaluate(() => {
+    VASAIResultImport.init({ sourceType: 'existing' });
+    VASAIResultImport.open();
+  });
 }
 
 async function downloadHandoff(page, selector) {
@@ -46,17 +54,9 @@ function aiResult(handoff, updates = {}) {
   }, updates);
 }
 
-test('approved RAG only enters handoff v3 and the prompt', async ({ page }) => {
+test('default handoff skips repeat import and RAG review UI', async ({ page }) => {
   await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(async () => {
-    await VASPersonalization.init();
-    await VASPersonalization.consent(true);
-    await VASPersonalization.clear();
-    await VASPersonalization.record({
-      type: 'feedback', source: 'closed-loop-test',
-      payload: { topic: '모바일 오류', outcome: '작은 화면에서 선택 영역을 명확하게 표시' }
-    });
-  });
+  await expect(page.locator('[data-result-import], .context-review')).toHaveCount(0);
   await page.locator('#projectName').fill('RAG 연결');
   await page.locator('#problemDescription').fill('모바일 오류를 고쳐 주세요.');
   await page.locator('#nextBtn').click();
@@ -66,26 +66,23 @@ test('approved RAG only enters handoff v3 and the prompt', async ({ page }) => {
   await page.locator('#nextBtn').click();
   await page.locator('input[name="budget"][value="unknown"]').check();
   await page.locator('#nextBtn').click();
-  await expect(page.locator('[data-context-item]')).toHaveCount(1);
-  await page.locator('[data-context-item]').check();
-  await page.locator('[data-context-confirm]').click();
   await page.locator('#nextBtn').click();
   await expect(page.locator('#doneScreen')).toHaveClass(/active/);
   const handoff = await downloadHandoff(page, '#downloadHandoff');
   expect(handoff.schemaVersion).toBe(3);
-  expect(handoff.context.rag.included).toBe(true);
-  expect(handoff.context.rag.items).toHaveLength(1);
-  expect(handoff.context.rag.items[0].userApproved).toBe(true);
-  expect(handoff.assistantGuide.pasteText).toContain('승인된 작업 기억(RAG)');
-  expect(handoff.assistantGuide.pasteText).toContain('VAS-AI-RESULT.json');
+  expect(handoff.context.rag).toEqual({ included: false, items: [] });
+  expect(handoff.qualityGate.ragReviewed).toBe(true);
+  expect(handoff.assistantGuide.pasteText).not.toContain('승인된 작업 기억(RAG)');
+  expect(handoff.assistantGuide.pasteText).not.toContain('VAS-AI-RESULT.json');
 });
 
 test('verified AI result creates the next handoff iteration', async ({ page }) => {
   await prepareExisting(page);
   const first = await downloadHandoff(page, '#downloadJson');
   expect(first.workflow.iteration).toBe(1);
+  await page.evaluate(document => VASHandoffWorkflow.remember(document), first);
 
-  await page.locator('[data-result-import]:visible').first().click();
+  await openCompatibilityResultImport(page);
   await page.locator('#vasResultPasteButton').click();
   await page.locator('#vasResultPaste').fill(JSON.stringify(aiResult(first)));
   await page.locator('#vasResultReadPaste').click();
@@ -94,7 +91,15 @@ test('verified AI result creates the next handoff iteration', async ({ page }) =
   await page.locator('#vasResultAccept').click();
   await expect(page.locator('.result-dialog')).not.toHaveAttribute('open', '');
 
-  const second = await downloadHandoff(page, '#downloadJson');
+  const second = await page.evaluate(async () => {
+    const linked = VASHandoffWorkflow.current();
+    const built = await VASAgentHandoffWeb.buildExisting('legacy-app', '모바일 오류를 고쳐 주세요.', {
+      requirements: { included: true, value: { request: '모바일 오류를 고쳐 주세요.' } },
+      design: VASSetupDesign.context(), rag: { included: false, items: [] },
+      continuation: linked.context, preferences: { included: false, items: [] }
+    }, { rag: { included: false, items: [] }, ragReviewed: true, continuation: linked.context, workflow: linked.workflow });
+    return built.document;
+  });
   expect(second.workflow.iteration).toBe(2);
   expect(second.workflow.parentResultId).toBe('r_1234567890abcdef');
   expect(second.context.continuation.included).toBe(true);
@@ -109,7 +114,7 @@ test('unsafe or mismatched result cannot be connected', async ({ page }) => {
     handoffId: 'h_00000000000000000000000000000000',
     changes: { summary: 'bad', relativeFiles: [{ path: '../secret.txt', action: 'modified' }] }
   });
-  await page.locator('[data-result-import]:visible').first().click();
+  await openCompatibilityResultImport(page);
   await page.locator('#vasResultPasteButton').click();
   await page.locator('#vasResultPaste').fill(JSON.stringify(unsafe));
   await page.locator('#vasResultReadPaste').click();
@@ -117,13 +122,26 @@ test('unsafe or mismatched result cannot be connected', async ({ page }) => {
   await expect(page.locator('#vasResultReview')).toBeHidden();
 });
 
-test('blocked storage and no memory still allow a reviewed handoff', async ({ page }) => {
+test('compatibility import rejects results without the payload hash', async ({ page }) => {
+  await prepareExisting(page);
+  const handoff = await downloadHandoff(page, '#downloadJson');
+  const missingHash = aiResult(handoff);
+  delete missingHash.handoffPayloadSha256;
+  await openCompatibilityResultImport(page);
+  await page.locator('#vasResultPasteButton').click();
+  await page.locator('#vasResultPaste').fill(JSON.stringify(missingHash));
+  await page.locator('#vasResultReadPaste').click();
+  await expect(page.locator('#vasResultStatus')).toContainText(/해시|형식/);
+  await expect(page.locator('#vasResultReview')).toBeHidden();
+});
+
+test('blocked storage still allows a handoff without optional review UI', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new Error('blocked'); } });
     Object.defineProperty(window, 'indexedDB', { configurable: true, get() { throw new Error('blocked'); } });
   });
   await prepareExisting(page);
-  await expect(page.locator('[data-context-item]')).toHaveCount(0);
+  await expect(page.locator('[data-context-item], [data-context-confirm]')).toHaveCount(0);
   const handoff = await downloadHandoff(page, '#downloadJson');
   expect(handoff.context.rag).toEqual({ included: false, items: [] });
   expect(handoff.qualityGate.ragReviewed).toBe(true);

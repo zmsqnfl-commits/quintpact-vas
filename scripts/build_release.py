@@ -36,8 +36,7 @@ CLIENT_ASSETS = [
     "storage-utils.js", "theme-state.js", "editorial-shell.css",
     "editorial-theme.js", "setup-tools.css", "setup-tools.js",
     "design-presets.js", "design-taste-pack.js", "setup-design.js",
-    "agent-contract.js", "handoff-workflow.js", "agent-handoff-web.js",
-    "handoff-context-review.js", "ai-result-import.js", "handoff-loop.css",
+    "agent-contract.js", "agent-handoff-web.js",
 ]
 
 
@@ -187,6 +186,7 @@ def build_client(stage: Path) -> Path:
             html = re.sub(r'\s*<a[^>]+id="createdProjectNext".*?</a>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectHandoff".*?</a>', "", html)
             html = re.sub(r'\s*<script src="(?:runtime-client|personalization-store|rag-lite)\.js"></script>', "", html)
+            html = re.sub(r'\s*<button[^>]*data-setup-settings[^>]*>.*?</button>', "", html)
             target.write_text(html, encoding="utf-8")
         else:
             shutil.copy2(source, target)

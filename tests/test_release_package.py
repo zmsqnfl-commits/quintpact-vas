@@ -155,6 +155,9 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertNotIn('id="hubBackLink"', html)
         self.assertNotIn("personalization-store.js", html)
         self.assertNotIn("rag-lite.js", html)
+        for unused in ("handoff-workflow.js", "handoff-context-review.js", "ai-result-import.js", "handoff-loop.css"):
+            self.assertNotIn(unused, payload)
+        self.assertNotIn('data-setup-settings>설정', html)
         self.assertIn("전체 압축 해제", payload["README.md"].decode("utf-8"))
         for legal in ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md"):
             self.assertIn(legal, payload)

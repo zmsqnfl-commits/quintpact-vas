@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">VAS 2.6.4 AI 작업 인계 워크플로</title>
+  <desc id="desc">새 프로젝트 또는 기존 프로그램에서 작업 지시와 디자인을 정하고, 선택한 작업 기억을 더해 프롬프트와 JSON을 만든 뒤 코딩 AI가 원본을 먼저 읽고 구현, 테스트, 검증, 배포하는 흐름</desc>
+  <defs>
+    <style>
+      .sans { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+      .label { font-size: 15px; font-weight: 750; letter-spacing: .08em; }
+      .phase { font-size: 18px; font-weight: 800; }
+      .node-title { font-size: 21px; font-weight: 800; }
+      .node-copy { font-size: 14px; fill: #5c5b57; }
+      .tiny { font-size: 13px; fill: #6c6b66; }
+      .line { fill: none; stroke: #181817; stroke-width: 2; }
+      .soft-line { fill: none; stroke: #aaa8a1; stroke-width: 1.5; }
+      .cell { fill: #f3f2ee; stroke: #181817; stroke-width: 1.4; }
+      .accent-cell { fill: #e1a900; stroke: #181817; stroke-width: 1.4; }
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#181817"/>
+    </marker>
+    <marker id="soft-arrow" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#aaa8a1"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#e8e8e4"/>
+  <rect x="32" y="32" width="1536" height="836" fill="none" stroke="#181817"/>
+
+  <text x="74" y="90" class="mono label" fill="#181817">VAS / 2.6.4 / CLOSED HANDOFF LOOP</text>
+  <text x="74" y="156" class="sans" font-size="48" font-weight="850" fill="#111110">설정에서 끝나지 않고, 실제 작업까지 이어집니다.</text>
+  <text x="76" y="194" class="sans" font-size="17" fill="#5c5b57">VAS는 안전한 작업 지시를 만들고, 코딩 AI는 원본을 먼저 읽은 뒤 구현과 검증을 수행합니다.</text>
+
+  <g class="sans">
+    <rect x="74" y="238" width="452" height="42" fill="#111110"/>
+    <text x="94" y="265" class="phase" fill="#f4f3ef">01 · VAS에서 준비</text>
+    <rect x="574" y="238" width="452" height="42" fill="#e1a900"/>
+    <text x="594" y="265" class="phase" fill="#111110">02 · AI 인계 자료 완성</text>
+    <rect x="1074" y="238" width="452" height="42" fill="#111110"/>
+    <text x="1094" y="265" class="phase" fill="#f4f3ef">03 · 코딩 AI에서 실행</text>
+  </g>
+
+  <!-- Start and branch -->
+  <g class="sans">
+    <rect class="cell" x="74" y="320" width="190" height="108"/>
+    <text x="94" y="352" class="mono label">START</text>
+    <text x="94" y="384" class="node-title">VAS 실행</text>
+    <text x="94" y="410" class="node-copy">BAT 더블클릭</text>
+
+    <rect class="cell" x="326" y="300" width="200" height="66"/>
+    <text x="346" y="328" class="node-title">새 프로젝트</text>
+    <text x="346" y="350" class="node-copy">요구사항 작성</text>
+    <rect class="cell" x="326" y="382" width="200" height="66"/>
+    <text x="346" y="410" class="node-title">기존 프로그램</text>
+    <text x="346" y="432" class="node-copy">폴더 위치 + 작업 지시</text>
+
+    <path class="line" d="M264 374H294V333H326" marker-end="url(#arrow)"/>
+    <path class="line" d="M294 374V415H326" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- Setup -->
+  <g class="sans">
+    <rect class="cell" x="74" y="486" width="214" height="112"/>
+    <text x="94" y="520" class="mono label">RAG · OPTIONAL</text>
+    <text x="94" y="554" class="node-title">작업 기억 선택</text>
+    <text x="94" y="580" class="node-copy">동의한 안전 요약만 사용</text>
+
+    <rect class="cell" x="326" y="486" width="200" height="112"/>
+    <text x="346" y="520" class="mono label">DESIGN</text>
+    <text x="346" y="554" class="node-title">디자인 설정</text>
+    <text x="346" y="580" class="node-copy">예시를 보며 직접 선택</text>
+
+    <path class="soft-line" d="M288 542H326" marker-end="url(#soft-arrow)"/>
+    <path class="line" d="M426 448V486" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- Handoff -->
+  <g class="sans">
+    <rect class="cell" x="574" y="320" width="202" height="108"/>
+    <text x="594" y="352" class="mono label">REVIEW</text>
+    <text x="594" y="384" class="node-title">최종 확인</text>
+    <text x="594" y="410" class="node-copy">목적 · 디자인 · 안전 범위</text>
+
+    <rect class="accent-cell" x="824" y="320" width="202" height="108"/>
+    <text x="844" y="352" class="mono label" fill="#111110">PRIMARY</text>
+    <text x="844" y="384" class="node-title" fill="#111110">프롬프트 복사</text>
+    <text x="844" y="410" class="node-copy" fill="#332600">Codex · Claude · Antigravity</text>
+
+    <rect class="cell" x="574" y="486" width="202" height="112"/>
+    <text x="594" y="520" class="mono label">OPTIONAL</text>
+    <text x="594" y="554" class="node-title">JSON 저장</text>
+    <text x="594" y="580" class="node-copy">동일 계약 · 무결성 해시</text>
+
+    <rect class="cell" x="824" y="486" width="202" height="112"/>
+    <text x="844" y="520" class="mono label">DONE</text>
+    <text x="844" y="554" class="node-title">VAS 종료 가능</text>
+    <text x="844" y="580" class="node-copy">인계 자료 생성 완료</text>
+
+    <path class="line" d="M526 374H574" marker-end="url(#arrow)"/>
+    <path class="line" d="M526 542H550V374H574" marker-end="url(#arrow)"/>
+    <path class="line" d="M776 374H824" marker-end="url(#arrow)"/>
+    <path class="soft-line" d="M675 428V486" marker-end="url(#soft-arrow)"/>
+    <path class="soft-line" d="M776 542H824" marker-end="url(#soft-arrow)"/>
+  </g>
+
+  <!-- Coding AI -->
+  <g class="sans">
+    <rect class="cell" x="1074" y="320" width="208" height="108"/>
+    <text x="1094" y="352" class="mono label">RBG · REQUIRED</text>
+    <text x="1094" y="384" class="node-title">원본 먼저 읽기</text>
+    <text x="1094" y="410" class="node-copy">파일 · 규칙 · 의존성 확인</text>
+
+    <rect class="cell" x="1318" y="320" width="208" height="108"/>
+    <text x="1338" y="352" class="mono label">PLAN</text>
+    <text x="1338" y="384" class="node-title">계획과 위험 확인</text>
+    <text x="1338" y="410" class="node-copy">영향 범위 · 검증 방법</text>
+
+    <rect class="cell" x="1074" y="486" width="208" height="112"/>
+    <text x="1094" y="520" class="mono label">BUILD</text>
+    <text x="1094" y="554" class="node-title">코드 수정</text>
+    <text x="1094" y="580" class="node-copy">기존 구조를 보존해 구현</text>
+
+    <rect class="cell" x="1318" y="486" width="208" height="112"/>
+    <text x="1338" y="520" class="mono label">VERIFY</text>
+    <text x="1338" y="554" class="node-title">테스트 · 결과</text>
+    <text x="1338" y="580" class="node-copy">실패와 남은 문제까지 기록</text>
+
+    <path class="line" d="M1026 374H1074" marker-end="url(#arrow)"/>
+    <path class="line" d="M1282 374H1318" marker-end="url(#arrow)"/>
+    <path class="line" d="M1422 428V458H1178V486" marker-end="url(#arrow)"/>
+    <path class="line" d="M1282 542H1318" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- Closed loop -->
+  <g class="sans">
+    <path class="line" d="M1422 598V662H675V428" marker-end="url(#arrow)"/>
+    <rect x="822" y="640" width="444" height="45" fill="#e8e8e4"/>
+    <text x="846" y="669" class="node-title">결과 확인 → 보완 → 다음 iteration</text>
+  </g>
+
+  <!-- Quality rail -->
+  <g class="sans">
+    <line x1="74" y1="738" x2="1526" y2="738" stroke="#181817"/>
+    <text x="74" y="778" class="mono label">INTERNAL QUALITY FLOW</text>
+
+    <rect class="cell" x="326" y="758" width="200" height="68"/>
+    <text x="346" y="788" class="node-title">작업 원본</text>
+    <text x="346" y="812" class="tiny">src · docs · scripts · tests</text>
+    <rect class="cell" x="574" y="758" width="202" height="68"/>
+    <text x="594" y="788" class="node-title">자동 검증</text>
+    <text x="594" y="812" class="tiny">Python · Browser · Package</text>
+    <rect class="cell" x="824" y="758" width="202" height="68"/>
+    <text x="844" y="788" class="node-title">배포본 생성</text>
+    <text x="844" y="812" class="tiny">ZIP · manifest · SHA256</text>
+    <rect class="accent-cell" x="1074" y="758" width="452" height="68"/>
+    <text x="1094" y="788" class="node-title" fill="#111110">GitHub Release + Pages</text>
+    <text x="1094" y="812" class="tiny" fill="#332600">검증된 배포본만 사용자에게 전달</text>
+
+    <path class="line" d="M526 792H574" marker-end="url(#arrow)"/>
+    <path class="line" d="M776 792H824" marker-end="url(#arrow)"/>
+    <path class="line" d="M1026 792H1074" marker-end="url(#arrow)"/>
+  </g>
+</svg>

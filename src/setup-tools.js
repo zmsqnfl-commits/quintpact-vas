@@ -25,19 +25,18 @@
       '<div class="setup-dialog-shell"><div class="setup-dialog-head"><h2 id="vasSetupHelpTitle">이 순서대로 하면 됩니다.</h2><button type="button" class="setup-dialog-close" data-setup-close aria-label="닫기">닫기</button></div>',
       '<ol class="setup-help-list"><li><b>01</b><div><strong>시작 방식과 작업 기억을 고릅니다.</strong><p>새 프로젝트 또는 기존 프로그램을 누른 뒤 이번 작업을 기억할지 선택합니다.</p></div></li>',
       '<li><b>02</b><div><strong>필요한 내용과 디자인을 정합니다.</strong><p>화면에 나오는 질문만 차례대로 확인하면 됩니다.</p></div></li>',
-      '<li><b>03</b><div><strong>프롬프트를 코딩 도구에 붙여넣습니다.</strong><p>Codex·Claude·Antigravity에서 실제 작업 폴더를 열고 복사한 프롬프트를 붙여넣습니다. JSON 저장은 선택입니다.</p></div></li>',
-      '<li><b>04</b><div><strong>AI 결과를 다음 작업으로 이어갑니다.</strong><p>작업 후 생성된 VAS-AI-RESULT.json을 불러오면 실패한 테스트와 남은 작업을 다음 인계에 연결합니다.</p></div></li></ol></div></dialog>',
+      '<li><b>03</b><div><strong>프롬프트를 코딩 도구에 붙여넣습니다.</strong><p>Codex·Claude·Antigravity에서 실제 작업 폴더를 열고 복사한 프롬프트를 붙여넣습니다. JSON 저장은 선택이며, 이후 VAS는 닫아도 됩니다.</p></div></li></ol></div></dialog>',
       '<dialog class="setup-dialog" id="vasSetupSettings" aria-labelledby="vasSetupSettingsTitle">',
       '<div class="setup-dialog-shell"><div class="setup-dialog-head"><h2 id="vasSetupSettingsTitle">설정을 바꿔보세요.</h2><button type="button" class="setup-dialog-close" data-setup-close aria-label="닫기">닫기</button></div>',
       '<div class="setup-memory-state"><span>작업 기억</span><strong id="vasSetupMemoryState">확인 중</strong></div>',
-      '<p class="setup-dialog-copy setup-setting-note">작업 기억은 다음 설정을 조금 더 편하게 만들기 위한 선택 기능입니다. 파일 내용·비밀값·절대 경로는 저장하지 않으며 최종 JSON에도 원본 기록을 넣지 않습니다.</p>',
+      '<p class="setup-dialog-copy setup-setting-note">작업 기억은 다음 디자인 선택을 조금 더 편하게 만들기 위한 선택 기능입니다. 파일 내용·비밀값·절대 경로는 저장하지 않으며 최종 JSON에도 원본 기록을 넣지 않습니다.</p>',
       '<div class="setup-setting-actions"><button type="button" id="vasSetupToggleMemory">기억 사용</button><button type="button" id="vasSetupTogglePause">잠시 중지</button><button type="button" id="vasSetupDeleteMemory">기억 내용 삭제</button><button type="button" id="vasSetupReset">설정 전체 초기화</button></div>',
       '<p class="setup-setting-feedback" id="vasSetupFeedback" role="status"></p></div></dialog>',
       '<dialog class="setup-dialog setup-start-dialog" id="vasStartMemory" aria-labelledby="vasStartMemoryTitle">',
       '<div class="setup-dialog-shell"><div class="setup-dialog-head"><div><span class="setup-step-label">시작 전 선택</span><h2 id="vasStartMemoryTitle">이번 작업을 기억할까요?</h2></div><button type="button" class="setup-dialog-close" data-setup-close aria-label="닫기">닫기</button></div>',
-      '<p class="setup-dialog-copy setup-start-copy">기억을 사용하면 다음 작업에서 관련 디자인과 작업 흐름을 추천합니다. 파일 내용·비밀값·절대 경로는 저장하지 않습니다.</p>',
+      '<p class="setup-dialog-copy setup-start-copy">기억을 사용하면 다음 작업에서 이전에 확인한 디자인 방향을 추천합니다. 파일 내용·비밀값·절대 경로는 저장하지 않습니다.</p>',
       '<div class="setup-memory-state setup-start-state"><span>현재 설정</span><strong id="vasStartMemoryState">확인 중</strong></div>',
-      '<div class="setup-start-actions"><button type="button" id="vasStartWithoutMemory"><strong>기억 없이 시작</strong><span>이번 작업을 기록하지 않습니다.</span></button><button type="button" id="vasStartWithMemory"><strong>작업 기억 사용</strong><span>안전한 선택과 흐름만 기억합니다.</span></button></div>',
+      '<div class="setup-start-actions"><button type="button" id="vasStartWithoutMemory"><strong>기억 없이 시작</strong><span>이번 디자인 선택을 기록하지 않습니다.</span></button><button type="button" id="vasStartWithMemory"><strong>작업 기억 사용</strong><span>확인한 디자인 선택만 기억합니다.</span></button></div>',
       '<p class="setup-start-footnote">나중에도 상단 설정에서 중지하거나 기억 내용을 삭제할 수 있습니다.</p></div></dialog>'
     ].join('');
     document.body.append.apply(document.body, Array.from(holder.children));

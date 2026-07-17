@@ -57,6 +57,10 @@ function updateUI() {
 /* 숨은 라디오 검증 안내 */
 function clearStepValidation(stepEl) {
     stepEl.querySelectorAll('[data-validation-message]').forEach(el => el.remove());
+    stepEl.querySelectorAll('[aria-invalid="true"]').forEach(el => {
+        el.removeAttribute('aria-invalid');
+        el.removeAttribute('aria-describedby');
+    });
     stepEl.querySelectorAll('[data-validation-target]').forEach(el => {
         el.removeAttribute('data-validation-target');
         el.style.outline = '';
@@ -75,9 +79,12 @@ function showFieldValidation(input) {
     target.style.outline = '3px solid #ffcc00';
     target.style.outlineOffset = '8px';
 
-    if (!q.querySelector('[data-validation-message]')) {
-        const notice = document.createElement('div');
+    let notice = q.querySelector('[data-validation-message]');
+    if (!notice) {
+        notice = document.createElement('div');
         notice.setAttribute('data-validation-message', 'true');
+        notice.setAttribute('role', 'alert');
+        notice.id = 'validation-' + (input.name || input.id || cur);
         notice.style.marginTop = '16px';
         notice.style.fontWeight = '800';
         notice.style.color = '#b45309';
@@ -85,12 +92,15 @@ function showFieldValidation(input) {
         q.appendChild(notice);
     }
 
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', notice.id);
     target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    input.focus();
 }
 
 function validateCurrentStep(stepEl) {
     clearStepValidation(stepEl);
-    const inputs = stepEl.querySelectorAll('input[required], textarea[required]');
+    const inputs = stepEl.querySelectorAll('input[required], textarea[required], select[required]');
     const checkedNames = new Set();
 
     for (let input of inputs) {
@@ -141,9 +151,12 @@ function changeStep(dir) {
         void nextStep.offsetWidth;
         nextStep.style.opacity = '1';
         nextStep.style.transform = 'translateY(0)';
-        const firstInput = nextStep.querySelector('input, textarea');
+        const firstInput = nextStep.querySelector('input:not([type="hidden"]), textarea, select');
         if (firstInput) firstInput.focus();
-        if (cur === total && window.VASHandoffContextReview) VASHandoffContextReview.refresh();
+        else {
+            const heading = nextStep.querySelector('h2');
+            if (heading) { heading.tabIndex = -1; heading.focus(); }
+        }
     }, 350);
 
     updateUI();
@@ -161,6 +174,8 @@ function showDone() {
     document.getElementById('navWrap').style.display = 'none';
     const ds = document.getElementById('doneScreen');
     ds.classList.add('active');
+    const doneHeading = ds.querySelector('h2');
+    if (doneHeading) window.setTimeout(() => doneHeading.focus(), 0);
     if (window.VASNewHandoff) window.VASNewHandoff.prepare().catch(function () {
         document.getElementById('handoffReview').textContent = '최종 내용을 준비하지 못했습니다. 입력 내용을 다시 확인해 주세요.';
     });
@@ -190,6 +205,8 @@ function goBackFromDone() {
         lastStep.style.opacity = '1';
         lastStep.style.transform = 'translateY(0)';
         updateUI();
+        const target = lastStep.querySelector('select, input:not([type="hidden"]), textarea, h2');
+        if (target) { if (target.tagName === 'H2') target.tabIndex = -1; target.focus(); }
     }, 50);
 }
 
@@ -267,7 +284,9 @@ setTimeout(() => {
 updateUI();
 setLang(currentLang);
 
-document.getElementById('projectForm').addEventListener('change', (event) => {
+function clearChangedValidation(event) {
     const stepEl = event.target.closest('.step');
     if (stepEl) clearStepValidation(stepEl);
-});
+}
+document.getElementById('projectForm').addEventListener('change', clearChangedValidation);
+document.getElementById('projectForm').addEventListener('input', clearChangedValidation);

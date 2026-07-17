@@ -354,8 +354,13 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   const context = VASProjectContext.get();
   const applyButton = document.getElementById('applyProjectTheme');
-  if (!context) applyButton.firstChild.textContent = '공통 설정으로 저장하고 허브로 ';
-  else if (!VASRuntime.isAvailable()) {
+  const ragLine = document.getElementById('includeRagContext').closest('.check-line');
+  if (!context) {
+    applyButton.firstChild.textContent = '설정 저장하고 돌아가기 ';
+    if (ragLine) ragLine.hidden = true;
+    const ragStatus = document.getElementById('ragPromptStatus');
+    if (ragStatus) ragStatus.hidden = true;
+  } else if (!VASRuntime.isAvailable()) {
     const status = document.getElementById('applyProjectStatus');
     status.hidden = false;
     status.textContent = '프로젝트에 저장하려면 Run-VAS-System.bat로 실행하세요.';
@@ -412,8 +417,19 @@ function navigateWithProject(href) {
   wrapper.append(link);
   VASThemeState.decorateLinks(wrapper);
   VASProjectContext.decorateLinks(wrapper);
-  if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks();
+  if (window.VASRuntime && VASRuntime.preserveTokenInLinks) VASRuntime.preserveTokenInLinks(wrapper);
   window.location.href = link.href;
+}
+function returnDestination() {
+  const requested = new URLSearchParams(window.location.search).get('return') || 'vas-hub.html';
+  const allowed = ['client-application.html', 'project-import.html', 'vas-hub.html'];
+  try {
+    const url = new URL(requested, window.location.href);
+    const name = url.pathname.split('/').pop();
+    if (!allowed.includes(name)) return 'vas-hub.html';
+    if (/^https?:$/.test(url.protocol) && url.origin !== window.location.origin) return 'vas-hub.html';
+    return name;
+  } catch (error) { return 'vas-hub.html'; }
 }
 async function applyProjectTheme() {
   const button = document.getElementById('applyProjectTheme');
@@ -421,10 +437,9 @@ async function applyProjectTheme() {
   const context = VASProjectContext.get();
   if (!context) {
     showToast('공통 디자인 설정으로 저장했습니다.');
-    if (window.opener) {
-      window.close();
-      setTimeout(function () { navigateWithProject('vas-hub.html'); }, 150);
-    } else navigateWithProject('vas-hub.html');
+    const destination = returnDestination();
+    window.close();
+    setTimeout(function () { if (!window.closed) navigateWithProject(destination); }, 150);
     return;
   }
   if (!VASRuntime.isAvailable()) {

@@ -130,11 +130,11 @@ function Resolve-VASAllowedFile {
     return [ordered]@{ path = $candidate; type = $contentType; scope = $Scope; relative = ($RelativePath -replace '\\', '/') }
 }
 function Import-VASMigrationModuleIfAvailable {
-    if (Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue) { return $true }
+    if ((Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue) -and (Get-Command Select-VASFolderLocation -ErrorAction SilentlyContinue)) { return $true }
     $path = Join-Path $PSScriptRoot 'VAS.Migration.psm1'
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
     try { Import-Module $path -DisableNameChecking } catch { return $false }
-    return [bool](Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue)
+    return [bool]((Get-Command Select-VASProjectFolder -ErrorAction SilentlyContinue) -and (Get-Command Select-VASFolderLocation -ErrorAction SilentlyContinue))
 }
 function Get-VASBodyProperty {
     param($Body, [string]$Name, $Default = $null)
@@ -214,16 +214,14 @@ function Invoke-VASMigrationRoute {
     }
     $root = $State.RootPath
     try {
-        if ($Path -ne '/api/folder/select') {
+        if ($Path -notin @('/api/folder/select', '/api/migrations/select')) {
             $python = Get-VASPythonCapability
             if (-not [bool]$python.available -and $python.version) { Write-VASError $Context 503 'Python 3.10 이상이 필요합니다. Python을 업데이트하세요.' 'python_version_unsupported'; return }
             if (-not [bool]$python.available) { Write-VASError $Context 503 'Python 3.10 이상을 찾을 수 없습니다. Python을 설치한 뒤 다시 시도하세요.' 'python_unavailable'; return }
         }
         switch ($Path) {
-            '/api/folder/select' {
-                $result = Select-VASProjectFolder -Root $root -Path ([string](Get-VASBodyProperty $Body 'path' ''))
-                Write-VASResponse $Context 200 ([ordered]@{ cancelled = ($null -eq $result); selection = $result })
-            }
+            '/api/folder/select' { $result = Select-VASFolderLocation -Root $root -Path ([string](Get-VASBodyProperty $Body 'path' '')); Write-VASResponse $Context 200 ([ordered]@{ cancelled = ($null -eq $result); selection = $result }) }
+            '/api/migrations/select' { $result = Select-VASProjectFolder -Root $root -Path ([string](Get-VASBodyProperty $Body 'path' '')); Write-VASResponse $Context 200 ([ordered]@{ cancelled = ($null -eq $result); selection = $result }) }
             '/api/migrations/analyze' {
                 $result = Analyze-VASProject -Root $root -SelectionId ([string](Get-VASBodyProperty $Body 'selectionId' '')) -Path ([string](Get-VASBodyProperty $Body 'path' ''))
                 Write-VASResponse $Context 200 $result
@@ -408,7 +406,7 @@ function Invoke-VASApiRequest {
         }
         return
     }
-    if ($path -in @('/api/folder/select', '/api/migrations/analyze', '/api/migrations/import', '/api/migrations/rollback', '/api/migrations/delete-source') -and $method -eq 'POST') {
+    if ($path -in @('/api/folder/select', '/api/migrations/select', '/api/migrations/analyze', '/api/migrations/import', '/api/migrations/rollback', '/api/migrations/delete-source') -and $method -eq 'POST') {
         Invoke-VASMigrationRoute $path $Context $State $body; return
     }
     if ($path -in @('/api/handoffs/preview', '/api/handoffs/export') -and $method -eq 'POST') { Invoke-VASHandoffHttpRoute $path $Context $State $body; return }

@@ -76,12 +76,13 @@ input[type="text"]:focus, textarea:focus { outline: 3px solid var(--accent); out
 .done-screen { display: none; padding-top: 40px; }
 .done-screen.active { display: block; animation: slideUpFade .5s var(--bezier) forwards; }
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-.done-graphic { margin-bottom: 28px; font-size: clamp(70px, 11vw, 126px); line-height: .9; letter-spacing: -.08em; font-weight: 650; }
+.done-graphic { margin: 0 0 28px; font-size: clamp(70px, 11vw, 126px); line-height: .9; letter-spacing: -.08em; font-weight: 650; }
 .done-screen > p { max-width: 42ch; margin: 0 0 46px; color: var(--text-muted); font-size: 17px; line-height: 1.7; }
 .done-btns { display: grid; gap: 8px; }
 .done-btns .btn { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); }
 .done-btns .btn.action-btn::after { content: "→"; font-size: 22px; }
 .done-btns .btn.action-btn:hover { background: var(--text-main); color: var(--bg-color); }
+.done-btns .btn.btn-primary-action { background: var(--text-main); color: var(--bg-color); }
 .done-info { margin: 12px 0 0 !important; padding: 18px; border-left: 3px solid var(--accent); color: var(--text-main) !important; background: color-mix(in srgb, var(--accent) 9%, transparent); font-size: 14px !important; }
 .design-choice select { width: 100%; min-height: 58px; border: 1px solid var(--border); border-radius: 0; padding: 0 16px; background: transparent; color: inherit; font-weight: 700; }
 .design-choice strong { display: block; margin: 18px 0 12px; max-width: 62ch; font: 700 14px/1.6 var(--font-sans); }

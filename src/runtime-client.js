@@ -52,10 +52,14 @@
     } catch (error) { }
   }
 
-  function preserveTokenInLinks() {
+  function preserveTokenInLinks(root) {
     const token = getToken();
     if (!token) return;
-    document.querySelectorAll('a[data-vas-link], a[href*=".html"]').forEach(function (link) {
+    const selector = 'a[data-vas-link], a[href*=".html"]';
+    const links = [];
+    if (root && root.matches && root.matches(selector)) links.push(root);
+    const scope = root && root.querySelectorAll ? root : document;
+    links.concat(Array.from(scope.querySelectorAll(selector))).forEach(function (link) {
       preserveTokenInLink(link, token);
     });
   }

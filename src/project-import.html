@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="project-import.css">
-  <link rel="stylesheet" href="handoff-loop.css">
 </head>
 <body>
   <header class="topbar">
@@ -34,8 +33,6 @@
       <section class="panel active" data-step="1">
         <div class="section-title"><span>01</span><h2>AI에게 맡길 작업을 적어주세요.</h2></div>
         <p class="web-note">폴더 내부는 분석하지 않습니다. 선택한 위치만 복사할 프롬프트에 넣어 Codex가 실제 원본을 찾게 합니다.</p>
-        <div class="result-import-callout"><div><strong>이전 AI 작업을 이어서 하나요?</strong><p>VAS-AI-RESULT.json을 불러오면 남은 작업과 실패한 테스트를 다음 인계에 연결합니다.</p></div><button type="button" data-result-import>이전 결과 불러오기</button></div>
-        <p class="loop-status" id="existingLoopStatus" role="status" hidden></p>
         <div class="location-field">
           <label for="folderPath">작업할 폴더 위치</label>
           <div class="location-control"><input id="folderPath" maxlength="1000" placeholder="예: Z:\프로젝트\회사 홈페이지" required><button type="button" id="selectFolder">폴더 위치</button></div>
@@ -51,20 +48,19 @@
         <div class="handoff-design">
           <label for="handoffDesignPreset">디자인 방향</label><select id="handoffDesignPreset"></select>
           <strong id="handoffDesignSummary" aria-live="polite"></strong>
-          <a class="design-reference-link" href="design-controller.html" target="_blank" rel="noopener" data-vas-link data-design-reference><span data-design-reference-label>디자인 예시·설정 보기</span><span aria-hidden="true">↗</span></a>
+          <a class="design-reference-link" href="design-controller.html?return=project-import.html" target="_blank" rel="noopener" data-vas-link data-design-reference><span data-design-reference-label>디자인 예시·설정 보기</span><span aria-hidden="true">↗</span></a>
           <p class="design-reference-note">새 창에서 실제 화면 예시를 보고 세부 값을 바꿀 수 있습니다.</p>
         </div>
         <label class="provider-field">사용할 코딩 도구<select id="provider"><option value="codex">Codex</option><option value="claude">Claude</option><option value="antigravity">Antigravity</option><option value="universal">기타 코딩 도구</option></select></label>
-        <div id="existingProjectContextReview"></div>
         <p class="web-note">오른쪽 PROMPT가 실제 전달 내용입니다. JSON은 설정을 보관하거나 함께 전달할 때만 사용하면 됩니다.</p>
-        <div class="actions handoff-actions"><button type="button" data-result-import>이전 결과 불러오기</button><button type="button" id="downloadJson">JSON 저장</button><button type="button" class="primary" id="copyPrompt">Codex용 프롬프트 복사 →</button></div>
+        <div class="actions handoff-actions"><button type="button" id="editWork">← 내용 수정</button><button type="button" class="primary" id="copyPrompt">Codex용 프롬프트 복사 →</button><button type="button" id="downloadJson">JSON 저장 (선택)</button></div>
       </section>
 
       <section class="panel" data-step="3">
         <div class="section-title"><span>03</span><h2>코딩 AI에 붙여넣으면 됩니다.</h2></div>
         <div class="finish-box"><b>이제 이렇게 하세요</b><ol><li>Codex·Claude·Antigravity에서 실제 원본 프로젝트 폴더를 엽니다.</li><li>복사한 프롬프트를 채팅에 붙여넣습니다.</li><li>필요하면 <code>VAS-AI-HANDOFF.json</code>도 프로젝트 최상위 폴더에 저장합니다.</li></ol></div>
         <div class="result"><p id="resultMessage">프롬프트를 복사했습니다. VAS는 닫아도 됩니다.</p></div>
-        <div class="actions finish-actions"><button type="button" class="primary" id="copyPromptAgain">프롬프트 다시 복사</button><button type="button" id="downloadAgain">JSON 저장</button><button type="button" data-result-import>AI 결과 불러오기</button><a href="vas-hub.html" data-vas-link>새 작업 시작</a><button type="button" data-setup-settings>설정 다시 하기</button></div>
+        <div class="actions finish-actions"><button type="button" class="primary" id="copyPromptAgain">프롬프트 다시 복사</button><button type="button" id="downloadAgain">JSON 저장 (선택)</button><button type="button" id="editSettings">← 내용 수정</button><a href="vas-hub.html" data-vas-link>새 작업 시작</a><button type="button" data-setup-settings>작업 기억 설정</button></div>
       </section>
       <div class="error-box" id="errorBox" role="alert" hidden></div>
     </section>
@@ -86,8 +82,6 @@
   <script src="agent-contract.js"></script>
   <script src="handoff-workflow.js"></script>
   <script src="agent-handoff-web.js"></script>
-  <script src="handoff-context-review.js"></script>
-  <script src="ai-result-import.js"></script>
   <script src="project-import.js"></script>
 </body>
 </html>

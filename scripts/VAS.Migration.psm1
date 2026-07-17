@@ -257,7 +257,7 @@ function Update-VASRegistry {
     Write-VASJsonFile $path ([pscustomobject]@{ version = 2; projects = @($items) })
 }
 
-function Select-VASProjectFolder {
+function Select-VASFolderLocation {
     [CmdletBinding()]
     param([string]$Root, [string]$Path)
     $selected = $Path
@@ -292,7 +292,18 @@ function Select-VASProjectFolder {
     }
     if (-not (Test-Path -LiteralPath $selected -PathType Container)) { throw "폴더가 존재하지 않습니다: $selected" }
     $fullPath = (Get-Item -LiteralPath $selected -Force).FullName
-    return (Save-VASSelection $Root $fullPath)
+    return [pscustomobject]@{
+        path = $fullPath
+        name = [IO.Path]::GetFileName($fullPath.TrimEnd('\', '/'))
+    }
+}
+
+function Select-VASProjectFolder {
+    [CmdletBinding()]
+    param([string]$Root, [string]$Path)
+    $location = Select-VASFolderLocation -Root $Root -Path $Path
+    if ($null -eq $location) { return $null }
+    return (Save-VASSelection $Root $location.path)
 }
 
 function Analyze-VASProject {
@@ -369,7 +380,7 @@ function Get-VASProjects {
 }
 
 Export-ModuleMember -Function @(
-    'Select-VASProjectFolder', 'Analyze-VASProject', 'Import-VASProject',
+    'Select-VASFolderLocation', 'Select-VASProjectFolder', 'Analyze-VASProject', 'Import-VASProject',
     'Get-VASMigrationStatus', 'Undo-VASProjectImport',
     'Remove-VASSourceAdvanced', 'Get-VASProjects', 'Get-VASPythonRuntime',
     'Update-VASProjectKnowledge', 'Resolve-VASSelection', 'Find-VASPythonCommand',

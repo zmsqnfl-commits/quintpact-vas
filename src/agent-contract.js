@@ -162,7 +162,7 @@
     let status = RESULT_STATUS.has(raw && raw.status) ? raw.status : '';
     if (!status) errors.push('결과 상태가 올바르지 않습니다.');
     const hash = raw && raw.handoffPayloadSha256;
-    if (hash != null && hash !== '' && !/^[a-f0-9]{64}$/i.test(String(hash))) errors.push('handoffPayloadSha256 형식이 올바르지 않습니다.');
+    if (!/^[a-f0-9]{64}$/i.test(String(hash || ''))) errors.push('handoffPayloadSha256 형식이 올바르지 않습니다.');
 
     const readback = raw && raw.readback || {};
     const checkedFiles = [];
@@ -190,6 +190,7 @@
     });
     const tests = (Array.isArray(raw && raw.tests) ? raw.tests : []).slice(0, 50).map(function (item) {
       const state = TEST_STATUS.has(item && item.status) ? item.status : 'skipped';
+      if (!TEST_STATUS.has(item && item.status)) errors.push('테스트 상태가 올바르지 않습니다.');
       const name = cleanWithCount(item && item.name, 200); const command = cleanWithCount(item && item.command, 500); const summary = cleanWithCount(item && item.summary, 1000);
       redactionState.count += name.redactions + command.redactions + summary.redactions;
       return { name: name.text || '검증', command: command.text, status: state, summary: summary.text };
@@ -204,6 +205,10 @@
     }).filter(function (item) { return item.summary || item.nextAction; });
     const changeSummary = cleanWithCount(changes.summary, 8000); const nextTask = cleanWithCount(raw && raw.nextRecommendedTask, 4000);
     redactionState.count += changeSummary.redactions + nextTask.redactions;
+    const safety = raw && raw.safety || {};
+    if (safety.absolutePathsExcluded !== true || safety.secretsExcluded !== true || safety.rawCommandOutputExcluded !== true) {
+      errors.push('결과 안전 확인 값이 올바르지 않습니다.');
+    }
     const normalizedResult = {
         format: 'vas-ai-result', schemaVersion: 1, resultId: resultId, handoffId: handoffId,
         handoffPayloadSha256: /^[a-f0-9]{64}$/i.test(String(hash || '')) ? String(hash) : null,

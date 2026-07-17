@@ -2,13 +2,21 @@
 (function () {
   'use strict';
 
-  const state = VASThemeState.init();
-
   const themeName = document.getElementById('themeNameSpan');
-  if (themeName) themeName.textContent = state.preset.charAt(0).toUpperCase() + state.preset.slice(1);
+  function refreshThemeName() {
+    const state = VASThemeState.get();
+    if (themeName) themeName.textContent = state.preset.charAt(0).toUpperCase() + state.preset.slice(1);
+  }
+
+  VASThemeState.init();
+  refreshThemeName();
+  window.addEventListener('vas-theme-state', refreshThemeName);
+  window.addEventListener('focus', refreshThemeName);
+  window.addEventListener('pageshow', refreshThemeName);
   if (document.body.dataset.mode === 'standalone') {
     const backLink = document.getElementById('hubBackLink');
     if (backLink) backLink.hidden = true;
+    document.querySelectorAll('[data-setup-settings]').forEach(function (button) { button.hidden = true; });
   }
   VASThemeState.decorateLinks(document);
 })();

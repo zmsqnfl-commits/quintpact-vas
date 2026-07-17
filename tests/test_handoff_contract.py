@@ -8,6 +8,7 @@ import pytest
 
 from scripts.vas_ai_contract import (
     approved_rag,
+    build_prompt,
     finalize_handoff,
     normalize_handoff,
     validate_result,
@@ -48,10 +49,13 @@ def result_document(**updates: object) -> dict:
         "iteration": 1,
         "sourceType": "existing",
         "status": "complete",
+        "generatedBy": {"tool": "test"},
+        "readback": {"checkedFiles": ["src/app.js"], "confirmedRules": [], "confirmedEntrypoints": [], "commands": [], "facts": [], "assumptions": []},
         "changes": {"summary": "수정 완료", "relativeFiles": [{"path": "src/app.js", "action": "modified", "fromPath": None}]},
         "tests": [{"name": "unit", "status": "passed", "summary": "통과"}],
         "remaining": [],
         "nextRecommendedTask": "배포 확인",
+        "safety": {"absolutePathsExcluded": True, "secretsExcluded": True, "rawCommandOutputExcluded": True},
     }
     result.update(updates)
     return result
@@ -64,6 +68,14 @@ def test_finalize_is_deterministic_and_non_circular() -> None:
     assert re.fullmatch(r"h_[a-f0-9]{32}", first["workflow"]["handoffId"])
     assert re.fullmatch(r"[a-f0-9]{64}", first["integrity"]["payloadSha256"])
     assert first["workflow"]["handoffId"] in first["assistantGuide"]["pasteText"]
+
+
+def test_default_prompt_is_one_shot_and_keeps_rbg() -> None:
+    text = build_prompt(base_document(), "codex")
+    assert "RBG(Read Before Generate)" in text
+    assert "실제 파일" in text
+    for hidden in ("VAS-AI-RESULT.json", "handoffId", "payloadSha256", "승인된 작업 기억", "이전 작업 연결"):
+        assert hidden not in text
 
 
 def test_only_explicitly_approved_rag_is_exported() -> None:
@@ -108,3 +120,14 @@ def test_result_contract_rejects_unsafe_paths(path: str) -> None:
 def test_result_contract_rejects_wrong_source_type() -> None:
     with pytest.raises(ValueError, match="source_type_mismatch"):
         validate_result(result_document(sourceType="new"), "existing")
+
+
+def test_result_contract_requires_hash_action_and_safety() -> None:
+    with pytest.raises(ValueError, match="invalid_handoff_hash"):
+        validate_result(result_document(handoffPayloadSha256=""), "existing")
+    unsafe_action = result_document()
+    unsafe_action["changes"]["relativeFiles"][0]["action"] = "executed"
+    with pytest.raises(ValueError, match="unsafe_result_path"):
+        validate_result(unsafe_action, "existing")
+    with pytest.raises(ValueError, match="invalid_safety_confirmation"):
+        validate_result(result_document(safety={}), "existing")

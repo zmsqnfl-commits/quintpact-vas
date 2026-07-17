@@ -84,7 +84,7 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             client = RuntimeClient(runtime)
             try:
                 status, selected = client.request(
-                    "/api/folder/select", "POST", {"path": str(source)}
+                    "/api/migrations/select", "POST", {"path": str(source)}
                 )
                 self.assertEqual(status, 200)
                 selection_id = selected["selection"]["selectionId"]

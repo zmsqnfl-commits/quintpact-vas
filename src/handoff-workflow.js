@@ -18,9 +18,10 @@
 
   function receipt(document) {
     if (!document || !document.workflow || !/^h_[a-f0-9]{32}$/i.test(document.workflow.handoffId || '')) return null;
+    if (!document.integrity || !/^[a-f0-9]{64}$/i.test(document.integrity.payloadSha256 || '')) return null;
     return {
       handoffId: document.workflow.handoffId,
-      payloadSha256: document.integrity && document.integrity.payloadSha256 || null,
+      payloadSha256: document.integrity.payloadSha256,
       iteration: Number(document.workflow.iteration) || 1,
       sourceType: document.project && document.project.sourceType || 'existing',
       resultIds: []
@@ -44,7 +45,7 @@
       return { status: 'mismatch', message: '인계 작업 종류와 결과의 작업 종류가 다릅니다.' };
     }
     if (Number(found.iteration) !== Number(result.iteration)) return { status: 'mismatch', message: '인계 반복 번호와 결과 반복 번호가 다릅니다.' };
-    if (found.payloadSha256 && result.handoffPayloadSha256 && found.payloadSha256 !== result.handoffPayloadSha256) {
+    if (!/^[a-f0-9]{64}$/i.test(result.handoffPayloadSha256 || '') || found.payloadSha256 !== result.handoffPayloadSha256) {
       return { status: 'mismatch', message: '인계 JSON 해시와 결과의 해시가 다릅니다.' };
     }
     if (Array.isArray(found.resultIds) && found.resultIds.includes(result.resultId)) return { status: 'duplicate', message: '이미 다음 작업에 반영한 결과입니다.' };

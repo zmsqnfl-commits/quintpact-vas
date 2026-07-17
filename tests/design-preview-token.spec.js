@@ -187,7 +187,9 @@ test('studio preset tokens travel through the hub without restyling the setup sh
   const largeTypeState = await page.evaluate(() => {
     const tokens = VASStorage.getDefaultTheme();
     tokens.fontSize = 24;
-    return VASThemeState.encodeNavigationState({ v: 1, preset: 'custom', tokens });
+    return VASThemeState.encodeNavigationState({
+      v: 1, revision: VASThemeState.get().revision + 1, preset: 'custom', tokens
+    });
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${hubUrl}#vas=${largeTypeState}`, { waitUntil: 'domcontentloaded' });
@@ -356,4 +358,19 @@ test('design studio mobile tabs keep settings and preview usable', async ({ page
   await expect(page.locator('#advPreview')).toBeVisible();
   await page.locator('[data-studio-view="settings"]').click();
   await expect(page.locator('#preset-container')).toBeVisible();
+});
+
+test('mobile workflow keeps help and the studio save action visible', async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 720 });
+    await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: '사용 방법' })).toBeVisible();
+    await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: '사용 방법' })).toBeVisible();
+    await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: '사용 방법' })).toBeVisible();
+    await expect(page.locator('#applyProjectTheme')).toBeVisible();
+    const actionHeight = await page.locator('#applyProjectTheme').evaluate(element => element.getBoundingClientRect().height);
+    expect(actionHeight).toBeGreaterThanOrEqual(44);
+  }
 });
