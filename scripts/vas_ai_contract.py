@@ -18,7 +18,7 @@ SEVERITIES = {"blocker", "high", "medium", "low"}
 SAFE_HANDOFF_ID = re.compile(r"^h_[a-f0-9]{32}$", re.I)
 SAFE_RESULT_ID = re.compile(r"^r_[a-z0-9_-]{16,64}$", re.I)
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
-ABSOLUTE = re.compile(r"(?i)(?:[A-Z]:[\\/]|\\\\[^\s]+|/(?:Users|home|var|etc|mnt|volume\d*)/)[^\s'\"`]*")
+ABSOLUTE = re.compile(r'''(?i)(?:file://[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:/])/(?:Users|home|var|etc|mnt|volume\d*)/[^\s'"`]+)''')
 SECRET = re.compile(
     r"(?i)(?:\b(?:password|passwd|secret|credential|api[_ -]?key|access[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+|"
     r"\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|"
@@ -33,7 +33,7 @@ def canonical(value: Any) -> bytes:
 
 def clean(value: Any, maximum: int = 4_000) -> str:
     text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
-    text = CONTROL.sub(" ", text)
+    text = re.sub(r"[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]", " ", text)
     text = SECRET.sub("[redacted]", text)
     text = ABSOLUTE.sub("[absolute-path]", text)
     return text.strip()[:maximum]
@@ -115,13 +115,15 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
     opening = f"{tool}에서 새 프로젝트를 만들 빈 폴더를 여세요." if is_new else f"{tool}에서 실제 작업할 원본 프로젝트 폴더를 여세요."
     source_rule = ("현재 열린 빈 폴더에 요구사항에 맞는 구조를 직접 설계하세요." if is_new
                    else "프로젝트 구조·기술 스택·실행 방법은 현재 폴더의 실제 파일을 직접 읽어 판단하세요.")
-    direction = clean(design.get("direction"), 8_000) if isinstance(design, dict) else ""
+    direction = clean(design.get("direction"), 12_000) if isinstance(design, dict) else ""
     if not direction:
         direction = "기존 프로젝트의 디자인 규칙을 우선하며, 별도 지시가 없으면 현재 모습을 유지하세요."
     constraints = task.get("constraints", []) if isinstance(task, dict) else []
     criteria = task.get("acceptanceCriteria", []) if isinstance(task, dict) else []
     constraint_text = "\n".join(f"- {clean(item, 1_000)}" for item in constraints) or "- 없음"
     criteria_text = "\n".join(f"- {clean(item, 1_000)}" for item in criteria) or "- 없음"
+    from vas_handoff_details import prompt_details
+    details_text = prompt_details(document)
     text = f"""{opening}
 
 {'현재 열린 폴더가 새 프로젝트 작업 공간입니다.' if is_new else '현재 열린 폴더가 작업 원본입니다.'}
@@ -139,6 +141,8 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
 디자인 방향:
 {direction}
 
+{details_text}
+
 작업 규칙:
 1. {source_rule}
 2. AGENTS.md·CLAUDE.md와 기존 프로젝트 규칙이 있으면 먼저 확인하세요.
@@ -147,7 +151,7 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
 5. 비밀값·사용자 데이터·캐시·빌드 결과물은 읽거나 변경하지 마세요.
 6. RBG(Read Before Generate): 먼저 확인한 구조, 진입점, 적용 위치, 프로젝트 규칙, 검증 방법을 짧게 정리하세요.
 7. 불명확하거나 삭제·대규모 변경처럼 위험한 경우만 질문하고 나머지는 실제 파일을 기준으로 수정·테스트하세요."""
-    return text[:16_000]
+    return text[:32_000]
 
 
 def normalize_handoff(raw: dict[str, Any], prompt_builder: Callable[[dict[str, Any]], str]) -> dict[str, Any]:

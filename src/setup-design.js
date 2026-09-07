@@ -34,14 +34,15 @@
 
   function context() {
     const state = VASThemeState.get();
-    const preset = typeof PRESETS !== 'undefined' ? PRESETS[state.preset] : null;
+    const preset = typeof PRESETS !== 'undefined' ? PRESETS[state.basePreset || state.preset] : null;
     const fallback = { prompt: '[Custom Token Direction]\n' + JSON.stringify(state.tokens, null, 2) };
     const direction = global.composeAgentPrompt
-      ? global.composeAgentPrompt(state.preset, preset || fallback, state.tasteProfileMode === 'auto' ? null : state.tasteProfileMode)
+      ? global.composeAgentPrompt(state.basePreset || state.preset, preset || fallback, state.tasteProfileMode === 'auto' ? null : state.tasteProfileMode, state.tokens)
       : (preset ? preset.prompt : fallback.prompt);
     return {
       included: true,
       preset: state.preset,
+      basePreset: state.basePreset,
       tasteProfileMode: state.tasteProfileMode,
       tokens: state.tokens,
       direction: direction
@@ -54,7 +55,7 @@
       const known = typeof PRESETS !== 'undefined' && PRESETS[state.preset];
       item.select.value = known ? state.preset : 'custom';
     }
-    if (item.summary) item.summary.textContent = title(state.preset) + ' — ' + description(state.preset);
+    if (item.summary) item.summary.textContent = title(state.basePreset || state.preset) + (state.preset === 'custom' ? ' · 세부 값 수정' : '') + ' — ' + description(state.basePreset || state.preset);
     if (item.referenceLabel) item.referenceLabel.textContent = title(state.preset) + ' 디자인 예시·설정 보기';
   }
 
@@ -97,7 +98,7 @@
 
   function apply(key) {
     if (key === 'custom' || typeof PRESETS === 'undefined' || !PRESETS[key]) return;
-    VASThemeState.commit({ preset: key, tokens: presetTokens(PRESETS[key]) });
+    VASThemeState.commit({ preset: key, basePreset: key, tokens: presetTokens(PRESETS[key]) });
     mounts.forEach(function (item) { refreshMount(item); refreshRecommendation(item); });
   }
 

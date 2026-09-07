@@ -3,7 +3,7 @@
   'use strict';
 
   const SECRET = /(?:\b(?:password|passwd|secret|credential|api[_ -]?key|access[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+|\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
-  const ABSOLUTE_PATH = /(?:[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|\/(?:Users|home|var|etc|mnt|volume\d*)\/[^\s'"`]+)/gi;
+  const ABSOLUTE_PATH = /file:\/\/[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:\/])\/(?:Users|home|var|etc|mnt|volume\d*)\/[^\s'"`]+/gi;
   const RESULT_STATUS = new Set(['complete', 'incomplete', 'blocked', 'failed']);
   const TEST_STATUS = new Set(['passed', 'failed', 'skipped']);
   const SOURCE_TYPES = new Set(['new', 'existing', 'registered']);
@@ -26,7 +26,7 @@
   function sanitize(value, depth) {
     const level = depth || 0;
     if (level > 8) return null;
-    if (typeof value === 'string') return clean(value, 6000);
+    if (typeof value === 'string') return clean(value, 12000);
     if (Array.isArray(value)) return value.slice(0, 100).map(function (item) { return sanitize(item, level + 1); });
     if (value && Object.getPrototypeOf(value) === Object.prototype) {
       const result = {};

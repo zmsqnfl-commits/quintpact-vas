@@ -65,7 +65,7 @@ SECRET_CONTENT = [
     re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I),
     re.compile(r"\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4}\b"),
 ]
-ABSOLUTE_PATH = re.compile(r"(?i)(?:[A-Z]:[\\/]|\\\\[^\\\s]+\\[^\\\s]+|/(?:Users|home|var|etc)/)[^\s'\"]*")
+ABSOLUTE_PATH = re.compile(r'''(?i)(?:file://[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:/])/(?:Users|home|var|etc|mnt|volume\d*)/[^\s'"`]+)''')
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
@@ -105,28 +105,29 @@ def _safe_relative(value: str) -> str | None:
 
 def _clean_string(value: Any, maximum: int = 4_000) -> str:
     text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
-    text = CONTROL.sub(" ", text)
+    text = re.sub(r"[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]", " ", text)
     text = ABSOLUTE_PATH.sub("[absolute-path]", text)
     for pattern in SECRET_CONTENT:
         text = pattern.sub("[redacted]", text)
     return text.strip()[:maximum]
 
 
-def _sanitize(value: Any, depth: int = 0) -> Any:
+def _sanitize(value: Any, depth: int = 0, path: tuple[str, ...] = ()) -> Any:
     if depth > 8:
         return None
     if isinstance(value, dict):
         result: dict[str, Any] = {}
         for raw_key, raw_value in list(value.items())[:500]:
             key = _clean_string(raw_key, 80)
-            if re.search(r"(?i)(password|secret|token|api.?key|credential|private.?key|absolute.?path)", key):
+            design_tokens = key == "tokens" and path == ("design",) and isinstance(raw_value, dict)
+            if not design_tokens and re.search(r"(?i)(password|secret|token|api.?key|credential|private.?key|absolute.?path)", key):
                 continue
-            result[key] = _sanitize(raw_value, depth + 1)
+            result[key] = _sanitize(raw_value, depth + 1, path + (key,))
         return result
     if isinstance(value, list):
-        return [_sanitize(item, depth + 1) for item in value[:500]]
+        return [_sanitize(item, depth + 1, path) for item in value[:500]]
     if isinstance(value, str):
-        return _clean_string(value)
+        return _clean_string(value, 12_000)
     if isinstance(value, (bool, int, float)) or value is None:
         return value
     return _clean_string(value)

@@ -197,6 +197,31 @@ body:has(.vas-project-rail) .app { height: calc(100dvh - 174px); }
 .p-profile-info p { margin: 0 0 15px; opacity: .68; font-size: var(--p-fs-sm, 14px); line-height: 1.5; }
 .p-input { width: 100%; padding: 13px 14px; border: var(--p-border-width, 1px) solid var(--p-border-color); border-radius: calc(var(--p-radius, 8px) / 2); background: var(--p-bg); color: var(--p-text); }
 
+
+/* Profile-specific composition; token values remain authoritative. */
+.adv-preview[data-taste-profile="premiumFrontend"] .p-hero,
+.adv-preview[data-taste-profile="editorialMotion"] .p-hero,
+.adv-preview[data-taste-profile="dataTool"] .p-hero,
+.adv-preview[data-taste-profile="minimalistUtility"] .p-hero { text-align: left; }
+.adv-preview[data-taste-profile="editorialMotion"] .p-hero p,
+.adv-preview[data-taste-profile="premiumFrontend"] .p-hero p { margin-left: 0; }
+.adv-preview[data-taste-profile="editorialMotion"] .p-grid { grid-template-columns: 2fr 1fr 1fr; }
+.adv-preview[data-taste-profile="dataTool"] .p-grid,
+.adv-preview[data-taste-profile="minimalistUtility"] .p-grid { display: flex; flex-direction: column; gap: 0; }
+.adv-preview[data-taste-profile="dataTool"] .p-stat-card,
+.adv-preview[data-taste-profile="minimalistUtility"] .p-stat-card { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.adv-preview[data-taste-profile="dataTool"] .p-stat-card > *,
+.adv-preview[data-taste-profile="minimalistUtility"] .p-stat-card > * { margin: 0; }
+.adv-preview[data-taste-profile="dataTool"] .p-hero h2 { font-size: var(--p-fs-h2, 36px); }
+.adv-preview[data-taste-profile="softPremium"] .p-grid { width: 94%; align-self: center; }
+.adv-preview[data-taste-profile="industrialBrutalist"] .p-grid { gap: 0; }
+.adv-preview[data-taste-profile="industrialBrutalist"] .p-hero { text-align: left; text-transform: uppercase; }
+@media (max-width: 700px) {
+  .adv-preview[data-taste-profile="editorialMotion"] .p-grid { grid-template-columns: 1fr; }
+  .adv-preview[data-taste-profile="dataTool"] .p-stat-card,
+  .adv-preview[data-taste-profile="minimalistUtility"] .p-stat-card { flex-wrap: wrap; }
+}
+
 .studio-applybar { position: relative; z-index: 30; min-height: 72px; display: grid; grid-template-columns: clamp(390px, 34vw, 500px) 1fr; border-top: 1px solid var(--studio-line); background: #0d0d0d; }
 .studio-applybar button { padding: 0 clamp(22px, 4vw, 64px); border: 0; border-right: 1px solid var(--studio-line); background: transparent; color: var(--studio-text); text-align: left; cursor: pointer; }
 .studio-applybar .apply-theme { display: flex; align-items: center; justify-content: space-between; background: var(--studio-accent); color: #111; font-size: 16px; font-weight: 800; }

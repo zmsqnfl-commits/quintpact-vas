@@ -124,6 +124,11 @@ class ReleasePackageTests(unittest.TestCase):
             WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"]
         )
         self.assertIn("src/vas-hub.html", payload)
+        for resource in ("src/agent-resources.js", ".agents/agent-resources.json", ".agents/HANDOFF-WORKFLOW.md"):
+            self.assertIn(resource, payload)
+        for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
+            for role in ("implementer", "designer", "reviewer"):
+                self.assertIn(f"{host}/agents/vas_{role}{suffix}", payload)
         launcher_bytes = payload["Run-VAS-System.bat"]
         self.assertIn(b"\r\n", launcher_bytes)
         self.assertNotIn(b"\n", launcher_bytes.replace(b"\r\n", b""))
@@ -152,6 +157,8 @@ class ReleasePackageTests(unittest.TestCase):
         )
         html = payload["index.html"].decode("utf-8")
         self.assertIn('<body data-mode="standalone">', html)
+        self.assertIn("agent-resources.js", payload)
+        self.assertLess(html.index('src="agent-resources.js"'), html.index('src="design-taste-pack.js"'))
         self.assertNotIn('id="hubBackLink"', html)
         self.assertNotIn("personalization-store.js", html)
         self.assertNotIn("rag-lite.js", html)

@@ -1,5 +1,6 @@
 let currentFormat = 'json';
 let currentPreset = 'awwwards';
+let currentBasePreset = 'awwwards';
 let isHydrating = false;
 // 즐겨찾기 상태 (localStorage 기반)
 let favorites = VASStorage.readJson('vasFavorites', [], function (value) {
@@ -83,12 +84,15 @@ function setControlsFromTokens(value) {
   document.getElementById('fontSize').value = v.fontSize;
 }
 function refreshDesignPrompt() {
-  const preset = PRESETS[currentPreset];
+  const preset = PRESETS[currentBasePreset];
+  const profileKey = getTasteProfileKey(currentBasePreset, preset, window.getManualTasteProfileKey ? window.getManualTasteProfileKey() : null);
+  document.getElementById('advPreview').dataset.tasteProfile = profileKey;
+  document.getElementById('previewTitle').textContent = '디자인 미리보기 · ' + VAS_TASTE_PROFILES[profileKey].label;
   const values = getValues();
   const customDirection = '[Custom Token Direction]\n' + JSON.stringify(values, null, 2);
   const promptPreset = preset || { prompt: customDirection };
   document.getElementById('aiPrompt').value = window.composeAgentPrompt
-    ? window.composeAgentPrompt(currentPreset, promptPreset)
+    ? window.composeAgentPrompt(currentBasePreset, promptPreset, null, values)
     : promptPreset.prompt;
 }
 window.refreshDesignPrompt = refreshDesignPrompt;
@@ -96,6 +100,7 @@ function applyPreset(name, element) {
   const p = PRESETS[name];
   if (!p) return;
   currentPreset = name;
+  currentBasePreset = name;
   syncActivePreset(name);
   document.getElementById('colorBg').value = p.bg;
   document.getElementById('colorSurface').value = p.surface;
@@ -183,6 +188,7 @@ function update(skipHistory = false, presetOverride) {
   document.querySelector('.preview').style.background = v.colors.background;
   const state = VASThemeState.commit({
     preset: currentPreset,
+    basePreset: currentBasePreset,
     tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
     tokens: v
   });
@@ -199,7 +205,7 @@ function update(skipHistory = false, presetOverride) {
 function normalizeHistoryEntry(value) {
   if (VASStorage.isTheme(value)) return { v: 1, preset: 'custom', tokens: VASStorage.normalizeTheme(value) };
   if (value && typeof value === 'object' && VASStorage.isTheme(value.tokens)) {
-    return { v: 1, preset: value.preset || 'custom', tokens: VASStorage.normalizeTheme(value.tokens) };
+    return { v: 1, preset: value.preset || 'custom', basePreset: value.basePreset || value.preset || 'custom', tasteProfileMode: value.tasteProfileMode || 'auto', tokens: VASStorage.normalizeTheme(value.tokens) };
   }
   return null;
 }
@@ -230,6 +236,8 @@ function undoTheme() {
     }
     try {
       currentPreset = PRESETS[prev.preset] ? prev.preset : 'custom';
+      currentBasePreset = prev.basePreset || prev.preset || 'custom';
+      setTasteProfileMode(prev.tasteProfileMode || 'auto');
       setControlsFromTokens(prev.tokens);
       isHydrating = true;
       update(true, currentPreset);
@@ -306,6 +314,7 @@ function importJSON(file) {
         return;
       }
       currentPreset = 'custom';
+      currentBasePreset = 'custom';
       setControlsFromTokens(VASStorage.normalizeTheme(v));
       update(false, 'custom');
       showToast('디자인 토큰 성공적으로 복원됨!');
@@ -321,6 +330,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderPresets();
   const state = VASThemeState.init();
   currentPreset = PRESETS[state.preset] ? state.preset : 'custom';
+  currentBasePreset = state.basePreset || state.preset;
   setControlsFromTokens(state.tokens);
   isHydrating = true;
   update(false, currentPreset);
@@ -457,6 +467,7 @@ async function applyProjectTheme() {
         projectId: context.projectId,
         theme: {
           preset: currentPreset,
+          basePreset: currentBasePreset,
           tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
           tokens: VASStorage.normalizeTheme(getValues())
         }

@@ -35,7 +35,7 @@ CLIENT_ASSETS = [
     "client-export.js", "client-application-init.js", "vas-config.js",
     "storage-utils.js", "theme-state.js", "editorial-shell.css",
     "editorial-theme.js", "setup-tools.css", "setup-tools.js",
-    "design-presets.js", "design-taste-pack.js", "setup-design.js",
+    "design-presets.js", "agent-resources.js", "design-taste-pack.js", "setup-design.js",
     "agent-contract.js", "agent-handoff-web.js",
 ]
 
@@ -134,6 +134,7 @@ def zip_directory(source: Path, destination: Path) -> None:
 
 
 def build_windows(stage: Path) -> Path:
+    subprocess.run([sys.executable, str(ROOT / "scripts/build-agent-resources.py"), "--check"], check=True)
     name = f"VAS-{version()}-windows"
     root = stage / name
     root.mkdir(parents=True)
@@ -141,6 +142,12 @@ def build_windows(stage: Path) -> Path:
         shutil.copy2(ROOT / filename, root / filename)
     for dirname in FULL_DIRS:
         copy_tree(ROOT / dirname, root / dirname)
+    for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
+        for role in ("implementer", "designer", "reviewer"):
+            relative = Path(host) / "agents" / ("vas_" + role + suffix)
+            destination = root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, destination)
     (root / "README.md").write_text(
         """# VAS 2.6.4 Windows 실행본
 

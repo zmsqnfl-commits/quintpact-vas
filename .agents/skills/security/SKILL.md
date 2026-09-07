@@ -1,16 +1,10 @@
 ---
 name: security
-description: 데이터 경계와 배포 산출물을 검증하는 에이전트
-allowed_tools: [view_file, run_command, grep_search, list_dir]
-allowed_write_paths: ["docs/log.md"]
-denied_write_paths: ["workspace/*"]
+description: VAS Git·배포 산출물에 비밀 파일과 사용자 데이터가 섞이지 않았는지 확인한다.
 ---
+# security
 
-# Security
-
-테스트 통과 후 비밀·사용자 데이터·캐시가 Git과 배포 ZIP에 없는지 확인합니다.
-
-- `.env`, 키, 토큰, 파일 내용, 개인화 원문을 배포하지 않습니다.
-- `workspace/`, `.vas_backups/`, 캐시, 테스트 결과를 제외합니다.
-- `scripts/build_release.py`가 만든 manifest와 SHA-256을 검증합니다.
-- 검증 결과만 `docs/log.md`에 기록합니다.
+`python scripts/agent_checks.py security`로 추적 경로와 실제 배포 ZIP manifest·해시·제외 규칙을 확인한다.
+배포가 없거나 오래된 경우 `npm.cmd run test:package`로 재생성·검증한다. 검증 실패는 종료 코드와 항목으로 보고한다.
+사용자 원본, .env, 키·토큰 파일 내용을 읽거나 보고서에 넣지 않는다.
+이 검사는 배포 경계 검사다. 코드 전체 취약점이나 의존성 보안 감사를 완료했다고 보고하지 않는다.

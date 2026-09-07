@@ -1,6 +1,6 @@
 # VAS 2.6.4 개발 규칙
 
-- HTML/CSS/Vanilla JS, Python, PowerShell만 사용합니다.
+- VAS 자체에는 HTML/CSS/Vanilla JS, Python, PowerShell만 사용합니다. 인계 대상 프로젝트는 해당 기술 스택을 유지합니다.
 - 파일당 500줄 이하, 외부 CDN·원격 폰트 금지입니다.
 - 코어 원본은 `src/`, `docs/`, `scripts/`, `tests/`입니다.
 - 신규·기존 기본 흐름은 프롬프트를 복사해 작업을 보내며 `VAS-AI-HANDOFF.json` v3 저장은 선택입니다.
@@ -12,3 +12,6 @@
 - 기존 복사·등록 모듈은 호환용으로 보존하되 기본 UI에 노출하지 않습니다.
 - 평소에는 Python·브라우저·패키지 테스트를 실행합니다.
 - 10회 스트레스 검사는 명시적 요청 때만 실행합니다.
+- 에이전트·디자인 지침 변경 후 `npm run agents:build`, `npm run knowledge:index`를 실행합니다.
+- `npm run agent:verify`는 실제 Python·브라우저 검사를 실행합니다. 패키지 생성 후 `npm run agent:security`로 배포 경계와 원본 해시를 확인합니다.
+- 하위 에이전트는 현재 호스트에서 실제 도구를 제공할 때만 호출하며, 지원하지 않으면 동일한 역할을 순차 수행합니다.

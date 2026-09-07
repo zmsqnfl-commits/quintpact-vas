@@ -47,10 +47,11 @@ def source_files(root: Path) -> list[Path]:
     if docs.exists():
         files.extend(docs.rglob("*.md"))
     if agents.exists():
-        files.extend(path for path in [agents / "CONTEXT.md", agents / "access-control.md"] if path.exists())
+        files.extend(path for path in [agents / "CONTEXT.md", agents / "access-control.md", agents / "HANDOFF-WORKFLOW.md"] if path.exists())
         files.extend((agents / "workflows").glob("*.md"))
         files.extend((agents / "skills").glob("*/SKILL.md"))
         files.extend((agents / "skills").glob("*/TASTE-RULES.md"))
+        files.extend((agents / "skills/designer/references/profiles").glob("*.md"))
     files = [path for path in files if is_allowed(path, root)]
     return sorted(set(files), key=lambda path: path.relative_to(root).as_posix().lower())
 

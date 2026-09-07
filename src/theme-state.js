@@ -37,6 +37,7 @@
       revision: normalizeRevision(input.revision),
       updatedAt: normalizeUpdatedAt(input.updatedAt),
       preset: normalizePreset(input.preset),
+      basePreset: normalizePreset(input.basePreset || input.preset),
       tasteProfileMode: normalizeTasteMode(input.tasteProfileMode),
       tokens: VASStorage.normalizeTheme(input.tokens)
     };
@@ -84,6 +85,7 @@
       revision: meta.revision,
       updatedAt: meta.updatedAt,
       preset: VASStorage.readText('vasCurrentPreset', DEFAULT_PRESET),
+      basePreset: meta.basePreset,
       tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
       tokens: tokens
     });
@@ -106,7 +108,7 @@
     VASStorage.writeText('vasTasteProfileMode', state.tasteProfileMode);
     VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.6.4');
     VASStorage.writeJson('vasThemeStateMeta', {
-      v: STATE_VERSION, preset: state.preset, revision: state.revision, updatedAt: state.updatedAt
+      v: STATE_VERSION, preset: state.preset, basePreset: state.basePreset, revision: state.revision, updatedAt: state.updatedAt
     });
   }
 
@@ -189,6 +191,7 @@
       revision: (base ? base.revision : 0) + 1,
       updatedAt: Date.now(),
       preset: input.preset === undefined ? base.preset : input.preset,
+      basePreset: input.basePreset || (input.preset && input.preset !== 'custom' ? input.preset : base.basePreset),
       tasteProfileMode: input.tasteProfileMode === undefined ? base.tasteProfileMode : input.tasteProfileMode,
       tokens: input.tokens === undefined ? base.tokens : input.tokens
     });

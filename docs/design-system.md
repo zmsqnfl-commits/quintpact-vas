@@ -1,48 +1,28 @@
-# 디자인 시스템 (Design System)
+# 디자인 시스템
 
-이 문서는 VAS 2.6.4 에이전트 팀이 UI/UX를 개발할 때 참조하는 **단일 진실 공급원(Single Source of Truth)**입니다.
-과거의 고정된(하드코딩된) 다크모드 룰은 폐기되었으며, 메인 디자인 시스템과 산출물 생성은 **내장 하이브리드 디자인 스튜디오**를 기준으로 합니다.
+## 적용 범위
 
----
+VAS 자체 화면은 HTML/CSS/Vanilla JS와 로컬 에셋을 사용하며 외부 CDN·원격 폰트를 추가하지 않습니다.
+VAS가 인계하는 대상 프로젝트는 해당 프로젝트의 기술 스택·브랜드·사용자 요구를 따릅니다.
+기존 React·Vue·디자인 시스템을 임의로 Vanilla JS나 시스템 폰트로 교체하지 않습니다.
 
-## 🎨 1. 디자인 토큰 추출 원칙 (Vibecoding Core)
+## 디자인 기준
 
-Implementer 및 Designer 에이전트는 코딩을 시작하기 전, **`src/design-controller.html`과 `src/design-presets.js`의 토큰/프리셋** 또는 사용자가 제공한 산출물을 기준으로 삼아야 합니다.
+1. 사용자 요구사항과 대상 프로젝트 규칙을 먼저 확인합니다.
+2. 확정된 토큰·참고 화면·에셋을 시각 명세로 사용합니다.
+3. Taste Profile과 프리셋은 명세에서 결정하지 않은 부분을 보완합니다.
 
-- **비개발자 권장 흐름:** `Run-VAS-System.bat` 실행 → 새 프로젝트 또는 기존 프로그램 선택 → 디자인 설정 → `VAS-AI-HANDOFF.json` 저장.
-- **디자인 스튜디오 위치:** `src/design-controller.html`
-- **신규 기본값:** `awwwards` 프리셋과 `Editorial Motion` Taste Profile을 사용합니다.
-- 사용자(팀 리드)가 특정 디자인 시스템, 토큰 JSON, 또는 산출물을 제공하면 해당 파일을 최상위 시각 명세로 간주합니다.
-- 임의의 보라색/형광색 템플릿(Slop) 그라디언트나 촌스러운 중앙 정렬은 원천 차단됩니다.
+새 설정의 기본값은 `awwwards / Editorial Motion`입니다. 기존 설정은 자동 전환하지 않습니다.
+세부 토큰을 편집해도 `basePreset`으로 원래 디자인 방향을 유지합니다.
+프로젝트 프리셋은 인계·디자인 예시에 적용하며 VAS 허브의 기본 셸 색은 유지합니다.
 
-## 🔤 2. 공통 타이포그래피 (Typography Tokens)
+## 구현과 검증
 
-프리셋 프롬프트에서 별도의 폰트를 지정하지 않은 경우, 아래 기본 룰을 따릅니다.
+- 인계 프롬프트의 정확한 색상·폰트·간격·반경·테두리·그림자를 적용합니다.
+- 정보 우선순위와 작업 흐름에 따라 레이아웃을 선택합니다. 특정 색이나 중앙 정렬을 일괄 금지하지 않습니다.
+- hover·focus·disabled·loading·empty·error 상태와 키보드 동작을 구현합니다.
+- 모션은 선택한 방향과 대상 프로젝트의 도구를 따르며 reduced-motion 설정을 존중합니다.
+- 데스크톱·모바일 화면을 실제 렌더링하고 참고 자료와 비교합니다. 보지 않은 화면의 검증을 주장하지 않습니다.
 
-- **기본 한글 폰트:** 운영체제 기본 sans 스택 (`system-ui`, `Segoe UI`, `Malgun Gothic`, `Apple SD Gothic Neo`)
-- **숫자 및 코드 폰트:** 시스템 mono 스택 (`ui-monospace`, `Cascadia Code`, `Consolas`)
-- **헤드라인 규칙:** 거대하게 키우지 말고 `tracking-tighter` (자간 좁게), `leading-none` (행간 좁게) 적용.
-- **이모지 규칙:** 시스템 이모지 대신 Phosphor/Radix 등 고품질 웹 아이콘 사용 원칙.
-
-## 🪄 3. 공통 애니메이션 및 모션 (Motion Specs)
-
-프리셋 프롬프트에서 모션 속도(Speed)를 지정받으면 해당 속도를 기준 삼아 애니메이션을 구성합니다. 무거운 외부 라이브러리(Framer Motion 등) 없이 순수 Vanilla CSS와 JS만으로 구현합니다.
-
-- **타이밍 함수 (Timing Function):** 
-  - 기본 모션: `cubic-bezier(0.16, 1, 0.3, 1)` 적용 (스프링처럼 쫀득한 움직임)
-- **택타일 피드백 (Tactile Feedback):**
-  - 모든 버튼/인터랙티브 요소는 `:active` 상태에서 `transform: scale(0.98);` 로 살짝 눌리는 물리적 피드백 제공.
-
-## 📐 4. 레이아웃과 형태 (Layout & Shapes)
-
-- **비대칭성 (Asymmetry):** 뻔한 3단 횡렬 배치, 무조건적인 텍스트 가운데 정렬 금지.
-- **음수 공간 (Negative Space):** 빽빽한 컨테이너(Card) 남용 금지. 선(Divider)과 여백만으로 데이터를 그룹화하여 공기처럼 가벼운 레이아웃 지향.
-- **Radius 및 Border:** 프리셋에서 주어진 토큰(예: IBM Carbon의 경우 0px, Google M3의 경우 16px)을 완벽하게 따라야 합니다.
-
-## 5. 기본값과 호환성
-
-- 새 저장소는 `awwwards`로 시작합니다.
-- 기존 저장소의 색상·간격·프리셋은 자동 전환하지 않습니다.
-- VAS 허브·설정 화면은 warm gray·near black·황갈색의 Awwwards Editorial 셸을 유지합니다.
-- 프로젝트 프리셋은 VAS 화면 색을 뒤집지 않고 JSON·프롬프트·디자인 예시에만 반영합니다.
-- `VASThemeState` URL 브리지로 선택값은 화면 사이에 이어갑니다.
+구체적인 지침은 `.agents/skills/designer/SKILL.md`와 `references/profiles/*.md`에서 관리합니다.
+변경 후 `npm run agents:build`와 `npm run knowledge:index`를 실행합니다.

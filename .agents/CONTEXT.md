@@ -4,6 +4,10 @@
 
 VAS는 새 프로그램과 기존 프로그램의 설정을 `VAS-AI-HANDOFF.json`으로 정리해 Codex·Claude·Antigravity에 전달하는 로컬 초기 설정 도구입니다.
 
+## 에이전트 실행
+
+`.agents/HANDOFF-WORKFLOW.md`를 따라 주 실행자가 구현·검증을 책임집니다. 실제 호출 도구가 있고 독립 작업이 유용할 때만 역할을 위임합니다. 네이티브 에이전트 정의는 `.codex/agents/`, `.claude/agents/`에 있으며 원본은 `.agents/skills/`입니다.
+
 ## 기준
 
 - 단일 작업 원본: `src/`, `docs/`, `scripts/`, `tests/`

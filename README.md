@@ -23,6 +23,7 @@ VAS는 기존 프로그램의 구조나 기술 스택을 추정하지 않습니�
 ## 검증·배포
 
 ```powershell
+npm.cmd run agents:build
 npm.cmd run knowledge:index
 npm.cmd run test:python
 npm.cmd run test:browser
@@ -30,3 +31,6 @@ npm.cmd run test:package
 ```
 
 10회 스트레스 검사는 명시적으로 필요할 때만 `npm.cmd run test:release`로 실행합니다.
+
+디자인·역할 지침은 `.agents/skills/`에서 관리합니다. `agent:verify`는 실제 Python·브라우저 검사를,
+`agent:security`는 생성된 배포의 파일 경계·원본 해시를 확인합니다. 자세한 실행 범위는 [인계 가이드](docs/HANDOFF.md)를 참고하세요.

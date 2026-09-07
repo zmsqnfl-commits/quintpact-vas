@@ -36,7 +36,7 @@
           <div class="q"><label for="problemDescription">해결할 문제와 원하는 결과</label><textarea id="problemDescription" name="problem_desc" placeholder="현재 불편한 점과 완성됐을 때의 모습을 적어주세요." required maxlength="4000"></textarea></div>
           <div class="q"><label for="projectReference">참고할 서비스 <small>선택</small></label><input id="projectReference" type="text" name="reference" placeholder="예: Notion AI"></div>
           <button type="button" class="drag-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"><span>참고 파일을 선택하면 이름만 화면에 표시하며 최종 JSON에는 넣지 않습니다.</span></button>
-          <input type="file" id="fileInput" multiple hidden onchange="handleFiles(this.files)"><div class="file-chips" id="fileChips"></div>
+          <input type="file" id="fileInput" multiple hidden onchange="handleFiles(this.files)"><div class="file-chips" id="fileChips"></div><p class="hint">여기서는 파일 이름만 기록합니다. 참고 이미지·문서 원본은 프롬프트와 함께 코딩 AI에 별도로 첨부하세요.</p>
         </section>
 
         <section class="step" data-step="2">
@@ -109,6 +109,7 @@
   <script src="personalization-store.js"></script>
   <script src="setup-tools.js"></script>
   <script src="design-presets.js"></script>
+  <script src="agent-resources.js"></script>
   <script src="design-taste-pack.js"></script>
   <script src="setup-design.js"></script>
   <script src="agent-contract.js"></script>

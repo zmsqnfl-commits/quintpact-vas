@@ -1,24 +1,18 @@
-# 접근 제어
+# 작업 범위와 실행 권한
 
-## 역할
+호스트의 실제 도구 권한과 샌드박스가 실행 경계를 통제한다. SKILL.md 문구나 파일 검사 도구만으로 보안 경계가 생기지는 않는다.
 
-| 역할 | 주 쓰기 영역 | 제한 |
-|---|---|---|
-| Architect | 설계 문서 | 운영 코드 직접 변경 금지 |
-| Designer | `src/assets/`, UI 명세 | 사용자 데이터 접근 금지 |
-| Implementer | `src/`, `scripts/` | 테스트 결과 조작 금지 |
-| Reviewer | 리뷰 결과 | 기능 파일 직접 변경 금지 |
-| Tester | `tests/` | 사용자 원본 변경 금지 |
-| Security | 릴리즈 검증·로그 | 검증 전 배포 금지 |
+| 역할 | 담당 |
+|---|---|
+| 주 실행자/Implementer | 승인된 소스·스크립트·관련 테스트 변경, 브라우저 검증 |
+| Designer | 참고 화면·확정 토큰·시각 명세와 비교 |
+| Reviewer | 원본·diff·검증 증거 검토, 소스 직접 수정 금지 |
+| Architect | 필요한 구조·인터페이스 설계 |
+| Tester | 실제 테스트·브라우저 실행, 실패 재현 |
+| Security | Git·패키지 경계와 해시 확인 |
 
-## 동적 정책
-
-- `review_before_release`: 리뷰와 단일 테스트 전 배포 금지
-- `source_read_only`: 기존 프로젝트는 승인 전 읽기만 허용
-- `staging_only`: 가져오기는 staging 검증 후에만 대상 승격
-- `sensitive_data_guard`: `.env`, 키, 토큰, 개인화 원문은 Git·배포 금지
-- `consent_required`: 동의 전 사용 이벤트 저장 금지
-- `workspace_isolation`: 사용자 산출물은 `workspace/projects/` 밖에 쓰지 않음
-- `stress_test_opt_in`: 10회 검사는 명시적 요청 때만 허용
-
-GitHub Pages와 릴리즈에는 `workspace/`, 백업, 캐시, 테스트 결과, 환경 변수 파일이 포함되지 않습니다.
+- 사용자 데이터·비밀 파일·백업을 검사 자료에 넣지 않는다.
+- 기존 사용자 프로젝트는 VAS에서 실행·복사·수정하지 않는다.
+- 역할별 파일 쓰기 범위는 `scripts/agent_checks.py path`로 사전 확인할 수 있다. 경로 이탈·보호 경로·역할 범위와 링크 해석 후 실제 위치를 검사한다.
+- before/after 보조 스크립트는 명시적으로 호출하는 검사다. 전역 훅을 자동 설치하거나 임의 터미널 명령을 안전하다고 판정하지 않는다.
+- 릴리스 전에 실제 Python·브라우저·패키지 검사를 통과해야 한다. 10회 검사는 명시적 요청 때만 실행한다.
