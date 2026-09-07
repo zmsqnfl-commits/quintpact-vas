@@ -1,0 +1,19 @@
+{
+  "task": "Preserve a simple inventory tool and correct any requirement mismatch",
+  "stack": "HTML/CSS/Vanilla JS",
+  "tokens": {
+    "primary": "#123abc",
+    "radius": 0,
+    "padding": 24
+  },
+  "behavior": {
+    "initialQuantity": 10,
+    "incrementButton": "입고 +1",
+    "incrementDelta": 1
+  },
+  "responsive": {
+    "desktopColumns": 2,
+    "mobileColumns": 1,
+    "mobileWidth": 390
+  }
+}

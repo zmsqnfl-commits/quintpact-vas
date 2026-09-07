@@ -84,6 +84,11 @@ def test_generated_agent_resources_and_native_configs():
     assert result.returncode == 0, result.stdout.decode()
     resource = json.loads((ROOT / ".agents/agent-resources.json").read_text(encoding="utf-8"))
     assert len(resource["profiles"]) == 7
+    assert set(resource["roles"]) == {"implementer", "designer", "reviewer"}
+    for role, instructions in resource["roles"].items():
+        raw = (ROOT / f".agents/skills/{role}/SKILL.md").read_text(encoding="utf-8")
+        assert instructions == raw.split("---", 2)[2].strip()
+        assert f"[ROLE INSTRUCTIONS: {role}]\n{instructions}" in resource["workflow"]
     for profile in resource["profiles"].values():
         body = (ROOT / profile["source"]).read_text(encoding="utf-8")
         assert profile["rules"] == [line[2:] for line in body.splitlines() if line.startswith("- ")]

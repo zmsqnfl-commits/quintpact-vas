@@ -27,9 +27,14 @@ def outputs() -> dict[str, str]:
             "source": relative,
             "rules": [line[2:] for line in text.splitlines() if line.startswith("- ")],
         }
+    roles = {role: body(f".agents/skills/{role}/SKILL.md")
+             for role in ("implementer", "designer", "reviewer")}
+    workflow = body(".agents/HANDOFF-WORKFLOW.md") + "\n\n" + "\n\n".join(
+        f"[ROLE INSTRUCTIONS: {role}]\n{instructions}" for role, instructions in roles.items())
     data = {
         "designer": body(".agents/skills/designer/SKILL.md"),
-        "workflow": body(".agents/HANDOFF-WORKFLOW.md"),
+        "workflow": workflow,
+        "roles": roles,
         "profiles": profiles,
     }
     encoded = json.dumps(data, ensure_ascii=False, indent=2)

@@ -19,7 +19,7 @@ test('all presets carry exact tokens, requirements and complete selected skill',
       const profile = VASAgentResources.profiles[getTasteProfileKey(key, PRESETS[key])];
       output.push({ key, prompt: result.pasteText, tokens: design.tokens,
         requirements: result.document.context.requirements.value,
-        rules: profile.rules, designer: VASAgentResources.designer });
+        rules: profile.rules, designer: VASAgentResources.designer, roles: VASAgentResources.roles });
     }
     return output;
   });
@@ -29,6 +29,8 @@ test('all presets carry exact tokens, requirements and complete selected skill',
     for (const rule of item.rules) expect(item.prompt, item.key).toContain(rule);
     expect(item.prompt).toContain(item.designer);
     expect(item.prompt).toContain('[OUTPUT CONTRACT]');
+    for (const role of ['implementer', 'designer', 'reviewer']) expect(item.prompt).toContain('[ROLE INSTRUCTIONS: ' + role + ']');
+    for (const instructions of Object.values(item.roles)) expect(item.prompt).toContain(instructions);
     expect(item.prompt).toContain('https://example.com/home/design');
     expect(item.prompt).toContain('90 days');
     expect(item.prompt).toContain('enterprise');

@@ -12,6 +12,24 @@ from pathlib import Path
 
 # Keep mapped-drive paths for npm on Windows; check_write resolves security boundaries.
 ROOT = Path(__file__).absolute().parents[1]
+
+
+def shell_root(root: Path) -> Path:
+    """npm's Windows script shell cannot use a UNC cwd; reuse an existing drive."""
+    if os.name != "nt" or not str(root).startswith("\\\\"):
+        return root
+    import ctypes
+    drives = ctypes.windll.kernel32.GetLogicalDrives()
+    for index in range(26):
+        if not drives & (1 << index):
+            continue
+        drive = Path(chr(65 + index) + ":/")
+        try:
+            relative = root.resolve().relative_to(drive.resolve())
+            return drive / relative
+        except (ValueError, OSError):
+            continue
+    return root
 WRITE_ROOTS = {
     "architect": {"docs"},
     "designer": {"src", "docs"},
@@ -58,11 +76,14 @@ def check_after(root: Path, role: str, value: str) -> tuple[bool, str]:
 
 def run(command: list[str]) -> int:
     print("Running: " + " ".join(command), flush=True)
-    return subprocess.run(command, cwd=ROOT, check=False).returncode
+    return subprocess.run(command, cwd=shell_root(ROOT), check=False).returncode
 
 
 def npm_script(name: str) -> int:
     # Run npm's JS entry directly: avoid cmd.exe parsing and network downloads.
+    if os.name == "nt" and str(shell_root(ROOT)).startswith("\\\\"):
+        print("npm requires an existing mapped drive or local checkout for this UNC path", file=sys.stderr)
+        return 2
     node = shutil.which("node")
     npm = shutil.which("npm.cmd" if os.name == "nt" else "npm")
     if not node or not npm:
