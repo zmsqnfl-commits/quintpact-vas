@@ -40,7 +40,7 @@ function renderPresets() {
       presetDescription.textContent = typeof PRESET_DESCRIPTIONS !== 'undefined' && PRESET_DESCRIPTIONS[key]
         ? PRESET_DESCRIPTIONS[key]
         : '디자인 프리셋';
-      presetButton.append(presetLabel, presetDescription);
+      presetButton.append(VASDesignPreview.palette(PRESETS[key]), presetLabel, presetDescription);
       presetButton.addEventListener('click', function () { applyPreset(key, presetButton); });
       const favoriteButton = document.createElement('button');
       favoriteButton.type = 'button';
@@ -63,7 +63,9 @@ function renderPresets() {
 }
 function syncActivePreset(name) {
   document.querySelectorAll('.btn-preset').forEach(function (button) {
-    button.classList.toggle('active', name !== 'custom' && button.dataset.preset === name);
+    const active = name !== 'custom' && button.dataset.preset === name;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
   });
 }
 function setControlsFromTokens(value) {
@@ -89,6 +91,7 @@ function refreshDesignPrompt() {
   document.getElementById('advPreview').dataset.tasteProfile = profileKey;
   document.getElementById('previewTitle').textContent = '디자인 미리보기 · ' + VAS_TASTE_PROFILES[profileKey].label;
   const values = getValues();
+  VASDesignPreview.render(profileKey, currentBasePreset, values.colors);
   const customDirection = '[Custom Token Direction]\n' + JSON.stringify(values, null, 2);
   const promptPreset = preset || { prompt: customDirection };
   document.getElementById('aiPrompt').value = window.composeAgentPrompt
@@ -186,6 +189,7 @@ function update(skipHistory = false, presetOverride) {
   f.style.setProperty('--p-border-color', v.colors.border);
   f.style.setProperty('--p-success', v.colors.success);
   document.querySelector('.preview').style.background = v.colors.background;
+  document.querySelector('.preview').style.color = v.colors.text;
   const state = VASThemeState.commit({
     preset: currentPreset,
     basePreset: currentBasePreset,
@@ -355,6 +359,7 @@ window.addEventListener('DOMContentLoaded', () => {
     button.addEventListener('click', function () {
       const view = button.dataset.studioView;
       document.querySelector('.app').dataset.mobileView = view;
+      window.scrollTo(0, 0);
       document.querySelectorAll('[data-studio-view]').forEach(function (item) {
         const active = item === button;
         item.classList.toggle('active', active);

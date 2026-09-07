@@ -111,3 +111,46 @@ test('taste profile changes preview structure without changing confirmed colors'
   const footer = await page.locator('.studio-applybar').boundingBox();
   expect(input.y + input.height).toBeLessThanOrEqual(footer.y);
 });
+
+test('preset buttons stay readable and preview layouts fit desktop and mobile', async ({ page }, testInfo) => {
+  await page.goto(source('design-controller.html'));
+  const keys = await page.locator('.btn-preset').evaluateAll(buttons => buttons.map(button => button.dataset.preset));
+  for (const width of [1440, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const key of keys) {
+      if (width === 320) await page.locator('[data-studio-view="settings"]').click();
+      await page.locator('.btn-preset[data-preset="' + key + '"]').click();
+      if (width === 320) await page.locator('[data-studio-view="preview"]').click();
+      const result = await page.locator('#advPreview').evaluate(root => {
+        const button = getComputedStyle(root.querySelector('.p-btn'));
+        const luminance = color => {
+          const rgb = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(value => {
+            const channel = value / 255;
+            return channel <= .04045 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4);
+          });
+          return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
+        };
+        const a = luminance(button.color), b = luminance(button.backgroundColor);
+        return { contrast: (Math.max(a, b) + .05) / (Math.min(a, b) + .05),
+          overflow: root.scrollWidth > root.clientWidth + 1 || document.documentElement.scrollWidth > window.innerWidth + 1 };
+      });
+      expect(result.contrast, key).toBeGreaterThanOrEqual(4.5);
+      expect(result.overflow, key + ' at ' + width).toBe(false);
+      if (['awwwards', 'linear', 'stripe'].includes(key)) {
+        await page.screenshot({ path: testInfo.outputPath(key + '-' + width + '.png') });
+      }
+    }
+  }
+});
+
+test('preview action moves keyboard focus and token edits preserve typed example text', async ({ page }) => {
+  await page.goto(source('design-controller.html'));
+  await page.locator('.p-btn').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#previewProjects')).toBeFocused();
+  await page.locator('.p-input').fill('한글 메모와 작업 이름');
+  await page.locator('#padding').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.p-input')).toHaveValue('한글 메모와 작업 이름');
+  await expect(page.locator('#advPreview')).toHaveAttribute('data-taste-profile', 'editorialMotion');
+});

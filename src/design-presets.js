@@ -5,9 +5,9 @@
  */
 
 const PRESET_CATEGORIES = {
-  core: { label: '기본 스타일 (Core)', presets: ['vercel','linear','stripe','shadcn','untitled','carbon'] },
-  brand: { label: '브랜드 레퍼런스 (Brand)', presets: ['apple','google','spotify','discord','airbnb','notion','github','figma','ant'] },
-  concept: { label: '콘셉트 (Concept)', presets: ['neobrutal','awwwards','glow'] }
+  core: { label: '추천 스타일', presets: ['awwwards','linear','notion','stripe','neobrutal','carbon'] },
+  brand: { label: '더 많은 스타일', presets: ['vercel','shadcn','untitled','apple','google','spotify','discord','airbnb','github','figma','ant'] },
+  concept: { label: '실험적인 스타일', presets: ['glow'] }
 };
 
 const SYSTEM_SANS = VASStorage.SYSTEM_SANS;

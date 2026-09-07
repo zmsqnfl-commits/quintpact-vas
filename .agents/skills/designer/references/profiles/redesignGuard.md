@@ -1,9 +1,9 @@
 # Redesign Guard
 
-- Preserve working behavior while upgrading visual quality.
-- Identify generic AI patterns and replace them with purposeful layout decisions.
-- Improve hierarchy, spacing, state feedback, and responsive stability.
-- Keep changes scoped, testable, and compatible with existing code.
-- Avoid redesigning unrelated areas just for novelty.
-- State the chosen layout, type scale, spacing and component states before implementation.
-- Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference.
+- Start with the actual screen, its main task and working routes. Record the current information order and component states before changing appearance.
+- Establish a type hierarchy with one page title, clear section headings, body copy and quiet metadata. Use the existing font and confirmed size tokens as the base; fix inconsistent weights and line heights.
+- Consolidate spacing around one unit based on confirmed padding. Align labels, controls and content edges; remove redundant containers only when their grouping has no meaning.
+- Strengthen the primary action, selected state and focus visibility. Keep useful secondary actions discoverable and maintain empty, loading, error and disabled behavior.
+- Choose one identity detail from the product or confirmed reference; avoid applying an unrelated portfolio hero, generic metric cards or a different navigation model.
+- Preserve saved data, routes, component APIs, framework, colors and confirmed tokens. Explain any accessibility-related token conflict before changing a value.
+- Compare before/after screenshots at 320/390px and desktop. Check real content, long names, overflow, keyboard order and the unchanged primary workflow; scope final claims to evidence.

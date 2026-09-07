@@ -15,6 +15,7 @@
       'Choose layout and component patterns for the actual content and workflow; avoid repetitive filler.',
       'Use clear hierarchy, calibrated space and strong scan paths; use asymmetry only when the selected direction calls for it.',
       'Preserve confirmed brand colors and tokens; check contrast and readable states.',
+      'Derive a readable on-primary foreground for filled buttons; do not reuse the surface color as button text. Keep normal text contrast at least 4.5:1 and explain conflicts with confirmed tokens.',
       'Use the target project stack and available components. VAS runtime constraints apply only to VAS itself.'
     ]
   };
@@ -48,6 +49,8 @@
     'Preserve the target framework, installed component system and font assets; choose new dependencies only when the task needs them.'
   ];
   const OUTPUT_CONTRACT = [
+    'Treat preset brand names as style references, not a request to copy a brand. The studio demo content, geometric studies and sample counts are illustrative and must not become production data.',
+    'Before implementation, name the actual screen task, the chosen composition, type ratios, spacing rhythm and focal point. Adapt editorial or consumer layouts to the requested product instead of forcing every screen into a hero plus three metric cards.',
     'Implement the requested result with concrete layout, typography, spacing, color and component states.',
     'Use actual reference files and screenshots. Name missing inputs instead of inventing their contents.',
     'Render and compare the result at mobile and desktop sizes. Correct differences and report verification evidence.'

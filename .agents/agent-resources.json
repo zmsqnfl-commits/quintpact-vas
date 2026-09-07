@@ -11,91 +11,95 @@
       "label": "Dense Data Tool",
       "source": ".agents/skills/designer/references/profiles/dataTool.md",
       "rules": [
-        "Optimize for repeated work, comparison, filtering, and fast scanning.",
-        "Use compact panels, stable dimensions, clear affordances, and predictable navigation.",
-        "Prefer tables, lists, segments, and status marks over marketing-style sections.",
-        "Keep typography tight but readable, with strong alignment and numeric clarity.",
-        "Avoid oversized hero layouts, decorative cards, and vague product storytelling.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: use a compact page title and scoped summary, a search/filter/action toolbar, then a real table or operations list. Keep the main data within the first desktop viewport.",
+        "Hierarchy: page title at 1.75-2 times body size, table text at 0.875-1 times, labels at 0.8 times. Use tabular numbers, right-aligned amounts and stable column widths.",
+        "Density: target 44-52px rows with the confirmed padding token governing container spacing. Distinguish table headings, totals and selected rows using weight and surface contrast.",
+        "Content: show meaningful identifiers, names, states and timestamps. Use text labels as well as colors for warnings and completion; unavailable values must say so rather than becoming zero.",
+        "Controls: place filters together, display active filter count and a clear action, preserve selections while sorting, and explain empty/error states near the affected data.",
+        "Responsive: keep comparison tables in a labeled local horizontal scroller when columns must remain aligned; otherwise use stacked labeled rows. Never hide critical status or identifiers just to fit mobile.",
+        "Keep decorative heroes, product illustrations and unrelated metrics out of operational workflows. A precise grid and clear state hierarchy carry the visual identity.",
+        "Preserve confirmed tokens. Verify a populated view, no results, error, keyboard navigation and 320/390px layouts with real browser evidence."
       ]
     },
     "editorialMotion": {
       "label": "Editorial Motion",
       "source": ".agents/skills/designer/references/profiles/editorialMotion.md",
       "rules": [
-        "Use asymmetric composition, editorial contrast, and memorable section rhythm.",
-        "Vary scale between headline, supporting copy, and interface details.",
-        "Use motion as pacing: reveal, stagger, slide, or scrub effects implemented with the existing project stack.",
-        "Keep the design readable and usable even when the layout is expressive.",
-        "Avoid center-stacked sameness and overly safe dashboard grids.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: a compact masthead, a 7:5 headline/visual split, then an indexed list of selected work. Use this structure for editorial or portfolio content; retain task-focused layouts for operational screens.",
+        "Hierarchy: one dominant headline at 3-4 times body size, section titles at 1.5 times, and quiet metadata at 0.8 times. Use short Korean lines, word-break: keep-all, and 1.2 heading / 1.7 body line heights.",
+        "Rhythm: use the confirmed spacing token as one unit; allow 2 units between sections and half a unit within related content. Align text and imagery to one grid instead of framing every block.",
+        "Focal point: use one relevant photograph, illustration, or designed typographic study. Preserve image aspect ratios; do not replace every image with an empty colored rectangle.",
+        "Details: pair project names with categories and small indices, use fine section rules, and reserve the primary fill for the main action. Use real content rather than invented popularity metrics.",
+        "Responsive: collapse the split into headline then visual below 700px; reduce display type to 2-2.75 times body size and move row metadata below titles. Prevent long Korean titles from clipping.",
+        "Motion: a single short reveal or restrained hover is sufficient; respect prefers-reduced-motion and keep reading/navigation immediately available.",
+        "Confirm tokens and references first. Verify hierarchy, image crop, row alignment, keyboard focus and 320/390px plus desktop layouts in the browser; fix differences before handoff."
       ]
     },
     "industrialBrutalist": {
       "label": "Industrial Brutalist",
       "source": ".agents/skills/designer/references/profiles/industrialBrutalist.md",
       "rules": [
-        "Use strong structure, hard edges, visible grids, and mechanical contrast.",
-        "Make type scale decisive and utilitarian, with clear labels and dense metadata.",
-        "Use borders, black/white contrast, and functional color rather than soft decoration.",
-        "Keep interactions physical, snappy, and legible.",
-        "Avoid playful gradients, rounded softness, and generic startup polish.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: create a strong masthead, a headline/graphic split for expressive pages, and an indexed production list. Operational screens begin with their controls and data instead of a decorative hero.",
+        "Hierarchy: bold display text at 3-4 times body size, section headings at 1.5 times, and monospaced identifiers at 0.8-0.875 times. Keep general Korean UI text on a readable sans stack.",
+        "Structure: use the confirmed border width and radius consistently, a disciplined grid, and one primary accent. Use the padding token as a section unit; align indices and names across rows.",
+        "Focal point: choose a strong typographic or geometric study tied to the subject. Contrast a large headline with compact metadata; keep body copy and control labels calm and readable.",
+        "Controls: use clear pressed, focused and disabled states. Hard shadows or physical translation are optional and must respect confirmed shadow/radius tokens and reduced-motion preferences.",
+        "Responsive: stack the split, reduce headline scale, wrap metadata under item names and retain usable 44px touch targets at 320px. Avoid forcing desktop grids to shrink below legible sizes.",
+        "Preserve user tokens and references. Inspect actual desktop/mobile renders for alignment, contrast, text wrapping and interaction feedback before handoff."
       ]
     },
     "minimalistUtility": {
       "label": "Minimalist Utility",
       "source": ".agents/skills/designer/references/profiles/minimalistUtility.md",
       "rules": [
-        "Prioritize utility, reading comfort, and document-like clarity.",
-        "Use line, whitespace, hierarchy, and compact controls instead of many cards.",
-        "Keep the palette mostly neutral with one quiet accent.",
-        "Make repeated workflows fast to scan and easy to operate.",
-        "Avoid ornamental UI and unnecessary visual weight.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: use a quiet navigation row, breadcrumb, a document-width reading column, title and summary, then ordered sections or notes. Keep supporting tools close to the content they affect.",
+        "Hierarchy: body at the confirmed base size with 1.7 line height, title at 2-2.75 times, subheadings at 1.25-1.5 times, and metadata at 0.8-0.875 times. Limit prose to about 60-72 characters per line.",
+        "Rhythm: use the confirmed padding token between sections and half that for connected rows. Structure lists with alignment and subtle rules; do not put every paragraph or metric in a separate card.",
+        "Details: use descriptive document names, dates, small indices and restrained icons. Give selected navigation, links and important actions a distinct emphasis without making all text bold.",
+        "Controls: keep search, editing and disclosure behavior explicit. Use native semantics and visible focus; expose useful empty, saved and error states where the user is working.",
+        "Responsive: collapse navigation to a compact menu and keep the reading column fluid with 16-24px side gutters. Wrap long names and move secondary metadata to a new line.",
+        "Preserve confirmed colors, radii, framework and existing font assets. Check reading comfort, text selection, keyboard actions and 320/390px plus desktop renders."
       ]
     },
     "premiumFrontend": {
       "label": "Premium Frontend",
       "source": ".agents/skills/designer/references/profiles/premiumFrontend.md",
       "rules": [
-        "Make the interface feel product-grade, not like a generic mockup.",
-        "Use precise spacing, calm surfaces, clean borders, and intentional type scale.",
-        "Keep buttons, panels, controls, and states practical enough to implement directly.",
-        "Favor restrained motion with tactile hover/active feedback.",
-        "Avoid decorative gradients, random blobs, oversized cards, and filler copy.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: for a workspace use a compact navigation bar or 216-240px sidebar, a page heading with one primary action, a short summary strip, then the main project list. Marketing pages require their own story and visual hierarchy.",
+        "Hierarchy: use body text as the base, page title at 2-2.25 times base, section titles at 1.2 times, and metadata at 0.8-0.875 times. Keep Korean UI text on the sans stack; reserve monospace for identifiers and numbers.",
+        "Density: use the confirmed padding token for panels and half that spacing between related controls. Aim for 44px primary controls and 56-72px project rows with aligned name, owner, status and next action.",
+        "Surfaces: background establishes the workspace; a single surface layer groups content. Prefer dividers within lists, borders for interactive controls, and shadows only for floating layers.",
+        "Identity: select one content-led visual motif such as progress tracks, issue identifiers or compact thumbnails. Give the primary action enough contrast and use secondary buttons with lower visual weight.",
+        "States: implement selected navigation, hover, visible keyboard focus, loading, empty and error states with useful next actions. Never invent healthy operational statistics for production screens.",
+        "Responsive: move sidebar navigation to an accessible drawer on small screens; put actions below titles and project metadata below the main label. Preserve meaningful row order at 320px.",
+        "Preserve confirmed tokens and reference assets. Compare the actual browser result at 390px and desktop for type hierarchy, density, alignment, color contrast and working controls."
       ]
     },
     "redesignGuard": {
       "label": "Redesign Guard",
       "source": ".agents/skills/designer/references/profiles/redesignGuard.md",
       "rules": [
-        "Preserve working behavior while upgrading visual quality.",
-        "Identify generic AI patterns and replace them with purposeful layout decisions.",
-        "Improve hierarchy, spacing, state feedback, and responsive stability.",
-        "Keep changes scoped, testable, and compatible with existing code.",
-        "Avoid redesigning unrelated areas just for novelty.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Start with the actual screen, its main task and working routes. Record the current information order and component states before changing appearance.",
+        "Establish a type hierarchy with one page title, clear section headings, body copy and quiet metadata. Use the existing font and confirmed size tokens as the base; fix inconsistent weights and line heights.",
+        "Consolidate spacing around one unit based on confirmed padding. Align labels, controls and content edges; remove redundant containers only when their grouping has no meaning.",
+        "Strengthen the primary action, selected state and focus visibility. Keep useful secondary actions discoverable and maintain empty, loading, error and disabled behavior.",
+        "Choose one identity detail from the product or confirmed reference; avoid applying an unrelated portfolio hero, generic metric cards or a different navigation model.",
+        "Preserve saved data, routes, component APIs, framework, colors and confirmed tokens. Explain any accessibility-related token conflict before changing a value.",
+        "Compare before/after screenshots at 320/390px and desktop. Check real content, long names, overflow, keyboard order and the unchanged primary workflow; scope final claims to evidence."
       ]
     },
     "softPremium": {
       "label": "Soft Premium Interface",
       "source": ".agents/skills/designer/references/profiles/softPremium.md",
       "rules": [
-        "Build a refined, expensive feel through material, depth, and spacing.",
-        "Use soft surfaces, subtle shadow logic, fine borders, and quiet typography.",
-        "Keep color controlled and avoid loud neon unless softened by context.",
-        "Treat glass effects as material with border, highlight, and inner depth.",
-        "Avoid cheap blur overlays, heavy gradients, and floating decoration.",
-        "State the chosen layout, type scale, spacing and component states before implementation.",
-        "Preserve confirmed tokens; inspect the rendered result at narrow and wide widths, then correct differences from the reference."
+        "Composition: for a consumer or product page use a quiet masthead, a 6:5 copy/image split, concise benefits, then a curated product or service list. For finance and admin work retain the data workflow and apply only the surface/type treatment.",
+        "Hierarchy: headline at 2.75-3.5 times body size with 1.2 line height, readable supporting copy at base size with 1.7 line height, and restrained metadata. Avoid using thin text for functional labels.",
+        "Rhythm: use generous section gaps at 2 times the confirmed padding token and compact groups at half a token. Let the visual and heading establish hierarchy rather than oversized empty cards.",
+        "Material: start with background and one surface layer. Use confirmed radii, fine borders, and a single subtle shadow style; translucent material must improve layer separation and preserve text contrast.",
+        "Visual: use relevant, well-cropped product or environment imagery. If assets are unavailable, make a deliberate illustration or type composition, and identify it as illustrative.",
+        "Actions: one prominent primary action with a readable foreground; secondary actions are quieter. Provide keyboard focus and legible disabled/error states; do not rely on pale color alone.",
+        "Responsive: stack heading, image, benefits and details in reading order below 700px. Maintain image proportions and 44px touch targets, and respect reduced motion.",
+        "Preserve confirmed tokens and font assets. Verify crops, spacing, contrast, long Korean text and mobile/desktop renders before completion."
       ]
     }
   }
