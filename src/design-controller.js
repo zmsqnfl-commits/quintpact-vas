@@ -33,14 +33,14 @@ function renderPresets() {
       presetButton.type = 'button';
       presetButton.className = 'btn-preset';
       presetButton.dataset.preset = key;
-      const presetName = key.charAt(0).toUpperCase() + key.slice(1);
+      const presetName = PRESETS[key].label || key.charAt(0).toUpperCase() + key.slice(1);
       const presetLabel = document.createElement('strong');
       const presetDescription = document.createElement('span');
       presetLabel.textContent = presetName;
       presetDescription.textContent = typeof PRESET_DESCRIPTIONS !== 'undefined' && PRESET_DESCRIPTIONS[key]
         ? PRESET_DESCRIPTIONS[key]
         : '디자인 프리셋';
-      presetButton.append(VASDesignPreview.palette(PRESETS[key]), presetLabel, presetDescription);
+      presetButton.append(VASDesignPreview.palette(PRESETS[key], key), presetLabel, presetDescription);
       presetButton.addEventListener('click', function () { applyPreset(key, presetButton); });
       const favoriteButton = document.createElement('button');
       favoriteButton.type = 'button';

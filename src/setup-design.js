@@ -4,7 +4,7 @@
 
   const mounts = [];
 
-  function title(key) { return key.charAt(0).toUpperCase() + key.slice(1); }
+  function title(key) { return PRESETS[key]?.label || key.charAt(0).toUpperCase() + key.slice(1); }
   function description(key) {
     if (typeof PRESET_DESCRIPTIONS !== 'undefined' && PRESET_DESCRIPTIONS[key]) return PRESET_DESCRIPTIONS[key];
     return '색상과 간격을 직접 정한 사용자 디자인';

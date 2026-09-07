@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="setup-tools.css">
   <link rel="stylesheet" href="design-controller.css">
   <link rel="stylesheet" href="design-preview.css">
+  <link rel="stylesheet" href="design-collection.css">
 </head>
 <body>
   <header class="studio-topbar">
@@ -53,7 +54,7 @@
 
       <section class="group token-controls">
         <h2>세부 토큰</h2>
-        <div class="field"><label for="fontFamily">글꼴</label><select id="fontFamily" onchange="update()"><option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">시스템 Sans</option><option value="ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace">시스템 Mono</option></select></div>
+        <div class="field"><label for="fontFamily">글꼴</label><select id="fontFamily" onchange="update()"><option value="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">시스템 Sans</option><option value="ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace">시스템 Mono</option><option value="'Bricolage Grotesque', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">Bricolage Grotesque · 개성 있는 Sans</option><option value="'DM Serif Display', Georgia, 'Batang', serif">DM Serif Display · 우아한 Serif</option><option value="'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">Space Grotesk · 기하학 Sans</option><option value="'Caprasimo', Georgia, 'Batang', serif">Caprasimo · 레트로 Serif</option><option value="'Anton', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">Anton · 포스터 Sans</option><option value="'Cormorant Garamond', Georgia, 'Batang', serif">Cormorant Garamond · 섬세한 Serif</option></select></div>
         <div class="field range-field"><label for="fontSize">글자 크기 <output id="fsVal">16px</output></label><input type="range" id="fontSize" min="12" max="24" value="16" step="1" oninput="update()"></div>
         <div class="field range-field"><label for="letterSpacing">자간 <output id="lsVal">-0.04em</output></label><input type="range" id="letterSpacing" min="-0.1" max="0.2" value="-0.04" step="0.01" oninput="update()"></div>
         <div class="field range-field"><label for="padding">여백 <output id="padVal">40px</output></label><input type="range" id="padding" min="12" max="64" value="40" step="4" oninput="update()"></div>
@@ -111,6 +112,7 @@
   <script src="agent-resources.js"></script>
   <script src="design-taste-pack.js"></script>
   <script src="design-profile-control.js"></script>
+  <script src="design-collection.js"></script>
   <script src="design-preview.js"></script>
   <script src="design-controller.js"></script>
 </body>

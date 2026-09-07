@@ -23,7 +23,7 @@ test('all presets carry exact tokens, requirements and complete selected skill',
     }
     return output;
   });
-  expect(results).toHaveLength(18);
+  expect(results).toHaveLength(28);
   for (const item of results) {
     for (const color of Object.values(item.tokens.colors)) expect(item.prompt, item.key).toContain(color);
     for (const rule of item.rules) expect(item.prompt, item.key).toContain(rule);

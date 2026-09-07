@@ -5,6 +5,7 @@
  */
 
 const PRESET_CATEGORIES = {
+  collection: { label: '새 디자인 컬렉션 · 10가지', presets: ['bento','aurora','clay','noir','botanical','retro','swiss','cyber','kinetic','collage'] },
   core: { label: '추천 스타일', presets: ['awwwards','linear','notion','stripe','neobrutal','carbon'] },
   brand: { label: '더 많은 스타일', presets: ['vercel','shadcn','untitled','apple','google','spotify','discord','airbnb','github','figma','ant'] },
   concept: { label: '실험적인 스타일', presets: ['glow'] }
@@ -12,8 +13,21 @@ const PRESET_CATEGORIES = {
 
 const SYSTEM_SANS = VASStorage.SYSTEM_SANS;
 const SYSTEM_MONO = VASStorage.SYSTEM_MONO;
+const DISPLAY_SANS = "'Bricolage Grotesque', " + SYSTEM_SANS;
+const DISPLAY_SERIF = "'DM Serif Display', Georgia, 'Batang', serif";
+const DISPLAY_SPACE = "'Space Grotesk', " + SYSTEM_SANS;
 
 const PRESET_DESCRIPTIONS = Object.freeze({
+  bento: '라벤더·라임 모듈과 그래픽을 조합한 크리에이티브 벤토',
+  aurora: '오로라 빛과 반투명 유리 패널의 몰입형 워크스페이스',
+  clay: '복숭아색 배경과 폭신한 3D 오브젝트의 클레이 디자인',
+  noir: '블랙·샴페인 골드와 세리프를 쓰는 럭셔리 에디션',
+  botanical: '보태니컬 사진과 올리브·아이보리의 자연스러운 브랜드',
+  retro: '버터크림·버건디와 레코드 그래픽의 레트로 포스터',
+  swiss: '코발트·버밀리언과 초대형 활자의 전시 포스터',
+  cyber: '애시드 라임과 와이어프레임·터미널의 사이버 인터페이스',
+  kinetic: '퍼플·옐로 대비와 움직이는 대형 타이포그래피',
+  collage: '핑크 종이와 겹친 사진·테이프를 쓰는 콜라주 저널',
   vercel: '흑백 대비가 선명한 개발 도구형 디자인',
   linear: '차분한 어두운 화면의 업무 도구형 디자인',
   stripe: '여백과 부드러운 깊이를 살린 신뢰감 있는 디자인',
@@ -35,6 +49,66 @@ const PRESET_DESCRIPTIONS = Object.freeze({
 });
 
 const PRESETS = {
+  bento: {
+    label: 'Bento Studio', tasteProfile: 'bentoStudio',
+    bg: '#e9dff5', surface: '#f8f4fc', text: '#17121f', primary: '#c8ed47', border: '#cfc2df',
+    rad: 24, pad: 24, bw: 0, shadow: 0, font: DISPLAY_SANS, speed: .2, ls: -.03,
+    prompt: '[Bento Studio]\nUse an irregular modular portfolio: one oversized typography tile, one original graphic, one usable checklist, a project strip and a compact contact tile. Lavender, lime, coral and black form deliberate contrasting islands. Preserve varied spans and avoid three identical summary cards.'
+  },
+  aurora: {
+    label: 'Aurora Glass', tasteProfile: 'auroraGlass',
+    bg: '#060e28', surface: '#142445', text: '#f4f7ff', primary: '#8dedff', border: '#51608b',
+    rad: 24, pad: 32, bw: 1, shadow: 24, font: DISPLAY_SPACE, speed: .4, ls: -.03,
+    prompt: '[Aurora Glass]\nUse a full-bleed midnight aurora image behind a left-aligned statement and an offset translucent workspace. Layer cyan-violet light with frosted borders, legible glass panels and a bottom dock. Keep the material visible between panels; use an opaque fallback when backdrop-filter is unavailable.'
+  },
+  clay: {
+    label: 'Clay Pop', tasteProfile: 'clayPop',
+    bg: '#ffcea5', surface: '#fff0dc', text: '#38132f', primary: '#913968', border: '#d79266',
+    rad: 32, pad: 24, bw: 0, shadow: 24, font: DISPLAY_SANS, speed: .3, ls: -.03,
+    prompt: '[Clay Pop]\nBuild a tactile creative learning screen with a lilac clay sculpture, peach backdrop, heavy rounded display type, inflated controls and softly inset course tiles. Use matched product artwork and real local interactions. Depth comes from consistent lighting, not arbitrary blur.'
+  },
+  noir: {
+    label: 'Noir Luxe', tasteProfile: 'noirLuxe',
+    bg: '#11100e', surface: '#201c17', text: '#f1e8d8', primary: '#ddc395', border: '#736044',
+    rad: 0, pad: 40, bw: 1, shadow: 0, font: "'Cormorant Garamond', Georgia, 'Batang', serif", speed: .5, ls: -.02,
+    prompt: '[Noir Luxe]\nCreate a luxury editorial product page: champagne serif masthead, large light serif headline, dark photographic still life, hairline rules and an open collection index. Keep the black field spacious; no generic dashboard, glass cards or gold gradients.'
+  },
+  botanical: {
+    label: 'Botanical Atelier', tasteProfile: 'botanicalAtelier',
+    bg: '#f3f0e5', surface: '#e8ecd9', text: '#273f2c', primary: '#435c32', border: '#a7b29a',
+    rad: 16, pad: 32, bw: 1, shadow: 0, font: DISPLAY_SERIF, speed: .3, ls: -.02,
+    prompt: '[Botanical Atelier]\nBuild an organic luxury brand composition around a tall arch of real botanical photography, olive/ivory materials and expressive serif type. Offset the image against calm copy, follow with a horizontal ritual/product band. Use actual foliage imagery rather than generic leaf icons.'
+  },
+  retro: {
+    label: 'Retro Sunset', tasteProfile: 'retroSunset',
+    bg: '#fff0c9', surface: '#f3dca9', text: '#66251f', primary: '#8f2e24', border: '#bc5b38',
+    rad: 24, pad: 24, bw: 2, shadow: 0, font: "'Caprasimo', Georgia, 'Batang', serif", speed: .2, ls: -.04,
+    prompt: '[Retro Sunset]\nDesign a warm music/cafe poster with chunky rounded serif type, sunset arches, vinyl record geometry and a full-width orange ticker. Below the poster use a dated event lineup. Buttercream, terracotta and burgundy create the identity; avoid a modern SaaS hero.'
+  },
+  swiss: {
+    label: 'Swiss Poster', tasteProfile: 'swissPoster',
+    bg: '#1847e8', surface: '#123bc8', text: '#fff8e8', primary: '#fff8e8', border: '#a2b6ff',
+    rad: 0, pad: 32, bw: 1, shadow: 0, font: "'Anton', " + SYSTEM_SANS, speed: .2, ls: -.05,
+    prompt: '[Swiss Poster]\nUse a cobalt exhibition poster with monumental compact sans type, strict asymmetric grid, vertical date, large vermilion circle and programme rows. Typography and geometry are the focal image. Preserve clear reading order when the poster collapses to mobile.'
+  },
+  cyber: {
+    label: 'Cyber Deck', tasteProfile: 'cyberDeck',
+    bg: '#080e0a', surface: '#101d15', text: '#e2f6d8', primary: '#c8ff4a', border: '#466334',
+    rad: 0, pad: 24, bw: 1, shadow: 0, font: SYSTEM_MONO, speed: .2, ls: 0,
+    prompt: '[Cyber Deck]\nBuild a sci-fi creative console with acid-lime line work, chamfered panels, an animated wireframe globe, local terminal interaction and horizontal signal instruments. Text labels remain legible; motion has a stop control and respects reduced motion. Never fabricate live security or financial telemetry.'
+  },
+  kinetic: {
+    label: 'Kinetic Type', tasteProfile: 'kineticType',
+    bg: '#5b24e8', surface: '#4818be', text: '#fffdf7', primary: '#e5ff55', border: '#b6a0ef',
+    rad: 0, pad: 32, bw: 0, shadow: 0, font: "'Anton', " + SYSTEM_SANS, speed: .3, ls: -.05,
+    prompt: '[Kinetic Type]\nMake typography the entire creative direction: giant italic headline, electric purple field, acid-yellow action, a contrasting moving type band and a sparse project index. Use actual transform animation with a pause control, no essential information dependent on animation.'
+  },
+  collage: {
+    label: 'Paper Collage', tasteProfile: 'paperCollage',
+    bg: '#f2dcd7', surface: '#fff8ed', text: '#4c302d', primary: '#704236', border: '#ba9990',
+    rad: 2, pad: 24, bw: 1, shadow: 16, font: DISPLAY_SERIF, speed: .3, ls: -.02,
+    prompt: '[Paper Collage]\nCreate a tactile journal with overlapping photographic prints, cream paper mattes, tape corners, modest rotation and editorial serif headlines. Follow the collage with a two-column article index. Keep text outside photos selectable and stack the prints on mobile without clipping.'
+  },
   vercel: {
     bg: '#ffffff', surface: '#ffffff', text: '#000000', primary: '#000000', border: '#eaeaea',
     rad: 6, pad: 24, bw: 1, shadow: 10, font: SYSTEM_MONO, speed: 0.15, ls: -0.04,

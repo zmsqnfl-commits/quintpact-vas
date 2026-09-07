@@ -83,7 +83,7 @@ def test_generated_agent_resources_and_native_configs():
     result = subprocess.run([sys.executable, str(ROOT / "scripts/build-agent-resources.py"), "--check"], cwd=ROOT, capture_output=True)
     assert result.returncode == 0, result.stdout.decode()
     resource = json.loads((ROOT / ".agents/agent-resources.json").read_text(encoding="utf-8"))
-    assert len(resource["profiles"]) == 7
+    assert len(resource["profiles"]) == 17
     assert set(resource["roles"]) == {"implementer", "designer", "reviewer"}
     for role, instructions in resource["roles"].items():
         raw = (ROOT / f".agents/skills/{role}/SKILL.md").read_text(encoding="utf-8")

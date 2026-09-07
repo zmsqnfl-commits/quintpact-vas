@@ -85,6 +85,12 @@
     const signature = profileKey + ':' + presetKey;
     if (root.dataset.sceneKey === signature) return;
     root.dataset.sceneKey = signature;
+    if (global.VASDesignCollection?.has(profileKey)) {
+      root.dataset.scene = 'collection';
+      global.VASDesignCollection.render(root, profileKey);
+      return;
+    }
+    delete root.dataset.collection;
     root.dataset.scene = scene.type;
     const visual = ['editorial', 'retreat', 'industrial'].includes(scene.type);
     const navigation = visual ? ['작업', '소개', '문의'] : ['개요', '프로젝트', '문서'];
@@ -123,10 +129,16 @@
       (Math.min(luminance(text), luminance(background)) + .05) < 7 ? text :
       'color-mix(in srgb, ' + text + ' 68%, ' + background + ')';
   }
-  function palette(preset) {
+  function palette(preset, key) {
     const strip = document.createElement('div');
     strip.className = 'preset-palette';
     strip.setAttribute('aria-hidden', 'true');
+    if (global.VASDesignCollection?.has(preset.tasteProfile)) {
+      strip.dataset.collection = key;
+      strip.dataset.monogram = { bento: 'moyo', aurora: 'aura', clay: 'plūm', noir: 'NUIT', botanical: 'VERDANT', retro: 'GOOD DAYS', swiss: 'FORM / 26', cyber: 'NEXUS_', kinetic: 'OFFBEAT', collage: 'DAYBOOK' }[key];
+      strip.style.setProperty('--thumb-bg', preset.bg);
+      strip.style.setProperty('--thumb-text', preset.text);
+    }
     [preset.bg, preset.surface, preset.primary, preset.text].forEach(function (color) {
       const chip = document.createElement('i');
       chip.style.background = color;
