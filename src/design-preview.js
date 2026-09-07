@@ -85,12 +85,18 @@
     const signature = profileKey + ':' + presetKey;
     if (root.dataset.sceneKey === signature) return;
     root.dataset.sceneKey = signature;
+    delete root.dataset.sample;
+    delete root.dataset.collection;
+    if (global.VASDesignSamples?.has(profileKey)) {
+      root.dataset.scene = 'sample';
+      global.VASDesignSamples.render(root, profileKey);
+      return;
+    }
     if (global.VASDesignCollection?.has(profileKey)) {
       root.dataset.scene = 'collection';
       global.VASDesignCollection.render(root, profileKey);
       return;
     }
-    delete root.dataset.collection;
     root.dataset.scene = scene.type;
     const visual = ['editorial', 'retreat', 'industrial'].includes(scene.type);
     const navigation = visual ? ['작업', '소개', '문의'] : ['개요', '프로젝트', '문서'];
@@ -133,6 +139,15 @@
     const strip = document.createElement('div');
     strip.className = 'preset-palette';
     strip.setAttribute('aria-hidden', 'true');
+    if (preset.sample) {
+      strip.dataset.sample = preset.sample;
+      const thumbnail = document.createElement('img');
+      thumbnail.src = 'assets/designs/samples/' + preset.sample + '.png';
+      thumbnail.alt = '';
+      thumbnail.loading = 'lazy';
+      strip.append(thumbnail);
+      return strip;
+    }
     if (global.VASDesignCollection?.has(preset.tasteProfile)) {
       strip.dataset.collection = key;
       strip.dataset.monogram = { bento: 'moyo', aurora: 'aura', clay: 'plūm', noir: 'NUIT', botanical: 'VERDANT', retro: 'GOOD DAYS', swiss: 'FORM / 26', cyber: 'NEXUS_', kinetic: 'OFFBEAT', collage: 'DAYBOOK' }[key];
@@ -146,5 +161,18 @@
     });
     return strip;
   }
-  global.VASDesignPreview = Object.freeze({ render: render, foreground: foreground, palette: palette });
+  function applyTokens(root, value) {
+    const v = VASStorage.normalizeTheme(value);
+    const vars = {
+      font: v.fontFamily, 'fs-hero': v.fsHero, 'fs-h2': v.fsH2, 'fs-h3': v.fsH3,
+      'fs-body': v.fsBody, 'fs-sm': v.fsSm, ls: v.letterSpacing + 'em', pad: v.padding + 'px',
+      radius: v.radius + 'px', 'border-width': v.borderWidth + 'px', speed: v.speed + 's',
+      primary: v.colors.primary, bg: v.colors.background, surface: v.colors.surface,
+      text: v.colors.text, 'border-color': v.colors.border, success: v.colors.success,
+      shadow: v.colors.border === '#000000' && v.borderWidth >= 3 && !v.shadow && !v.radius
+        ? '6px 6px 0px #000' : v.shadow > 0 ? '0 ' + v.shadow / 2 + 'px ' + v.shadow + 'px rgba(0,0,0,0.15)' : 'none'
+    };
+    Object.entries(vars).forEach(([key, val]) => root.style.setProperty('--p-' + key, val));
+  }
+  global.VASDesignPreview = Object.freeze({ render: render, foreground: foreground, palette: palette, applyTokens: applyTokens });
 })(window);

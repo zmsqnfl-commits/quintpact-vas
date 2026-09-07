@@ -336,11 +336,11 @@ test('existing flow asks for intent and leaves source discovery to the coding AI
   await page.locator('#taskRequest').fill('오류를 고쳐 주세요.');
   await page.locator('#continueSettings').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
-  await expect(page.locator('#handoffDesignSummary')).toContainText('잡지처럼 큰 제목과 비대칭 구성');
+  await expect(page.locator('#handoffDesignSummary')).toContainText('FORM / FIELD');
   await expect(page.locator('[data-design-reference]')).toContainText('Awwwards 디자인 예시·설정 보기');
   await expect(page.locator('[data-design-reference]')).toHaveAttribute('href', /design-controller\.html/);
   await page.locator('#handoffDesignPreset').selectOption('linear');
-  await expect(page.locator('#handoffDesignSummary')).toContainText('차분한 어두운 화면');
+  await expect(page.locator('#handoffDesignSummary')).toContainText('ORBIT');
   await expect(page.locator('[data-design-reference]')).toContainText('Linear 디자인 예시·설정 보기');
   await expect(page.locator('#previewContent')).toContainText('Z:\\work\\legacy-app');
   await expect(page.locator('#previewContent')).toContainText('실제 파일을 직접 읽어 판단하세요');

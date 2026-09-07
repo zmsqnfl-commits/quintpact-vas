@@ -26,8 +26,10 @@ test('design preview reflects preset tokens', async ({ page }) => {
 
   await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
 
-  await expect(page.locator('.p-stat-card')).toHaveCount(3);
-  await expect(page.locator('.p-profile')).toHaveCount(1);
+  await expect(page.locator('#advPreview')).toHaveAttribute('data-sample', 'awwwards');
+  await expect(page.locator('.ds-projects details')).toHaveCount(3);
+  await expect(page.locator('.p-stat-card')).toHaveCount(0);
+  await expect(page.locator('.ds-contact form')).toHaveCount(1);
   await expect(page.locator('.btn-preset[data-preset="awwwards"] span')).toContainText('잡지처럼');
   const presetColumns = await page.locator('.preset-grid').first().evaluate(element =>
     getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
@@ -99,7 +101,7 @@ test('fresh installs use the Awwwards editorial baseline across studio and hub',
   expect(studio.preset).toBe('awwwards');
   expect(studio.active).toBe('awwwards');
   expect(studio.prompt).toContain('Preset: awwwards');
-  expect(studio.prompt).toContain('Taste Profile: Editorial Motion');
+  expect(studio.prompt).toContain('Taste Profile: Architecture Editorial');
 
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
   const hub = await page.evaluate(() => {
@@ -243,7 +245,7 @@ test('taste profile manual override updates prompt and can return to auto', asyn
       autoCarbonOk: autoCarbonPrompt.includes('Taste Profile: Dense Data Tool'),
       manualOk: manualPrompt.includes('Taste Profile: Minimalist Utility'),
       manualPersists: manualLinearPrompt.includes('Taste Profile: Minimalist Utility'),
-      autoRestored: autoLinearPrompt.includes('Taste Profile: Premium Frontend'),
+      autoRestored: autoLinearPrompt.includes('Taste Profile: Product Workspace'),
       manualKeyCleared: getManualTasteProfileKey() === null,
       storedMode: localStorage.getItem('vasTasteProfileMode'),
       sectionsOk

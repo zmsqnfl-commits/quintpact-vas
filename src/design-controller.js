@@ -54,11 +54,13 @@ function renderPresets() {
     });
     container.append(heading, grid);
   }
-  if (favorites.length) addGroup('즐겨찾기', favorites);
+  const visibleFavorites = favorites.filter(key => VAS_PRESET_KEYS.includes(key));
+  if (visibleFavorites.length) addGroup('즐겨찾기', visibleFavorites);
   Object.keys(PRESET_CATEGORIES).forEach(function (key) {
     const category = PRESET_CATEGORIES[key];
     addGroup(category.label, category.presets);
   });
+  if (PRESETS[currentBasePreset] && !VAS_PRESET_KEYS.includes(currentBasePreset)) addGroup('저장된 이전 스타일', [currentBasePreset]);
   syncActivePreset(currentPreset);
 }
 function syncActivePreset(name) {
@@ -102,8 +104,10 @@ window.refreshDesignPrompt = refreshDesignPrompt;
 function applyPreset(name, element) {
   const p = PRESETS[name];
   if (!p) return;
+  const refreshCatalog = !VAS_PRESET_KEYS.includes(currentBasePreset) || !VAS_PRESET_KEYS.includes(name);
   currentPreset = name;
   currentBasePreset = name;
+  if (refreshCatalog) renderPresets();
   syncActivePreset(name);
   document.getElementById('colorBg').value = p.bg;
   document.getElementById('colorSurface').value = p.surface;
@@ -117,8 +121,6 @@ function applyPreset(name, element) {
   document.getElementById('speed').value = p.speed;
   document.getElementById('letterSpacing').value = p.ls;
   document.getElementById('fontFamily').value = p.font;
-  // Set the AI System Prompt
-  refreshDesignPrompt();
   update(false, name);
   if (window.VASPersonalization) {
     window.VASPersonalization.record({
@@ -164,30 +166,7 @@ function update(skipHistory = false, presetOverride) {
   document.getElementById('borderVal').textContent = v.borderWidth + 'px';
   document.getElementById('shadowVal').textContent = v.shadow + 'px';
   document.getElementById('speedVal').textContent = v.speed.toFixed(2) + 's';
-  // Set CSS Vars for Preview Component
-  f.style.setProperty('--p-font', v.fontFamily);
-  f.style.setProperty('--p-fs-hero', v.fsHero);
-  f.style.setProperty('--p-fs-h2', v.fsH2);
-  f.style.setProperty('--p-fs-h3', v.fsH3);
-  f.style.setProperty('--p-fs-body', v.fsBody);
-  f.style.setProperty('--p-fs-sm', v.fsSm);
-  f.style.setProperty('--p-ls', v.letterSpacing + 'em');
-  f.style.setProperty('--p-pad', v.padding + 'px');
-  f.style.setProperty('--p-radius', v.radius + 'px');
-  f.style.setProperty('--p-border-width', v.borderWidth + 'px');
-  // Custom shadow logic for NeoBrutalism
-  if(v.colors.border === '#000000' && v.borderWidth >= 3 && v.shadow === 0 && v.radius === 0) {
-     f.style.setProperty('--p-shadow', '6px 6px 0px #000');
-  } else {
-     f.style.setProperty('--p-shadow', v.shadow > 0 ? `0 ${v.shadow/2}px ${v.shadow}px rgba(0,0,0,0.15)` : 'none');
-  }
-  f.style.setProperty('--p-speed', v.speed + 's');
-  f.style.setProperty('--p-primary', v.colors.primary);
-  f.style.setProperty('--p-bg', v.colors.background);
-  f.style.setProperty('--p-surface', v.colors.surface);
-  f.style.setProperty('--p-text', v.colors.text);
-  f.style.setProperty('--p-border-color', v.colors.border);
-  f.style.setProperty('--p-success', v.colors.success);
+  VASDesignPreview.applyTokens(f, v);
   document.querySelector('.preview').style.background = v.colors.background;
   document.querySelector('.preview').style.color = v.colors.text;
   const state = VASThemeState.commit({
@@ -241,6 +220,7 @@ function undoTheme() {
     try {
       currentPreset = PRESETS[prev.preset] ? prev.preset : 'custom';
       currentBasePreset = prev.basePreset || prev.preset || 'custom';
+      renderPresets();
       setTasteProfileMode(prev.tasteProfileMode || 'auto');
       setControlsFromTokens(prev.tokens);
       isHydrating = true;
@@ -331,10 +311,10 @@ function importJSON(file) {
 // 드래그 앤 드롭 이벤트 리스너 바인딩
 window.addEventListener('DOMContentLoaded', () => {
   VASProjectContext.init();
-  renderPresets();
   const state = VASThemeState.init();
   currentPreset = PRESETS[state.preset] ? state.preset : 'custom';
   currentBasePreset = state.basePreset || state.preset;
+  renderPresets();
   setControlsFromTokens(state.tokens);
   isHydrating = true;
   update(false, currentPreset);

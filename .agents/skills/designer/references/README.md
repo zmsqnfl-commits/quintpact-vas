@@ -12,6 +12,8 @@
 - dataTool: 데이터 탐색과 조작
 - redesignGuard: 기존 디자인을 보존하는 개선
 
+추천 샘플 4종은 별도 프로필로 연결합니다: curatedEditorial(건축 스튜디오), curatedProduct(프로젝트 보드), curatedSaas(구독 서비스), curatedKnowledge(팀 위키). 선택 목록에는 새 컬렉션 10종과 이 4종만 표시하고, 나머지 이전 프리셋은 저장된 설정의 호환용으로 유지합니다. 샘플 사이트는 현재 토큰을 담아 새 탭에서 열며, 샘플 내부 조작으로 원래 설정을 변경하지 않습니다.
+
 Designer 스킬 또는 프로필 수정 후 `npm run agents:build`를 실행합니다.
 `npm run agents:check`는 원본과 생성 결과가 같은지 검사합니다.
 

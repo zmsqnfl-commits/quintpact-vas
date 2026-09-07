@@ -24,8 +24,8 @@
 
   const PRESET_TASTE_PROFILE_MAP = {
     vercel: 'premiumFrontend',
-    linear: 'premiumFrontend',
-    stripe: 'softPremium',
+    linear: 'curatedProduct',
+    stripe: 'curatedSaas',
     shadcn: 'minimalistUtility',
     untitled: 'premiumFrontend',
     carbon: 'dataTool',
@@ -34,12 +34,12 @@
     spotify: 'premiumFrontend',
     discord: 'premiumFrontend',
     airbnb: 'softPremium',
-    notion: 'minimalistUtility',
+    notion: 'curatedKnowledge',
     github: 'dataTool',
     figma: 'dataTool',
     ant: 'dataTool',
     neobrutal: 'industrialBrutalist',
-    awwwards: 'editorialMotion',
+    awwwards: 'curatedEditorial',
     glow: 'softPremium'
   };
 

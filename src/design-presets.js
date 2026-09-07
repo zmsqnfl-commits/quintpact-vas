@@ -1,15 +1,14 @@
 /**
  * VAS 디자인 스튜디오 — 프리셋 데이터
  * design-controller.html에서 분리된 프리셋 정의 파일
- * 카테고리: CORE(기본 스타일), BRAND(브랜드 레퍼런스), CONCEPT(콘셉트 스타일)
+ * 공개 목록은 14개로 선별합니다. 이전 프리셋 데이터는 저장된 설정 호환용입니다.
  */
 
 const PRESET_CATEGORIES = {
   collection: { label: '새 디자인 컬렉션 · 10가지', presets: ['bento','aurora','clay','noir','botanical','retro','swiss','cyber','kinetic','collage'] },
-  core: { label: '추천 스타일', presets: ['awwwards','linear','notion','stripe','neobrutal','carbon'] },
-  brand: { label: '더 많은 스타일', presets: ['vercel','shadcn','untitled','apple','google','spotify','discord','airbnb','github','figma','ant'] },
-  concept: { label: '실험적인 스타일', presets: ['glow'] }
+  core: { label: '추천 샘플 사이트 · 4가지', presets: ['awwwards','linear','stripe','notion'] }
 };
+const VAS_PRESET_KEYS = Object.freeze(Object.values(PRESET_CATEGORIES).flatMap(category => category.presets));
 
 const SYSTEM_SANS = VASStorage.SYSTEM_SANS;
 const SYSTEM_MONO = VASStorage.SYSTEM_MONO;
@@ -29,11 +28,11 @@ const PRESET_DESCRIPTIONS = Object.freeze({
   kinetic: '퍼플·옐로 대비와 움직이는 대형 타이포그래피',
   collage: '핑크 종이와 겹친 사진·테이프를 쓰는 콜라주 저널',
   vercel: '흑백 대비가 선명한 개발 도구형 디자인',
-  linear: '차분한 어두운 화면의 업무 도구형 디자인',
-  stripe: '여백과 부드러운 깊이를 살린 신뢰감 있는 디자인',
+  linear: 'ORBIT · 칸반 보드와 작업 상세를 갖춘 프로젝트 관리 앱',
+  stripe: 'RELAY · 매출 화면과 요금제 선택을 갖춘 구독 서비스',
   apple: '큰 글자와 넓은 여백을 쓰는 부드러운 프리미엄 디자인',
   neobrutal: '굵은 선과 강한 색으로 시선을 끄는 각진 디자인',
-  awwwards: '잡지처럼 큰 제목과 비대칭 구성을 쓰는 편집형 디자인',
+  awwwards: 'FORM / FIELD · 잡지처럼 큰 사진과 활자를 쓰는 건축 스튜디오',
   untitled: '읽기 쉽고 정돈된 기업용 서비스 디자인',
   shadcn: '군더더기 없이 단정한 개발자 도구형 디자인',
   glow: '어두운 배경에 은은한 빛을 쓰는 미래형 디자인',
@@ -43,7 +42,7 @@ const PRESET_DESCRIPTIONS = Object.freeze({
   spotify: '콘텐츠가 돋보이는 선명한 어두운 디자인',
   discord: '정보가 많아도 편안하게 읽히는 커뮤니티형 디자인',
   airbnb: '따뜻한 여백과 사진 중심의 친근한 서비스 디자인',
-  notion: '문서처럼 조용하고 단순한 작업 공간 디자인',
+  notion: 'FIELDNOTES · 문서 검색과 체크리스트를 갖춘 팀 위키',
   github: '코드와 변경 내역을 읽기 좋은 개발 도구형 디자인',
   figma: '도구와 작업 영역을 촘촘하게 배치한 편집기형 디자인'
 });
@@ -115,13 +114,15 @@ const PRESETS = {
     prompt: "[Vercel Design System Reference]\n- Goal: Create a high-contrast, ultra-snappy monochrome interface inspired by precise developer tooling.\n- Font: Use the operating-system monospace stack for numeric/code details and the system sans stack for UI text.\n- Border-radius: Exact 6px, no circles.\n- Borders: 1px solid #eaeaea for clean separation, not card spam.\n- Shadows: Extremely subtle drop-shadows; hover may lift the surface -2px with restraint.\n- Primary Button: Near-black with white text, no decorative rounding.\n- Focus: Speed, minimal padding, stark contrast, and practical scanability."
   },
   linear: {
+    tasteProfile: 'curatedProduct', sample: 'linear',
     bg: '#0b0c0f', surface: '#111318', text: '#f1f1f3', primary: '#6f7db8', border: '#242833',
     rad: 8, pad: 24, bw: 1, shadow: 20, font: SYSTEM_SANS, speed: 0.2, ls: 0,
     prompt: "[Linear Design System Reference]\n- Goal: Create a premium, dark-mode-first productivity tool aesthetic.\n- Font: Use the system sans stack with medium/semibold hierarchy; use system mono only for technical data.\n- Colors: Off-black background, dark neutral surfaces, and one muted blue-lavender accent.\n- Borders: 1px solid neutral dark borders. Use inner shadow hints instead of glow-heavy styling.\n- Radii: 8px for cards, 4px for buttons.\n- Micro-interactions: Very subtle opacity transitions (0.2s), restrained border response on hover.\n- Focus: Deep contrast, calm accents, supreme tidiness."
   },
   stripe: {
+    tasteProfile: 'curatedSaas', sample: 'stripe',
     bg: '#f6f9fc', surface: '#ffffff', text: '#32325d', primary: '#5f6fa8', border: '#e6ebf1',
-    rad: 8, pad: 32, bw: 0, shadow: 40, font: SYSTEM_SANS, speed: 0.3, ls: 0,
+    rad: 8, pad: 32, bw: 0, shadow: 40, font: DISPLAY_SERIF, speed: 0.3, ls: 0,
     prompt: "[Stripe Design System Reference]\n- Goal: Create a trustworthy, high-tech fintech dashboard.\n- Font: Use the system sans stack with a clean, highly legible hierarchy.\n- Colors: Light cool grey background, white surfaces, and a muted blue accent instead of loud blue-purple.\n- Borders: Minimal visible borders. Use soft, diffuse shadows only where they clarify elevation.\n- Radii: 8px across the board.\n- Transitions: Smooth 0.3s cubic-bezier with modest lift.\n- Focus: Trust, cleanliness, whitespace, and soft depth."
   },
   apple: {
@@ -135,6 +136,7 @@ const PRESETS = {
     prompt: "[Neo-Brutalism Design System Reference]\n- Goal: High-impact, mechanical, unpolished interface with disciplined contrast.\n- Font: Use heavy system sans, with system mono for labels and numeric details.\n- Colors: Light grey base with one strong accent surface, not a rainbow palette.\n- Borders: Solid near-black borders, default 2px for clean contrast.\n- Shadows: Hard near-black drop shadows where they improve physical feedback. No blur.\n- Radii: 0px. Sharp edges only.\n- Hover: Button physically translates down/right to press into the hard shadow. Speed: Snappy (0.1s)."
   },
   awwwards: {
+    tasteProfile: 'curatedEditorial', sample: 'awwwards',
     bg: '#e8e8e5', surface: '#e8e8e5', text: '#111111', primary: '#111111', border: '#111111',
     rad: 0, pad: 40, bw: 1, shadow: 0, font: SYSTEM_SANS, speed: 0.5, ls: -0.04,
     prompt: "[Awwwards Editorial Design Reference]\n- Goal: High-end editorial gallery feel with expressive but usable composition.\n- Typography: Large scale contrast with controlled tracking. Avoid oversized type that breaks workflow readability.\n- Colors: Warm gray background, near-black text, mostly monochrome.\n- Layout: Split screens and asymmetrical grids. Avoid generic centered hero and repeated card rows.\n- Interactions: Smooth, slow reveals (0.5s+ cubic-bezier). Hover states may shift type or cursor with restraint."
@@ -185,6 +187,7 @@ const PRESETS = {
     prompt: "[Airbnb Design System Reference]\n- Goal: Trustworthy, highly legible, welcoming consumer UI.\n- Colors: White background, warm red accent, and near-black text.\n- Borders: Very light gray; use soft shadows only where elevation is meaningful.\n- Radii: Friendly 12px corners.\n- Focus: Large readable typography, warm whitespace, and inviting consumer flow."
   },
   notion: {
+    tasteProfile: 'curatedKnowledge', sample: 'notion',
     bg: '#ffffff', surface: '#f7f7f5', text: '#37352f', primary: '#2383e2', border: '#e9e9e7',
     rad: 4, pad: 16, bw: 1, shadow: 5, font: SYSTEM_SANS, speed: 0.15, ls: 0,
     prompt: "[Notion Design System Reference]\n- Goal: Minimalist, document-driven productivity workspace.\n- Colors: White/off-white backgrounds and soft black text.\n- Borders: Extremely subtle borders.\n- Radii: Small, tight 4px corners.\n- Focus: Document-like canvas, high utility, and quiet information hierarchy."

@@ -8,7 +8,7 @@ Researched 2026-09-07. The ten VAS profiles and compositions are original adapta
 | [Taste Skill](https://github.com/Leonxlnx/taste-skill/tree/ccbc15639c97057cbfcf32ecebc38ef716e4bb37) | ccbc156 | Vary layout, density and motion; avoid uniform generic sections |
 | [UI UX Pro Max style catalogue](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/4aad0584d92131626b16d4ff4d77f0455385013c/src/ui-ux-pro-max/data/styles.csv) | 4aad058 | Distinct glass, clay, bento, organic, retro, Swiss and kinetic style families |
 
-The shipped collection contains Bento Studio, Aurora Glass, Clay Pop, Noir Luxe, Botanical Atelier, Retro Sunset, Swiss Poster, Cyber Deck, Kinetic Type and Paper Collage. Each has its own template, responsive rules and maintained agent profile. Existing eighteen presets remain available.
+The public catalog contains the ten new collections plus four curated sample sites: Awwwards (FORM / FIELD architecture), Linear (ORBIT project board), Stripe (RELAY subscriptions) and Notion (FIELDNOTES wiki). Each has an independent composition and maintained agent profile. Other previous preset data remains for saved-setting compatibility and is not listed as a new choice.
 
 ## Assets
 
@@ -16,3 +16,4 @@ The shipped collection contains Bento Studio, Aurora Glass, Clay Pop, Noir Luxe,
 - Local fonts come from the official [Google Fonts repository](https://github.com/google/fonts): Bricolage Grotesque, DM Serif Display, Space Grotesk, Anton, Caprasimo and Cormorant Garamond. Each binary is accompanied by its SIL Open Font License in `src/assets/fonts/`.
 - Fonts and imagery are bundled for offline use. Target projects should provision suitable licensed assets and fonts in their own stack; VAS asset paths are not promised to exist in a user's project.
 - Reference screenshots were used to develop each composition. Type, controls, rows, forms, glass surfaces and geometric poster graphics are native HTML/CSS; motion has pause and reduced-motion support.
+- The courtyard and fieldnotes-cover images are original generated photographs for fictional sample sites. They do not document real architecture commissions or team workspaces. Four images under `src/assets/designs/samples/` are actual rendered-site screenshots used only as selector thumbnails. Regenerate them with `node scripts/capture-design-samples.cjs` after changing sample layouts.

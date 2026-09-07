@@ -67,10 +67,10 @@ test('minor edits preserve the base preset and auto profile across reload and un
   let state = await page.evaluate(() => VASThemeState.get());
   expect(state.preset).toBe('custom');
   expect(state.basePreset).toBe('awwwards');
-  await expect(page.locator('#aiPrompt')).toHaveValue(/Taste Profile: Editorial Motion/);
+  await expect(page.locator('#aiPrompt')).toHaveValue(/Taste Profile: Architecture Editorial/);
   await expect(page.locator('#aiPrompt')).toHaveValue(/#123abc/);
   await page.reload();
-  await expect(page.locator('#aiPrompt')).toHaveValue(/Taste Profile: Editorial Motion/);
+  await expect(page.locator('#aiPrompt')).toHaveValue(/Taste Profile: Architecture Editorial/);
   await expect(page.locator('#colorPrimary')).toHaveValue('#123abc');
   await page.locator('#padding').evaluate(element => { element.value = '48'; element.dispatchEvent(new Event('input', { bubbles: true })); });
   await page.locator('.reset-theme').click();
@@ -81,7 +81,7 @@ test('minor edits preserve the base preset and auto profile across reload and un
   await page.goto(source('client-application.html'));
   const handoff = await page.evaluate(() => VASSetupDesign.context());
   expect(handoff.basePreset).toBe('awwwards');
-  expect(handoff.direction).toContain('Editorial Motion');
+  expect(handoff.direction).toContain('Architecture Editorial');
   expect(handoff.tokens.colors.primary).toBe('#123abc');
 });
 
@@ -91,11 +91,11 @@ test('taste profile changes preview structure without changing confirmed colors'
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(source('design-controller.html'));
   await page.locator('#shadow').evaluate(element => { element.value = '12'; element.dispatchEvent(new Event('input', { bubbles: true })); });
-  const before = await page.locator('#advPreview').evaluate(element => ({color: element.style.getPropertyValue('--p-primary'), layout: getComputedStyle(element.querySelector('.p-grid')).display}));
-  const shadow = await page.locator('.p-stat-card').first().evaluate(element => getComputedStyle(element).boxShadow);
+  const before = await page.locator('#advPreview').evaluate(element => ({color: element.style.getPropertyValue('--p-primary'), layout: element.dataset.scene}));
+  const shadow = await page.locator('.p-btn').first().evaluate(element => getComputedStyle(element).boxShadow);
   await page.locator('#tasteProfileMode').selectOption('dataTool');
   await expect(page.locator('#advPreview')).toHaveAttribute('data-taste-profile', 'dataTool');
-  const after = await page.locator('#advPreview').evaluate(element => ({color: element.style.getPropertyValue('--p-primary'), layout: getComputedStyle(element.querySelector('.p-grid')).display}));
+  const after = await page.locator('#advPreview').evaluate(element => ({color: element.style.getPropertyValue('--p-primary'), layout: element.dataset.scene}));
   expect(after.color).toBe(before.color);
   expect(after.layout).not.toBe(before.layout);
   await expect(page.locator('.p-stat-card').first()).toHaveCSS('box-shadow', shadow);
@@ -145,12 +145,12 @@ test('preset buttons stay readable and preview layouts fit desktop and mobile', 
 
 test('preview action moves keyboard focus and token edits preserve typed example text', async ({ page }) => {
   await page.goto(source('design-controller.html'));
-  await page.locator('.p-btn').focus();
+  await page.locator('.p-btn').first().focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#previewProjects')).toBeFocused();
   await page.locator('.p-input').fill('한글 메모와 작업 이름');
   await page.locator('#padding').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.p-input')).toHaveValue('한글 메모와 작업 이름');
-  await expect(page.locator('#advPreview')).toHaveAttribute('data-taste-profile', 'editorialMotion');
+  await expect(page.locator('#advPreview')).toHaveAttribute('data-taste-profile', 'curatedEditorial');
 });

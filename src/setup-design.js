@@ -53,6 +53,12 @@
     const state = VASThemeState.get();
     if (item.select) {
       const known = typeof PRESETS !== 'undefined' && PRESETS[state.preset];
+      item.select.querySelectorAll('[data-legacy]').forEach(option => option.remove());
+      if (known && !VAS_PRESET_KEYS.includes(state.preset)) {
+        const legacy = new Option(title(state.preset) + ' · 저장된 이전 스타일', state.preset);
+        legacy.dataset.legacy = '';
+        item.select.append(legacy);
+      }
       item.select.value = known ? state.preset : 'custom';
     }
     if (item.summary) item.summary.textContent = title(state.basePreset || state.preset) + (state.preset === 'custom' ? ' · 세부 값 수정' : '') + ' — ' + description(state.basePreset || state.preset);
@@ -66,7 +72,7 @@
       if (entry && entry.kind === 'memory') values.push(entry.text || '');
     });
     const combined = values.join(' ').toLowerCase();
-    return Object.keys(PRESETS).find(function (key) {
+    return VAS_PRESET_KEYS.find(function (key) {
       return new RegExp('(^|[^a-z0-9])' + key.toLowerCase() + '([^a-z0-9]|$)').test(combined);
     }) || null;
   }
@@ -80,7 +86,7 @@
     try {
       const status = await VASPersonalization.status();
       if (status.consent !== true || status.paused) return;
-      const keys = Object.keys(PRESETS);
+      const keys = VAS_PRESET_KEYS;
       const result = await VASPersonalization.recommend('디자인 프리셋 ' + keys.join(' '), { limit: 12 });
       const key = recommendedPreset(result);
       if (!key) return;
@@ -107,7 +113,7 @@
     const summary = document.getElementById(summaryId);
     if (!select) return;
     select.innerHTML = '';
-    Object.keys(PRESETS).forEach(function (key) {
+    VAS_PRESET_KEYS.forEach(function (key) {
       const option = document.createElement('option');
       option.value = key;
       option.textContent = title(key);

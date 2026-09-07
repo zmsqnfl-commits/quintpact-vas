@@ -79,5 +79,6 @@ test('collection controls, motion preferences and saved fonts survive real inter
   expect(prompt).toContain('Cormorant Garamond');
   await page.locator('.btn-preset[data-preset="awwwards"]').click();
   await expect(page.locator('#advPreview')).not.toHaveAttribute('data-collection');
-  await expect(page.locator('.p-stat-card')).toHaveCount(3);
+  await expect(page.locator('#advPreview')).toHaveAttribute('data-sample', 'awwwards');
+  await expect(page.locator('.ds-architecture-photo')).toBeVisible();
 });

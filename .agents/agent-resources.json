@@ -59,6 +59,58 @@
         "Responsive: stack the sculpture below the headline and change course cards into compact horizontal rows on phones. Verify shape, image crop and 320px reading; disable decorative motion for reduced motion."
       ]
     },
+    "curatedEditorial": {
+      "label": "Architecture Editorial",
+      "source": ".agents/skills/designer/references/profiles/curatedEditorial.md",
+      "rules": [
+        "Identity: a considered editorial studio with warm gray canvas and near-black typography. The Awwwards reference means expressive, usable art direction, not a copied vendor website.",
+        "Composition: a monumental two-line heading beside a narrow introduction, a large unfiltered subject photograph, a ruled project index and a simple inquiry form. Do not substitute three statistic cards or geometric filler for the photographic focal point.",
+        "Typography: strong grotesk display scale, tight tracking and quiet UI text; preserve confirmed fonts and Korean legibility. Let mobile headlines wrap without cropping words.",
+        "Media: use original subject-relevant photography with a stable landscape crop. The included courtyard image belongs to the fictional FORM / FIELD sample and is not a real customer project.",
+        "Detail: sharp geometry, fine horizontal rules, generous margins and small project captions. Use the confirmed radius, spacing and color tokens if the user customizes them.",
+        "Interaction: project rows disclose actual information, navigation reaches relevant sections, and inquiry input has clear validation and feedback. Connect real submission only when requested; identify local previews truthfully.",
+        "Responsive: stack headline and introduction, retain the photograph as the focal point, and keep project titles and contact controls usable at 320px. Compare real rendered desktop and mobile screens against the chosen reference."
+      ]
+    },
+    "curatedKnowledge": {
+      "label": "Knowledge Workspace",
+      "source": ".agents/skills/designer/references/profiles/curatedKnowledge.md",
+      "rules": [
+        "Identity: a quiet team knowledge workspace with true white document, off-white side rail and one understated blue accent. The Notion name is a style reference, not a copied identity.",
+        "Composition: searchable document navigation, breadcrumb, shallow photographic cover, readable document title and metadata, a concise callout, table of contents and a working checklist. Do not turn the document into a marketing hero or metrics dashboard.",
+        "Typography: constrain the document reading measure, use strong section hierarchy, and keep body copy and Korean fallback comfortable at normal sizes. Respect confirmed font and spacing tokens.",
+        "Media: use a calm original editorial cover with no overlaid UI text; preserve its crop while allowing user-provided subject matter to replace the sample vase photograph.",
+        "Interaction: document search has a clear empty state, selecting a document changes its real content and active navigation, and checkboxes update completion visibly. Use native controls and keyboard focus.",
+        "Data: fictional FIELDNOTES documents demonstrate the design. They must not be inserted as the user's actual team policies or meeting records.",
+        "Responsive: turn the sidebar into compact navigation, stack the table of contents below prose and keep checkboxes and related-document links reachable at 320px. Verify desktop and mobile rendering with the confirmed tokens."
+      ]
+    },
+    "curatedProduct": {
+      "label": "Product Workspace",
+      "source": ".agents/skills/designer/references/profiles/curatedProduct.md",
+      "rules": [
+        "Identity: a focused dark productivity workspace, with off-black background, quiet dark surfaces and one muted periwinkle accent. The Linear name is a style reference, not an instruction to copy the product.",
+        "Composition: compact sidebar, project breadcrumb and heading, progress strip, category filters, three kanban columns and an inline task inspector. Build the actual workflow instead of a marketing hero with fake metrics.",
+        "Typography: readable system sans for controls, consistent label sizes, restrained headings and tabular details. Keep confirmed font and color tokens.",
+        "Detail: fine borders, modest radii, subtle elevation and compact status labels; reserve the accent for selected tasks and actionable controls.",
+        "Interaction: search and filters combine, tasks open an inspector, status edits move the task to the correct column, and task creation updates derived totals. Use native controls and visible keyboard focus.",
+        "Data: calculate progress from actual tasks. Sample records and fictional team members demonstrate layout only and must not become production project facts or falsely live data.",
+        "Responsive: collapse the sidebar to compact navigation and stack kanban columns when cards no longer fit. Test search, creation, status changes and empty states at desktop and 320px."
+      ]
+    },
+    "curatedSaas": {
+      "label": "Subscription Studio",
+      "source": ".agents/skills/designer/references/profiles/curatedSaas.md",
+      "rules": [
+        "Identity: a refined subscription software site with cool white canvas, navy text, muted blue action and diffuse product-panel depth. Treat Stripe as a visual reference, not a copied identity.",
+        "Composition: expressive headline and concise product explanation beside one native billing dashboard, followed by a billing-period selector and two distinct horizontal pricing plans. Avoid decorative floating payment cards or repetitive feature tiles.",
+        "Typography: editorial serif display where the confirmed font allows it, with clear sans UI labels and calm price hierarchy. Preserve user-selected fonts and Korean fallback.",
+        "Product view: implement charts, subscription rows and labels as native accessible UI rather than a flattened screenshot. Label illustrative values as sample data and provide a readable chart description.",
+        "Pricing: monthly and yearly choices must update amounts and explain the billing period. Selecting a plan must provide truthful feedback and must not imply a real purchase when no checkout exists.",
+        "Tokens: maintain confirmed colors, radius and shadow; use appropriate readable foregrounds on primary buttons. Keep whitespace consistent between hero and pricing.",
+        "Responsive: stack hero copy and product panel, simplify the dashboard rail and place plans vertically on narrow screens. Verify price legibility, keyboard controls and 320px overflow."
+      ]
+    },
     "cyberDeck": {
       "label": "Cyber Deck",
       "source": ".agents/skills/designer/references/profiles/cyberDeck.md",
