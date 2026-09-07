@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9dff5">
+  <title>Morrow — 크리에이티브 작업 보드</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script src="store.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#board-heading">작업 목록으로 이동</a>
+  <div class="shell">
+    <header class="header">
+      <a class="wordmark" href="./index.html" aria-label="Morrow 작업 보드">morrow</a>
+      <nav aria-label="작업 보기">
+        <button type="button" data-view="board" aria-pressed="true">작업 보드</button>
+        <button type="button" data-view="archive" aria-pressed="false">보관함</button>
+      </nav>
+    </header>
+    <main>
+      <div class="bento-grid">
+        <section class="tile hero" aria-labelledby="welcome-heading">
+          <h1 id="welcome-heading">좋은 생각을,<br>끝낸 작업으로.</h1>
+          <p>만들고 싶은 것을 적고, 하나씩 완성하세요.</p>
+          <button type="button" class="button dark" id="new-task">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>새 작업
+          </button>
+        </section>
+        <section class="tile focus-tile" aria-labelledby="focus-heading">
+          <h2 id="focus-heading">지금 집중할 작업</h2>
+          <p class="focus-meta" id="focus-meta"></p>
+          <h3 id="focus-title"></h3>
+          <div class="focus-bottom">
+            <button type="button" class="button dark" id="focus-open">작업 열기</button>
+            <span id="focus-status"></span>
+          </div>
+        </section>
+        <section class="tile storage-tile" aria-labelledby="storage-heading">
+          <h2 id="storage-heading">이 브라우저에 저장</h2>
+          <p id="storage-status" role="status" aria-live="polite">저장 상태를 확인하고 있어요.</p>
+          <button type="button" class="button outline" id="export-json">JSON 내보내기</button>
+        </section>
+        <figure class="art-tile">
+          <img src="assets/morrow-print.png" alt="" width="1122" height="1402" fetchpriority="high">
+        </figure>
+      </div>
+      <section class="tile board-panel" aria-labelledby="board-heading">
+        <div class="board-top">
+          <h2 id="board-heading" tabindex="-1">모든 작업</h2>
+          <label class="search-field">
+            <span class="sr-only">작업 검색</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+            <input id="search" type="search" placeholder="작업 검색" autocomplete="off" maxlength="160">
+          </label>
+        </div>
+        <div class="filter-bar">
+          <div class="status-filters" role="group" aria-label="상태 필터">
+            <button type="button" data-status-filter="all" aria-pressed="true">전체</button>
+            <button type="button" data-status-filter="todo" aria-pressed="false">할 일</button>
+            <button type="button" data-status-filter="doing" aria-pressed="false">진행 중</button>
+            <button type="button" data-status-filter="done" aria-pressed="false">완료</button>
+          </div>
+          <label class="category-control">
+            <span class="sr-only">분류 필터</span>
+            <select id="category-filter">
+              <option value="all">모든 카테고리</option>
+              <option value="branding">브랜딩</option><option value="web">웹</option><option value="content">콘텐츠</option>
+            </select>
+          </label>
+        </div>
+        <div class="list-header" aria-hidden="true">
+          <span></span><span>작업</span><span>카테고리</span><span>상태</span><span>예시</span><span>기한</span><span></span>
+        </div>
+        <ul id="task-list" aria-label="작업 목록"></ul>
+        <div class="empty-state" id="empty-state" hidden>
+          <p id="empty-message"></p><button type="button" class="button dark" id="empty-action">새 작업</button>
+        </div>
+        <p class="example-note" id="example-note">예시 작업이 포함되어 있어요. 직접 수정하거나 지워보세요.</p>
+        <p class="sr-only" id="result-count" role="status" aria-live="polite"></p>
+      </section>
+      <div id="notice" class="notice" hidden>
+        <p id="notice-message" role="status" aria-live="polite"></p>
+        <button type="button" id="undo-button" class="button dark">실행 취소</button>
+      </div>
+      <p class="sr-only" id="live-message" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+  <dialog id="task-dialog" aria-labelledby="dialog-heading">
+    <form id="task-form" novalidate>
+      <div class="dialog-header">
+        <h2 id="dialog-heading">새 작업</h2>
+        <button type="button" class="icon-button" id="close-dialog" aria-label="창 닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <label for="task-title">제목</label>
+      <input id="task-title" name="title" type="text" maxlength="160" required aria-describedby="title-error" autocomplete="off">
+      <p id="title-error" class="field-error" hidden>제목을 입력해 주세요.</p>
+      <label for="task-note">메모</label>
+      <textarea id="task-note" name="note" rows="3" maxlength="4000"></textarea>
+      <div class="field-pair">
+        <div><label for="task-category">분류</label><select id="task-category" name="category">
+          <option value="branding">브랜딩</option><option value="web">웹</option><option value="content">콘텐츠</option>
+        </select></div>
+        <div><label for="task-status">상태</label><select id="task-status" name="status">
+          <option value="todo">할 일</option><option value="doing">진행 중</option><option value="done">완료</option>
+        </select></div>
+      </div>
+      <label for="task-due">마감일 (선택)</label>
+      <input id="task-due" name="dueDate" type="date" max="9999-12-31" aria-describedby="date-error">
+      <p id="date-error" class="field-error" hidden>올바른 마감일을 입력해 주세요.</p>
+      <div class="edit-actions" id="edit-actions" hidden>
+        <button type="button" id="archive-task" class="button quiet">보관</button>
+        <button type="button" id="delete-task" class="button quiet">삭제</button>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="button quiet" id="cancel-dialog">취소</button>
+        <button type="submit" class="button dark" id="save-task">작업 추가</button>
+      </div>
+    </form>
+  </dialog>
+  <noscript>작업 보드를 사용하려면 브라우저에서 JavaScript를 켜 주세요.</noscript>
+</body>
+</html>

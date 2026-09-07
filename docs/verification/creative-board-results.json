@@ -1,0 +1,114 @@
+{
+  "app": "Morrow — 크리에이티브 작업 보드",
+  "date": "2026-09-07",
+  "entrypoint": "src/proof-app/index.html",
+  "handoff": {
+    "id": "h_64962914d7d4a1db857cfd995c68da27",
+    "payloadSha256": "020f6c4243befa91da9da36e24c7989339068280ff5e00ee54e05bad0090d2f7",
+    "exportedThrough": "Actual five-step VAS form and download button",
+    "requestAndFullRoleBodiesVerified": true
+  },
+  "agents": [
+    {
+      "taskId": "/root/proof_designer",
+      "status": "complete",
+      "result": "Generated and inspected concept and extracted artwork; wrote design handoff."
+    },
+    {
+      "taskId": "/root/proof_implementer",
+      "status": "complete",
+      "result": "Implemented seven app files and fixed review findings; syntax and path checks exit 0."
+    },
+    {
+      "taskId": "/root/proof_reviewer",
+      "status": "complete",
+      "result": "Found one P2 save/load count mismatch; independently rechecked approved fix; no remaining blockers.",
+      "readOnlyInstruction": true,
+      "separateSandbox": false,
+      "prePostReviewSourceUnchanged": true,
+      "fixRecheckUnchangedExceptApprovedStore": true
+    }
+  ],
+  "hostRoleMode": "Generic subagents received full VAS role instructions; not native registered-role selection.",
+  "checks": [
+    {
+      "command": "node scripts/build-proof-handoff.cjs",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run test:python",
+      "exitCode": 0,
+      "passed": 111,
+      "skipped": 1,
+      "note": "11 client + 5 syntax + 27 integrity + 8 personalization + 43 pytest + 14 Windows runtime + 3 runtime source; version and agent-resource checks also passed."
+    },
+    {
+      "command": "npm run test:browser -- --workers=2 --reporter=line --output <external directory>",
+      "exitCode": 0,
+      "passed": 74
+    },
+    {
+      "command": "npm run test:browser -- tests/creative-board.spec.js --grep 5001st --workers=1 --reporter=line --output <external directory>",
+      "exitCode": 0,
+      "passed": 1,
+      "note": "Added after independent review: 5000 seeded tasks -> create 5001st -> reload -> 5001 visible."
+    }
+  ],
+  "proofAppRegressionCases": 16,
+  "distinctBrowserCasesPassed": 75,
+  "renderedChecks": {
+    "entryTitleAndContent": true,
+    "consoleErrors": 0,
+    "externalRuntimeRequests": 0,
+    "viewports": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "horizontalOverflow": false,
+    "nativeIabCreateReloadDelete": true,
+    "conceptCompared": true
+  },
+  "fixedIssues": [
+    "Dialog Tab/Shift+Tab wraps inside visible controls.",
+    "Mobile completion target is 44px.",
+    "Read-denied storage message explicitly explains unsaved edits and original data preservation.",
+    "Removed mismatched 5000-task load limit; schema and duplicate-ID validation retained."
+  ],
+  "limitations": [
+    "Browser-local data; no server, account, AI API, import or device synchronization.",
+    "Windows Chrome and Codex in-app browser were exercised locally; Safari/Firefox and physical mobile keyboards were not tested.",
+    "One real app validates this execution path; it does not prove every coding host or project behaves identically."
+  ],
+  "sourceFiles": [
+    {
+      "path": "src/proof-app/app.js",
+      "sha256": "e68a64418da383e8925b076caed88f77a939a30be6161dcb17c865afb784e819"
+    },
+    {
+      "path": "src/proof-app/index.html",
+      "sha256": "670bba5490a5f304acb12bd9d6950da021038832e2be60f7820cdf562953c163"
+    },
+    {
+      "path": "src/proof-app/store.js",
+      "sha256": "0a2fc6bfb3990e4085318318f4c21d331970fb0cc3dd251862e1ce827b1db854"
+    },
+    {
+      "path": "src/proof-app/styles.css",
+      "sha256": "dbe4fd3c813ee243c92370ae7775b0bbb0437f4e38f4781f9487c988e1538927"
+    },
+    {
+      "path": "src/proof-app/assets/bricolagegrotesque-OFL.txt",
+      "sha256": "46ba5f18ee20ea529f21d96c0ef8637a8314c1a5cfb2aa84018bc8157cbeff41"
+    },
+    {
+      "path": "src/proof-app/assets/BricolageGrotesque.ttf",
+      "sha256": "413e7357809ddd12fd80a96a8a396de0e401638d4acd3cb3e37532f0472ac682"
+    },
+    {
+      "path": "src/proof-app/assets/morrow-print.png",
+      "sha256": "bb34308d378d5c807f310777c5568ae7240835233041f670e9a2e4b381a78d98"
+    }
+  ]
+}
