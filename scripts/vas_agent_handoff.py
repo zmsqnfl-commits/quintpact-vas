@@ -25,7 +25,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 3
-VAS_VERSION = "2.6.4"
+VAS_VERSION = "2.7.0"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500

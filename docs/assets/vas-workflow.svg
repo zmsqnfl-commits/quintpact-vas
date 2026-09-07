@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-  <title id="title">VAS 2.6.4 AI 작업 인계 워크플로</title>
+  <title id="title">VAS 2.7.0 AI 작업 인계 워크플로</title>
   <desc id="desc">새 프로젝트 또는 기존 프로그램에서 작업 지시와 디자인을 정하고, 선택한 작업 기억을 더해 프롬프트와 JSON을 만든 뒤 코딩 AI가 원본을 먼저 읽고 구현, 테스트, 검증, 배포하는 흐름</desc>
   <defs>
     <style>
@@ -26,7 +26,7 @@
   <rect width="1600" height="900" fill="#e8e8e4"/>
   <rect x="32" y="32" width="1536" height="836" fill="none" stroke="#181817"/>
 
-  <text x="74" y="90" class="mono label" fill="#181817">VAS / 2.6.4 / CLOSED HANDOFF LOOP</text>
+  <text x="74" y="90" class="mono label" fill="#181817">VAS / 2.7.0 / CLOSED HANDOFF LOOP</text>
   <text x="74" y="156" class="sans" font-size="48" font-weight="850" fill="#111110">설정에서 끝나지 않고, 실제 작업까지 이어집니다.</text>
   <text x="76" y="194" class="sans" font-size="17" fill="#5c5b57">VAS는 안전한 작업 지시를 만들고, 코딩 AI는 원본을 먼저 읽은 뒤 구현과 검증을 수행합니다.</text>
 

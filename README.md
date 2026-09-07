@@ -1,10 +1,14 @@
-# VAS 2.6.4
+# VAS 2.7.0
 
 VAS는 `작업·디자인 설정 → 프롬프트 생성 → 코딩 AI 전달`을 위한 로컬 도구입니다.
 
+2.7.0에는 새 디자인 컬렉션 10종, 실제로 둘러볼 수 있는 추천 샘플 4종, 전체 디자인 지침 전달과 에이전트 실행 검증이 포함됩니다. [변경 내역](docs/releases/2.7.0.md)을 확인하세요.
+
+[디자인 스튜디오](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0)에서 스타일을 비교하고, VAS 인계로 만든 [Morrow 검증 웹앱](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0)을 직접 사용해 볼 수 있습니다. [검증 기록](docs/verification/README.md)도 함께 제공합니다.
+
 ## 한눈에 보는 작업 흐름
 
-![VAS 2.6.4 AI 작업 인계 워크플로](docs/assets/vas-workflow.svg)
+![VAS 2.7.0 AI 작업 인계 워크플로](docs/assets/vas-workflow.svg)
 
 ## 사용 방법
 

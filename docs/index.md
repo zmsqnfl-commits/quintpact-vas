@@ -1,4 +1,4 @@
-# VAS 2.6.4 시스템 지도
+# VAS 2.7.0 시스템 지도
 
 ## 사용자 흐름
 
@@ -21,6 +21,8 @@ VAS 웹 화면은 프롬프트와 선택 JSON을 만들 때만 사용합니다. 
 | 기존 프로그램 | 폴더 위치·작업·디자인 프롬프트와 선택 JSON | `src/project-import.html` |
 | 공통 도움말·설정 | 작업 순서와 작업 기억 제어 | `src/setup-tools.js` |
 | 디자인 | 프리셋·토큰·에이전트 디자인 지침 | `src/design-controller.html` |
+| 디자인 샘플 | 선택한 토큰으로 실제 샘플 사이트 확인 | `src/design-sample.html` |
+| 검증 앱 | VAS 인계로 만든 별도 Morrow 작업 보드 | `src/proof-app/index.html`, `docs/verification/README.md` |
 | 인계 계약 | 인계 v3 생성과 호환용 결과 v1 검증 | `src/agent-contract.js`, `src/handoff-workflow.js`, `scripts/vas_ai_contract.py` |
 | 호환 모듈 | 결과 JSON 검증·RAG 검토(기본 UI 미노출) | `src/ai-result-import.js`, `src/handoff-context-review.js` |
 | 런타임 | 로컬 웹 실행과 호환 API | `scripts/Start-VAS.ps1` |
