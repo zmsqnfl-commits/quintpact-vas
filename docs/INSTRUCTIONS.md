@@ -1,4 +1,4 @@
-# VAS 2.7.2 개발 규칙
+# VAS 2.7.3 개발 규칙
 
 - VAS 자체에는 HTML/CSS/Vanilla JS, Python, PowerShell만 사용합니다. 인계 대상 프로젝트는 해당 기술 스택을 유지합니다.
 - 파일당 500줄 이하, 외부 CDN·원격 폰트 금지입니다.

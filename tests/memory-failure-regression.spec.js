@@ -2,6 +2,24 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const script = path.join(__dirname, '..', 'src', 'personalization-store.js');
 
+test('overlapping design confirmations share one write and can retry a failure', async ({ page }) => {
+  const { pathToFileURL } = require('url');
+  await page.goto(pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href);
+  const result = await page.evaluate(async () => {
+    let attempts = 0, release;
+    const blocked = new Promise(resolve => { release = resolve; });
+    window.VASPersonalization = { record: async () => { attempts += 1; await blocked; throw Error('synthetic write failure'); } };
+    const first = VASSetupDesign.confirm().catch(() => 'failed');
+    const second = VASSetupDesign.confirm().catch(() => 'failed');
+    const overlapping = attempts; release();
+    const failures = await Promise.all([first, second]);
+    window.VASPersonalization = { record: async () => { attempts += 1; return { id: 'saved' }; } };
+    await VASSetupDesign.confirm(); await VASSetupDesign.confirm();
+    return { overlapping, failures, attempts };
+  });
+  expect(result).toEqual({ overlapping: 1, failures: ['failed', 'failed'], attempts: 2 });
+});
+
 test('persistent mutation failures retain the adapter, consent and visible records', async ({ page }) => {
   await page.evaluate(() => {
     const events = [{ id: 'control', type: 'theme_selected', timestamp: '2026-09-08T00:00:00Z', payload: { preset: 'bento' } }];

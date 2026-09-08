@@ -3,6 +3,7 @@
   'use strict';
 
   const mounts = [];
+  const pendingConfirmations = new Map();
   let lastConfirmation = '';
 
   function title(key) { return PRESETS[key]?.label || key.charAt(0).toUpperCase() + key.slice(1); }
@@ -159,8 +160,12 @@
     if (!VAS_PRESET_KEYS.includes(key)) return;
     const identity = JSON.stringify([key, state.tasteProfileMode, state.tokens]);
     if (identity === lastConfirmation) return;
-    const recorded = await VASPersonalization.record({ type: 'theme_selected', source: 'setup-design', payload: { preset: key, confirmed: true } });
-    if (recorded) lastConfirmation = identity;
+    if (pendingConfirmations.has(identity)) return pendingConfirmations.get(identity);
+    const pending = VASPersonalization.record({ type: 'theme_selected', source: 'setup-design', payload: { preset: key, confirmed: true } })
+      .then(function (recorded) { if (recorded) lastConfirmation = identity; return recorded; })
+      .finally(function () { pendingConfirmations.delete(identity); });
+    pendingConfirmations.set(identity, pending);
+    return pending;
   }
   global.VASSetupDesign = Object.freeze({ mount: mount, apply: apply, context: context, refresh: refresh, confirm: confirm });
 })(window);

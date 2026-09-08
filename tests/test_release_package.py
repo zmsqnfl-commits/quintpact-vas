@@ -235,6 +235,10 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("path: dist/pages", pages)
         self.assertIn("include-hidden-files: true", pages)
         self.assertIn('tags:\n      - "v*"', release)
+        self.assertRegex(release, r'(?m)^  release:\n    needs: windows\n')
+        self.assertIn('runs-on: windows-latest', release)
+        self.assertIn('tests/integrated-runtime.spec.js', release)
+        self.assertIn('python tests/test_release_runtime_flow.py', release)
         for filename in ("VAS-${version}-windows.zip", "VAS-Client-Form-${version}.zip",
                          "release-manifest.json", "SHA256SUMS.txt"):
             self.assertIn(filename, release)

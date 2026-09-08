@@ -24,6 +24,7 @@ test('declining work memory does not record the start navigation', async ({ page
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('.start-card:not(.import)').click();
   await page.locator('#vasStartWithoutMemory').click();
+  await expect(page).toHaveURL(/client-application\.html/);
   await page.waitForFunction(() => typeof VASPersonalization !== 'undefined');
   const events = await page.evaluate(async () => VASPersonalization.list());
   expect(events).toEqual([]);
