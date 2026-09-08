@@ -191,7 +191,7 @@ function Export-VASProjectHandoff {
     [IO.Directory]::CreateDirectory($content) | Out-Null
     try {
         $summary = [ordered]@{
-            schema = 1; vasVersion = '2.7.4'; projectId = $project.projectId
+            schema = 1; vasVersion = '2.7.5'; projectId = $project.projectId
             name = $project.name; sourceType = $project.sourceType; goal = $project.goal
             stage = $project.stage; exportedAt = [DateTime]::UtcNow.ToString('o')
         }
@@ -235,7 +235,7 @@ function Export-VASProjectHandoff {
         [IO.Compression.ZipFile]::CreateFromDirectory($content, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
         $safeName = ([string]$project.name -replace '[^A-Za-z0-9가-힣._-]', '-').Trim('-')
         if (-not $safeName) { $safeName = 'vas-project' }
-        return [ordered]@{ fileName = $safeName + '-VAS-2.7.4-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
+        return [ordered]@{ fileName = $safeName + '-VAS-2.7.5-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
     } finally {
         if (Test-Path -LiteralPath $temporary -PathType Container) { [IO.Directory]::Delete($temporary, $true) }
     }

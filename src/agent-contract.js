@@ -6,8 +6,10 @@
   const CREDENTIAL_NAMES = '(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)';
   const CREDENTIAL_KEY = new RegExp('^' + CREDENTIAL_NAMES + '$', 'i');
   const GAP = String.raw`\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*`;
-  const ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + '[:=]' + GAP + '("(?:\\\\.|[^"\\\\])*(?:"|$)|\'(?:\\\\.|[^\'\\\\])*(?:\'|$)|`(?:\\\\.|[^`\\\\])*(?:`|$)|(?:Bearer|Basic)\\s+[^\\s,;]+|[^\\s,;]+)', 'gi');
-  const TRIPLE_ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + "[:=]" + GAP + "(?:[rbuf]{0,2})(\"{3}|'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)", 'gi');
+  const ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + String.raw`(?:\]` + GAP + ')?[:=]' + GAP + '("(?:\\\\.|[^"\\\\])*(?:"|$)|\'(?:\\\\.|[^\'\\\\])*(?:\'|$)|`(?:\\\\.|[^`\\\\])*(?:`|$)|(?:Bearer|Basic)\\s+[^\\s,;]+|[^\\s,;]+)', 'gi');
+  const TRIPLE_ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + String.raw`(?:\]` + GAP + ")?[:=]" + GAP + "(?:[rbuf]{0,2})(\"{3}|'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)", 'gi');
+  const XML_CREDENTIAL = new RegExp('<(?:[^\\s<>/=:]+:)?' + CREDENTIAL_NAMES + '(?=[\\s/>])', 'i');
+  const INDEXED_CREDENTIAL = new RegExp(String.raw`\[` + GAP + "[\"'`]" + CREDENTIAL_NAMES + "[\"'`]" + GAP + String.raw`\]`, 'i');
   const SECRET = /(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
 
   function sensitiveKey(key) { return CREDENTIAL_KEY.test(String(key)); }
@@ -41,7 +43,12 @@
   const CREDENTIAL_VALUE = /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z]+ )*PRIVATE KEY-----|$)|\b(?:Bearer|Basic)\s+[a-z0-9._~+\/=-]{10,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\+[a-z0-9_.-]+)?:\/\/[^\s"'<>`]+/gi;
 
   function redactCredentials(value, depth) {
-    const source = redactYamlBlocks(redactTriples(String(value == null ? '' : value)));
+    const raw = String(value == null ? '' : value);
+    const labels = raw.replace(/\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/gi, (_, unicode, hex) => String.fromCharCode(parseInt(unicode || hex, 16)));
+    if (INDEXED_CREDENTIAL.test(labels)) return '[redacted]';
+    // Credential XML may contain nested markup, CDATA or an unclosed element.
+    if (XML_CREDENTIAL.test(raw)) return '[redacted]';
+    const source = redactYamlBlocks(redactTriples(raw));
     const level = depth || 0;
     if (level > 24) return '[redacted]';
     function scrub(item, nested) {
@@ -66,7 +73,7 @@
     let text = source.replace(/"(?:\\.|[^"\\])*"/g, function (token, offset) {
       try {
         const decoded = JSON.parse(token);
-        if (/^\s*:/.test(source.slice(offset + token.length))) {
+        if (/^\s*(?::|\]\s*=)/.test(source.slice(offset + token.length))) {
           return sensitiveKey(decoded) ? JSON.stringify(decoded) : token;
         }
         const safe = redactCredentials(decoded, level + 1);

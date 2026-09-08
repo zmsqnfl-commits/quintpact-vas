@@ -79,6 +79,16 @@ class KnowledgeIndexTests(unittest.TestCase):
 
 
 class PersonalizationTests(unittest.TestCase):
+    def test_portable_identity_matches_sha256_without_web_crypto(self):
+        result = run_node(r"""
+const identity = globalThis.VASMemoryIdentity;
+const crypto = require('crypto');
+const ids = Array.from({length: 64}, (_, i) => ('_' + 'Aa0-'.repeat(16)).slice(0, i + 1));
+const matches = ids.every(id => identity(id) === crypto.createHash('sha256').update('vas-memory-id:' + id).digest('hex').slice(0, 32));
+console.log(JSON.stringify({ matches, uuid: identity('7A43C52F-45A2-4EE8-B88F-0ABA339AFF67'), hex: identity('7A43C52F45A24EE8B88F0ABA339AFF67') }));
+""")
+        self.assertEqual(result, {'matches': True, 'uuid': '7a43c52f45a24ee8b88f0aba339aff67', 'hex': '7a43c52f45a24ee8b88f0aba339aff67'})
+
     def test_consent_sanitization_retrieval_and_deletion(self):
         result = run_node(r"""
 (async function () {

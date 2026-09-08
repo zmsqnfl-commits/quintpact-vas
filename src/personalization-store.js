@@ -2,6 +2,7 @@
 (function (global) {
   'use strict';
   const config = global.VASConfig || {};
+  const portableId = global.VASMemoryIdentity || (typeof require === 'function' ? require('./memory-identity.js') : null);
   const SCHEMA = config.personalizationSchema || 1;
   const DB_NAME = config.personalizationDbName || 'vas-personalization';
   const WARNING_EVENTS = config.memoryWarningEvents || 2000;
@@ -12,7 +13,7 @@
   ]);
   const TYPE_SET = new Set(EVENT_TYPES);
   const BLOCKED_KEY = /(pass(word|phrase)?|secret|credential|api.?key|auth|token|database.?url|db.?pass|aws.?access|file|path|folder|directory|attachment|upload|(project|client).?name|contact|phone|e.?mail)/i;
-  const SECRET_VALUE = new RegExp("(?:\\b(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)\\b[\"']?\\s*(?:(?:/\\*[\\s\\S]*?\\*/|//[^\\r\\n]*)\\s*)*[:=]|(?:\\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\\b(?:AKIA|ASIA)[A-Z0-9]{16}|\\b(?:Bearer|Basic)\\s+[a-z0-9._~+/=-]{10,}|\\beyJ[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}|-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----|\\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\\+[a-z0-9_.-]+)?://\\S+|\\b[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|\\b(?:\\+?82[- ]?0?1[016789]|01[016789])[- ]?\\d{3,4}[- ]?\\d{4}))", 'i');
+  const SECRET_VALUE = new RegExp("(?:\\b(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)\\b[\"']?\\s*(?:(?:/\\*[\\s\\S]*?\\*/|//[^\\r\\n]*)\\s*)*(?:\\]\\s*(?:(?:/\\*[\\s\\S]*?\\*/|//[^\\r\\n]*)\\s*)*)?[:=]|(?:\\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\\b(?:AKIA|ASIA)[A-Z0-9]{16}|\\b(?:Bearer|Basic)\\s+[a-z0-9._~+/=-]{10,}|\\beyJ[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}|-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----|\\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\\+[a-z0-9_.-]+)?://\\S+|\\b[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|\\b(?:\\+?82[- ]?0?1[016789]|01[016789])[- ]?\\d{3,4}[- ]?\\d{4}))", 'i');
   const PATH_VALUE = /(?:^|[\s"'(])(?:[a-z]:[\\/]|\\\\|\/(?:users|home|etc|var|tmp|mnt|volumes)\/|\.{1,2}[\\/])|[\\/][\w .-]+\.[a-z0-9]{1,8}(?:$|[\s"',)])/i;
   const FILE_VALUE = /(?:^|[\s"'(])[^<>:"/\\|?*\r\n]{1,100}\.[a-z0-9]{1,8}(?:$|[\s"',)])/i;
   let activeAdapter = null;
@@ -192,20 +193,22 @@
     return /^[a-z0-9_-]{1,64}$/i.test(text) && !SECRET_VALUE.test(text) ? text : fallbackValue;
   }
   function privateText(value) {
-    let decoded = String(value);
+    let decoded = String(value).replace(/\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/gi, (_, u, x) => String.fromCharCode(parseInt(u || x, 16)));
     for (let i = 0; i < 4; i += 1) {
       const next = decoded.replace(/"(?:\\.|[^"\\])*"/g, function (token) { try { return ' ' + JSON.parse(token) + ' '; } catch (error) { return token; } });
       if (next === decoded) break; if (i === 3) return true;
       decoded = next;
     }
-    return SECRET_VALUE.test(decoded) || PATH_VALUE.test(decoded) || FILE_VALUE.test(decoded);
+    const xmlLabels = decoded.replace(/<(?:[^\s<>\/=:]+:)?([a-z0-9_-]+)(?=[\s/>])/gi, ' $1=');
+    const indexedLabels = decoded.replace(/["'`]?\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\r\n]*)\s*)*\]/g, '=');
+    return SECRET_VALUE.test(indexedLabels) || SECRET_VALUE.test(xmlLabels) || PATH_VALUE.test(decoded) || FILE_VALUE.test(decoded);
   }
   function sanitizeString(value) {
     if (privateText(value)) return undefined;
     return String(value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500) || undefined;
   }
   function sanitizeValue(value, key, depth) {
-    if (depth > 5 || (key && (BLOCKED_KEY.test(key) || SECRET_VALUE.test(key + '=')))) return undefined;
+    if (depth > 5 || (key && (BLOCKED_KEY.test(key) || privateText(key) || SECRET_VALUE.test(key + '=') || ['__proto__', 'constructor', 'prototype'].includes(key)))) return undefined;
     if (typeof value === 'string') return sanitizeString(value);
     if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
     if (typeof value === 'boolean' || value === null) return value;
@@ -231,7 +234,7 @@
     return value && Object.keys(value).some(function (key) { return hasContent(value[key]); });
   }
   function eventId() {
-    if (global.crypto && typeof global.crypto.randomUUID === 'function') return global.crypto.randomUUID();
+    if (global.crypto && typeof global.crypto.randomUUID === 'function') return global.crypto.randomUUID().replace(/-/g, '');
     sequence += 1;
     return 'event-' + Date.now().toString(36) + '-' + sequence.toString(36);
   }
@@ -298,7 +301,6 @@
     changed('consent');
     return consentState;
   }
-
   async function pause(paused) {
     await init();
     if (paused === undefined) { pauseState = Boolean(await call('getMeta', 'paused')); return pauseState; }
@@ -307,7 +309,6 @@
     changed('pause');
     return pauseState;
   }
-
   async function record(typeOrEvent, payload, options) {
     await init();
     if (await consent() !== true || await pause()) return null;
@@ -325,7 +326,6 @@
     changed('record');
     return stored;
   }
-
   async function list(filter) {
     const settings = filter || {};
     let events = (await call('list')).map(function (event) {
@@ -340,26 +340,22 @@
     const limit = Math.max(0, Number(settings.limit) || events.length);
     return events.slice(0, limit).map(clone);
   }
-
   async function remove(id) {
     await call('setMeta', 'profile', null);
     await call('remove', safeIdentifier(id, ''));
     changed('delete');
     return true;
   }
-
   async function clear() {
     await call('setMeta', 'profile', null);
     await call('clear');
     changed('clear');
     return true;
   }
-
   async function exportData() {
     const events = await list({ order: 'asc' });
     return JSON.stringify({ schema: SCHEMA, exportedAt: new Date().toISOString(), events: events }, null, 2);
   }
-
   async function importData(input, options) {
     await init();
     if (await consent() !== true) return 0;
@@ -369,7 +365,8 @@
     } catch (error) {
       return 0;
     }
-    if (!data || data.schema !== SCHEMA || !Array.isArray(data.events)) return 0;
+    const legacy = data && !Object.hasOwn(data, 'schema') && data.format === 'vas-personalization-memory' && data.version === SCHEMA;
+    if (!data || (data.schema !== SCHEMA && !legacy) || !Array.isArray(data.events)) return 0;
     const mode = options && options.replace === true ? 'replace' : 'merge';
     if (mode === 'replace') await call('setMeta', 'profile', null);
     const safeEvents = [];
@@ -386,12 +383,19 @@
       imported = response && Number.isFinite(Number(response.imported)) ? Number(response.imported) : imported;
     } else {
       if (mode === 'replace') await call('clear');
-      for (const event of safeEvents) await call('put', event);
+      const aliases = new Map();
+      for (const row of mode === 'merge' ? await list() : []) {
+        aliases.set(row.id, row.id); aliases.set(await portableId(row.id), row.id);
+      }
+      for (const event of safeEvents) {
+        const key = await portableId(event.id), id = aliases.get(event.id) || aliases.get(key) || event.id;
+        await call('put', Object.assign({}, event, { id }));
+        aliases.set(event.id, id); aliases.set(key, id);
+      }
     }
     changed('import');
     return imported;
   }
-
   async function status() {
     await init();
     await consent();
@@ -412,7 +416,6 @@
       retention: runtimeStatus ? runtimeStatus.retention : 'until-explicit-delete'
     });
   }
-
   async function projectKnowledge(projectId) {
     const runtime = global.VASRuntime;
     if (!projectId || !/^[A-Za-z0-9._-]{1,100}$/.test(projectId)) return [];
@@ -433,7 +436,6 @@
     }
     return projectKnowledgeCache.get(projectId).entries;
   }
-
   async function ragCall(method, query, options, prompt) {
     await init();
     await consent();
@@ -463,12 +465,10 @@
       ? global.VASRagLite.augmentPrompt(prompt, query, settings)
       : global.VASRagLite[method](query, settings);
   }
-
   function changed(action) {
     if (global.dispatchEvent && global.CustomEvent) global.dispatchEvent(new CustomEvent('vas-memory-change', { detail: { action: action } }));
     try { if (memoryChannel) memoryChannel.postMessage(action); } catch (error) { }
   }
-
   if (global.document && global.BroadcastChannel) {
     try {
       memoryChannel = new global.BroadcastChannel('vas-work-memory');
@@ -477,24 +477,17 @@
       };
     } catch (error) { }
   }
-
   const api = Object.freeze({
     eventTypes: EVENT_TYPES,
-    init: init,
-    consent: consent,
+    init: init, consent: consent,
     getConsent: function () { return consent(); },
     record: record,
     retrieve: function (query, options) { return ragCall('retrieve', query, options); },
     recommend: function (query, options) { return ragCall('recommend', query, options); },
     augmentPrompt: function (prompt, query, options) { return ragCall('augmentPrompt', query, options, prompt); },
-    list: list,
-    delete: remove,
-    clear: clear,
-    export: exportData,
-    import: importData,
-    pause: pause,
-    status: status
+    list: list, delete: remove, clear: clear,
+    export: exportData, import: importData,
+    pause: pause, status: status
   });
-
   global.VASPersonalization = api;
 })(typeof window !== 'undefined' ? window : globalThis);

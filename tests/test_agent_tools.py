@@ -5,7 +5,9 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import shutil
 import tomllib
+import pytest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,3 +110,53 @@ def test_windows_before_hook_fails_for_protected_target():
     env = dict(os.environ, TOOL_NAME="Write", AGENT_ROLE="implementer", TARGET_PATH="workspace/data.json")
     result = subprocess.run(["powershell", "-NoProfile", "-File", str(ROOT / ".agents/skills/implementer/scripts/before_tool.ps1")], env=env, capture_output=True)
     assert result.returncode != 0
+
+
+@pytest.mark.parametrize('name', ['fixture file.py', '[literal].py', '-option.py'])
+def test_precommit_uses_staged_blob_with_literal_names(tmp_path, name):
+    def git(*args):
+        return subprocess.run(['git', *args], cwd=tmp_path, capture_output=True, check=True)
+    git('init', '-q')
+    (tmp_path / 'src').mkdir()
+    target = tmp_path / 'src' / name
+    target.write_text('api_key = "StagedCanary123"\n')
+    git('add', '--', 'src/' + name)
+    target.write_text('print("safe")\n')
+    helper = ROOT / '.agents/hooks/check-staged.py'
+    env = dict(os.environ); env.pop('SKIP_SENSITIVE', None)
+    def check():
+        return subprocess.run([sys.executable, str(helper)], cwd=tmp_path, env=env, capture_output=True)
+    result = check()
+    assert result.returncode == 1
+    assert b'StagedCanary123' not in result.stdout + result.stderr
+    git('add', '--', 'src/' + name)
+    target.write_text('api_key = "UnstagedCanary123"\n')
+    assert check().returncode == 0
+    # Delete is not a blob read; an index addition can exist without a worktree file.
+    git('rm', '--cached', '-f', '--', 'src/' + name)
+    assert check().returncode == 0
+    git('add', '--', 'src/' + name); target.unlink()
+    assert check().returncode == 1
+
+
+def test_precommit_copied_wrappers_and_git_error(tmp_path):
+    subprocess.run(['git', 'init', '-q'], cwd=tmp_path, check=True)
+    (tmp_path / 'src').mkdir()
+    file = tmp_path / 'src/demo.py'; file.write_text('secret = "HookCanary123"\n')
+    subprocess.run(['git', 'add', '.'], cwd=tmp_path, check=True)
+    file.write_text('print("safe")\n')
+    copied = tmp_path / 'copied hooks'; copied.mkdir()
+    for name in ['pre-commit.sh', 'pre-commit.ps1', 'check-staged.py']:
+        shutil.copy2(ROOT / '.agents/hooks' / name, copied / name)
+    commands = []
+    bash = Path(r'C:\Program Files\Git\bin\bash.exe') if os.name == 'nt' else shutil.which('bash')
+    if bash and Path(bash).exists(): commands.append([str(bash), str(copied / 'pre-commit.sh')])
+    if os.name == 'nt': commands.append(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(copied / 'pre-commit.ps1')])
+    assert commands
+    for command in commands:
+        env = dict(os.environ); env.pop('SKIP_SENSITIVE', None)
+        assert subprocess.run(command, cwd=tmp_path, env=env, capture_output=True).returncode == 1
+        env['SKIP_SENSITIVE'] = '1'
+        assert subprocess.run(command, cwd=tmp_path, env=env, capture_output=True).returncode == 0
+    no_git = tmp_path.parent / (tmp_path.name + '-no-git'); no_git.mkdir()
+    assert subprocess.run([sys.executable, str(copied / 'check-staged.py')], cwd=no_git, env=env, capture_output=True).returncode == 2

@@ -22,8 +22,10 @@ ABSOLUTE = re.compile(r'''(?i)(?:file://[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^
 CREDENTIAL_NAMES = r"(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)"
 CREDENTIAL_KEY = re.compile(rf"^{CREDENTIAL_NAMES}$", re.I)
 GAP = r"\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*"
-ASSIGNMENT = re.compile(rf"""\b{CREDENTIAL_NAMES}\b["']?{GAP}[:=]{GAP}("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|`(?:\\.|[^`\\])*(?:`|$)|(?:Bearer|Basic)\s+[^\s,;]+|[^\s,;]+)""", re.I)
-TRIPLE_ASSIGNMENT = re.compile(r"\b" + CREDENTIAL_NAMES + r"\b[\"']?" + GAP + "[:=]" + GAP + '(?:[rbuf]{0,2})("{3}|\'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)', re.I)
+ASSIGNMENT = re.compile(rf"""\b{CREDENTIAL_NAMES}\b["']?{GAP}(?:\]{GAP})?[:=]{GAP}("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|`(?:\\.|[^`\\])*(?:`|$)|(?:Bearer|Basic)\s+[^\s,;]+|[^\s,;]+)""", re.I)
+TRIPLE_ASSIGNMENT = re.compile(r"\b" + CREDENTIAL_NAMES + r"\b[\"']?" + GAP + r"(?:\]" + GAP + ")?[:=]" + GAP + '(?:[rbuf]{0,2})("{3}|\'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)', re.I)
+XML_CREDENTIAL = re.compile(r"<(?:[^\s<>/=:]+:)?" + CREDENTIAL_NAMES + r"(?=[\s/>])", re.I)
+INDEXED_CREDENTIAL = re.compile(r"\[" + GAP + r"[\"'`]" + CREDENTIAL_NAMES + r"[\"'`]" + GAP + r"\]", re.I)
 JSON_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
 SECRET = re.compile(
     r"(?i)(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|"
@@ -76,7 +78,14 @@ def redact_triples(source: str) -> str:
 
 
 def redact_credentials(value: Any, depth: int = 0) -> str:
-    source = redact_yaml_blocks(redact_triples(str(value if value is not None else "")))
+    raw = str(value if value is not None else "")
+    labels = re.sub(r"\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))", lambda m: chr(int(m[1] or m[2], 16)), raw, flags=re.I)
+    if INDEXED_CREDENTIAL.search(labels):
+        return "[redacted]"
+    # Withhold credential XML without parsing entities or guessing a closing boundary.
+    if XML_CREDENTIAL.search(raw):
+        return "[redacted]"
+    source = redact_yaml_blocks(redact_triples(raw))
     if depth > 24:
         return "[redacted]"
 
@@ -103,7 +112,7 @@ def redact_credentials(value: Any, depth: int = 0) -> str:
     def token(match: re.Match[str]) -> str:
         try:
             decoded = json.loads(match.group())
-            if re.match(r"\s*:", source[match.end():]):
+            if re.match(r"\s*(?::|\]\s*=)", source[match.end():]):
                 return json.dumps(decoded) if sensitive_key(decoded) else match.group()
             safe = redact_credentials(decoded, depth + 1)
             return match.group() if safe == decoded else json.dumps(safe, ensure_ascii=False)

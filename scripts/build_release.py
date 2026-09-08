@@ -1,4 +1,4 @@
-"""VAS 2.7.4 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.7.5 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -149,7 +149,7 @@ def build_windows(stage: Path) -> Path:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
     (root / "README.md").write_text(
-        """# VAS 2.7.4 Windows 실행본
+        """# VAS 2.7.5 Windows 실행본
 
 ## 시작
 
@@ -192,7 +192,7 @@ def build_client(stage: Path) -> Path:
             html = re.sub(r'\s*<button[^>]+id="createProjectButton".*?</button>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectNext".*?</a>', "", html)
             html = re.sub(r'\s*<a[^>]+id="createdProjectHandoff".*?</a>', "", html)
-            html = re.sub(r'\s*<script src="(?:runtime-client|personalization-store|rag-lite)\.js"></script>', "", html)
+            html = re.sub(r'\s*<script src="(?:runtime-client|personalization-store|memory-identity|rag-lite)\.js"></script>', "", html)
             html = re.sub(r'\s*<button[^>]*data-setup-settings[^>]*>.*?</button>', "", html)
             target.write_text(html, encoding="utf-8")
         else:

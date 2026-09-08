@@ -27,6 +27,7 @@ test('persistent mutation failures retain the adapter, consent and visible recor
     const fail = async () => { throw Error('synthetic disk failure'); };
     window.VASLocalMemoryAdapter = { init: async () => {}, list: async () => events, getMeta: async k => meta[k], setMeta: fail, put: fail, clear: fail, remove: fail, importData: fail };
   });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-identity.js') });
   await page.addScriptTag({ path: script });
   const result = await page.evaluate(async () => {
     const api = VASPersonalization, rejected = [];
@@ -50,6 +51,7 @@ test('IndexedDB request success followed by transaction abort is a failure', asy
     } };
     Object.defineProperty(window, 'indexedDB', { configurable: true, value: { open() { const r = { result: database }; setTimeout(() => r.onsuccess(), 0); return r; } } });
   });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-identity.js') });
   await page.addScriptTag({ path: script });
   const result = await page.evaluate(async () => {
     await VASPersonalization.init(); let rejected = false;

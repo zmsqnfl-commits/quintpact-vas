@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import socket
+import subprocess
 import sys
 import urllib.error
 import zipfile
@@ -55,11 +56,16 @@ def test_legacy_normalization_sanitizes_nested_fields_before_hashing():
     assert safe["integrity"]["payloadSha256"] == expected
 
 
-def test_safe_json_source_keeps_exact_excerpt_bytes(tmp_path):
-    original = '{ "tokens": {"primary": "#123abc"}, "reference": "https://example.com/home/design" }\n'
-    (tmp_path / "config.json").write_text(original, encoding="utf-8")
+@pytest.mark.parametrize('name,original', [
+    ('config.json', '{ "tokens": {"primary": "#123abc"}, "reference": "https://example.com/home/design" }\n'),
+    ('config.py', 'config["theme"] = "bento"\n'),
+    ('config.xml', '<tokens><primary>#123abc</primary></tokens>\n'),
+])
+def test_safe_json_source_keeps_exact_excerpt_bytes(tmp_path, name, original):
+    assert clean(original) == original.strip()
+    (tmp_path / name).write_text(original, encoding="utf-8")
     target = tmp_path.parent / (tmp_path.name + "-safe.zip")
-    export_package({"source":str(tmp_path),"task":{"request":"review config"},"format":"source-zip","approvedFiles":["config.json"],"output":str(target)})
+    export_package({"source":str(tmp_path),"task":{"request":"review config"},"format":"source-zip","approvedFiles":[name],"output":str(target)})
     with zipfile.ZipFile(target) as archive:
         assert archive.read("excerpts/0001.txt") == ("[Lines 1-1]\n" + original).encode()
 
@@ -212,3 +218,65 @@ def test_windows_memory_filters_shared_credentials_on_write_and_legacy_export(ru
         assert case['marker'] not in raw, case['name']
     assert 'bento' in raw
     client.request('/api/memory/events', 'DELETE')
+
+
+def test_windows_memory_private_keys_and_portable_id_merge(runtime):
+    client, state, _ = runtime
+    client.request('/api/memory/events', 'DELETE')
+    client.request('/api/memory/pause', 'POST', {'paused': False})
+    keys = json.loads((ROOT / 'tests/fixtures/private-memory-keys.json').read_text())
+    payload = {'preset': 'bento', 'nested': [{key: 'value' for key in keys}]}
+    payload.update({key: 'value' for key in keys})
+    ids = ['7a43c52f-45a2-4ee8-b88f-0aba339aff67', 'event-legacy-1']
+    data = {'schema': 1, 'events': [{'id': id, 'type': 'theme_selected', 'payload': payload} for id in ids]}
+    expected_ids = [ids[0].replace('-', ''), hashlib.sha256(('vas-memory-id:' + ids[1]).encode()).hexdigest()[:32]]
+    for _ in range(2):
+        _, imported, _ = client.request('/api/memory/import', 'POST', {'data': data})
+        assert imported['total'] == 2
+    _, exported, _ = client.request('/api/memory/export')
+    assert exported['schema'] == exported['version'] == 1
+    assert [event['id'] for event in exported['events']] == expected_ids
+    for event in exported['events']:
+        assert event['payload'] == {'preset': 'bento', 'nested': [{}]}
+        client.request('/api/memory/events/' + event['id'], 'PUT', {'type': 'theme_selected', 'payload': {'preset': 'linear'}})
+    # Real Windows export merges back into the original browser-side identities.
+    code = '''
+const fs = require('fs'); require(process.argv[1]);
+(async () => {
+ const [original, windows] = JSON.parse(fs.readFileSync(0, 'utf8'));
+ await VASPersonalization.consent(true); await VASPersonalization.import(original);
+ await VASPersonalization.import(windows); await VASPersonalization.import(windows);
+ console.log((await VASPersonalization.list()).length);
+})().catch(error => { console.error(error); process.exit(1); });
+'''
+    result = subprocess.run(['node', '-e', code, str(ROOT / 'src/personalization-store.js')], input=json.dumps([data, exported]), text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == '2'
+    # A seeded historical key receives the same filtering at the export boundary.
+    store = json.loads((state / 'memory.json').read_text(encoding='utf-8-sig'))
+    for event in store['events']: event['payload'] = payload
+    (state / 'memory.json').write_text(json.dumps(store), encoding='utf-8-sig')
+    _, historical, _ = client.request('/api/memory/export')
+    for event in historical['events']:
+        assert event['payload'] == {'preset': 'bento', 'nested': [{}]}
+        client.request('/api/memory/events/' + event['id'], 'DELETE')
+    _, status, _ = client.request('/api/memory/status')
+    assert status['count'] == 0
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows PowerShell required')
+def test_memory_dictionary_and_psobject_preserve_arrays_and_filter_keys(tmp_path):
+    script = tmp_path / 'privacy.ps1'
+    script.write_text('''
+. $env:VAS_PRIVACY_SOURCE
+$keys = Get-Content -LiteralPath $env:VAS_PRIVATE_KEYS -Raw | ConvertFrom-Json
+$dictionary = [ordered]@{ preset = 'bento'; count = 2; enabled = $true; empty = $null; list = @('linear'); many = @(1, 2) }
+foreach ($key in $keys) { $dictionary[$key] = 'value' }
+$object = $dictionary | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+@((ConvertTo-VASSafeValue $dictionary), (ConvertTo-VASSafeValue $object)) | ConvertTo-Json -Depth 10 -Compress
+''', encoding='utf-8-sig')
+    env = dict(os.environ, VAS_PRIVACY_SOURCE=str(ROOT / 'scripts/VAS.Memory.Privacy.ps1'), VAS_PRIVATE_KEYS=str(ROOT / 'tests/fixtures/private-memory-keys.json'))
+    result = subprocess.run(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(script)], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    control = {'preset': 'bento', 'count': 2, 'enabled': True, 'empty': None, 'list': ['linear'], 'many': [1, 2]}
+    assert json.loads(result.stdout) == [control, control]

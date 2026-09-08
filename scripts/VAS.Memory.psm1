@@ -149,8 +149,7 @@ function ConvertTo-VASMemoryEvent {
     if (-not $type -or $type.Length -gt 80 -or $type -notmatch '^[a-zA-Z0-9._-]+$' -or $type -match $script:SensitiveValuePattern) {
         throw '이벤트 type 형식이 올바르지 않습니다.'
     }
-    $id = $ExistingId
-    if (-not $id) { $id = [Guid]::NewGuid().ToString('N') }
+    $id = ConvertTo-VASMemoryId $ExistingId
     $timestamp = [string](Get-VASProperty $InputObject 'timestamp' '')
     if (-not $timestamp) { $timestamp = [DateTime]::UtcNow.ToString('o') }
     $parsed = [DateTime]::MinValue
@@ -270,6 +269,7 @@ function Export-VASMemory {
     $store = Initialize-VASMemoryStore $Root
     return [ordered]@{
         format = 'vas-personalization-memory'
+        schema = $script:SchemaVersion
         version = $script:SchemaVersion
         exportedAt = [DateTime]::UtcNow.ToString('o')
         paused = [bool]$store.paused
@@ -288,8 +288,7 @@ function Import-VASMemory {
         $byId = [ordered]@{}
         if ($Mode -eq 'merge') { foreach ($event in @($store.events)) { $byId[[string]$event.id] = $event } }
         foreach ($item in $incoming) {
-            $requestedId = [string](Get-VASProperty $item 'id' '')
-            if ($requestedId -notmatch '^[a-fA-F0-9]{32}$') { $requestedId = [Guid]::NewGuid().ToString('N') }
+            $requestedId = ConvertTo-VASMemoryId (Get-VASProperty $item 'id' '')
             $byId[$requestedId] = ConvertTo-VASMemoryEvent $item $requestedId
         }
         $store.events = @($byId.Values)

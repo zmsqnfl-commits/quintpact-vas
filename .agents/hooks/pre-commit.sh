@@ -1,6 +1,6 @@
 #!/bin/bash
 # pre-commit 훅 — 커밋 전 자동 검증
-# 이 파일을 .git/hooks/pre-commit 으로 복사하세요.
+# 이 파일을 .git/hooks/pre-commit으로, check-staged.py를 같은 폴더로 복사하세요.
 # /setup-from-application 실행 시 프로젝트에 맞게 커스터마이징됩니다.
 
 echo "[Pre-Commit] 커밋 전 검증 시작..."
@@ -20,15 +20,9 @@ if [ -n "$OVER_LIMIT" ]; then
 fi
 
 # 2. 민감 데이터 패턴 체크 (ABAC sensitive_data_guard)
-SENSITIVE=$(git diff --cached --name-only | xargs grep -l -E "(password|secret|api_key|private_key)\s*=" 2>/dev/null)
-if [ -n "$SENSITIVE" ]; then
-    echo "[WARNING] 민감 데이터 패턴 발견:"
-    echo "$SENSITIVE"
-    echo "계속하려면 SKIP_SENSITIVE=1 git commit 사용"
-    if [ "$SKIP_SENSITIVE" != "1" ]; then
-        exit 1
-    fi
-fi
+HOOK_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd) || exit 2
+if command -v python3 >/dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
+"$PYTHON" "$HOOK_DIR/check-staged.py" || exit $?
 
 echo "[Pre-Commit] 검증 통과 ✓"
 exit 0

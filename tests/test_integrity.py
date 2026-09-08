@@ -1,4 +1,4 @@
-"""VAS 2.7.4 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
+"""VAS 2.7.5 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
 from __future__ import annotations
 
 import ast
@@ -33,8 +33,8 @@ js_files = sorted(SRC.glob("*.js"))
 package = json.loads(text(ROOT / "package.json"))
 config = text(SRC / "vas-config.js")
 
-check("01 package version", package.get("version") == "2.7.4")
-check("02 runtime version", "version: '2.7.4'" in config or 'version: "2.7.4"' in config)
+check("01 package version", package.get("version") == "2.7.5")
+check("02 runtime version", "version: '2.7.5'" in config or 'version: "2.7.5"' in config)
 check("03 public entrypoints", all((ROOT / item).exists() for item in [
     "Run-VAS-System.bat", "src/vas-hub.html", "src/client-application.html",
 ]))
