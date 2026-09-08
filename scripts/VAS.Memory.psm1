@@ -35,10 +35,23 @@ function New-VASEmptyMemoryStore {
     return $store
 }
 
+function Clear-VASMemoryHistory {
+    param([string]$Root, [string]$CurrentTemp)
+    $memoryRoot = [IO.Path]::GetFullPath((Get-VASMemoryRoot $Root)).TrimEnd('\')
+    Get-ChildItem -LiteralPath $memoryRoot -Force -File -ErrorAction Stop | Where-Object {
+        $_.Name -eq 'memory.previous.json' -or $_.Name -like 'memory.corrupt-*.json' -or $_.Name -like '.memory-*.tmp'
+    } | ForEach-Object {
+        $path = [IO.Path]::GetFullPath($_.FullName)
+        if ([IO.Path]::GetDirectoryName($path) -ne $memoryRoot) { throw 'VAS_MEMORY_PATH_INVALID' }
+        if ($path -ne $CurrentTemp) { Remove-Item -LiteralPath $path -Force -ErrorAction Stop }
+    }
+}
+
 function Save-VASMemoryStore {
     param(
         [Parameter(Mandatory = $true)]$Store,
-        [string]$Root
+        [string]$Root,
+        [switch]$PurgeHistory
     )
 
     $memoryRoot = Get-VASMemoryRoot $Root
@@ -49,9 +62,12 @@ function Save-VASMemoryStore {
     $Store.updatedAt = [DateTime]::UtcNow.ToString('o')
     $json = $Store | ConvertTo-Json -Depth 20
     $utf8 = New-Object Text.UTF8Encoding($false)
-    [IO.File]::WriteAllText($temp, $json, $utf8)
-
     try {
+        [IO.File]::WriteAllText($temp, $json, $utf8)
+        if ($PurgeHistory) {
+            Clear-VASMemoryHistory $Root $temp
+            $backup = [NullString]::Value
+        }
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             [IO.File]::Replace($temp, $path, $backup, $true)
         } else {
@@ -259,7 +275,7 @@ function Remove-VASMemoryEvent {
         $before = @($store.events).Count
         $store.events = @($store.events | Where-Object { $_.id -ne $Id })
         $removed = $before -ne @($store.events).Count
-        if ($removed) { Save-VASMemoryStore $store $Root | Out-Null }
+        Save-VASMemoryStore $store $Root -PurgeHistory | Out-Null
         return $removed
     } finally { Exit-VASMemoryLock $guard }
 }
@@ -272,7 +288,7 @@ function Clear-VASMemory {
         $store = Read-VASMemoryStoreUnlocked $Root
         $count = @($store.events).Count
         $store.events = @()
-        Save-VASMemoryStore $store $Root | Out-Null
+        Save-VASMemoryStore $store $Root -PurgeHistory | Out-Null
         return [ordered]@{ removed = $count }
     } finally { Exit-VASMemoryLock $guard }
 }
@@ -318,7 +334,7 @@ function Import-VASMemory {
             $byId[$requestedId] = ConvertTo-VASMemoryEvent $item $requestedId
         }
         $store.events = @($byId.Values)
-        Save-VASMemoryStore $store $Root | Out-Null
+        Save-VASMemoryStore $store $Root -PurgeHistory:($Mode -eq 'replace') | Out-Null
         return [ordered]@{ mode = $Mode; imported = $incoming.Count; total = @($store.events).Count }
     } finally { Exit-VASMemoryLock $guard }
 }

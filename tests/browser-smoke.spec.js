@@ -60,8 +60,7 @@ test('new project produces the common safe VAS-AI-HANDOFF.json', async ({ page }
   const body = JSON.stringify(document);
   expect(body).not.toContain('contact@example.com');
   expect(body).not.toContain('sk-proj-1234567890abcdef');
-  expect(body).toContain('[contact]');
-  expect(body).toContain('[secret]');
+  expect(body).toContain('[redacted]');
   expect(body).not.toContain('client_name');
   await expect(page.locator('#handoffStatus')).toContainText('저장했습니다');
 });

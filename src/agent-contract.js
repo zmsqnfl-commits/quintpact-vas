@@ -2,7 +2,56 @@
 (function (global) {
   'use strict';
 
-  const SECRET = /(?:\b(?:password|passwd|secret|credential|api[_ -]?key|access[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+|\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
+  // Match credential field names, never the plural design.tokens container.
+  const CREDENTIAL_NAMES = '(?:[a-z0-9]+[_-])*(?:password|passwd|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key)';
+  const CREDENTIAL_KEY = new RegExp('^' + CREDENTIAL_NAMES + '$', 'i');
+  const GAP = String.raw`\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*`;
+  const ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + '[:=]' + GAP + '("(?:\\\\.|[^"\\\\])*(?:"|$)|\'(?:\\\\.|[^\'\\\\])*(?:\'|$)|`(?:\\\\.|[^`\\\\])*(?:`|$)|(?:Bearer|Basic)\\s+[^\\s,;]+|[^\\s,;]+)', 'gi');
+  const SECRET = /(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
+
+  function sensitiveKey(key) { return CREDENTIAL_KEY.test(String(key)); }
+
+  function redactCredentials(value, depth) {
+    const source = String(value == null ? '' : value);
+    const level = depth || 0;
+    if (level > 24) return '[redacted]';
+    function scrub(item, nested) {
+      if (nested > 24) return '[redacted]';
+      if (typeof item === 'string') return redactCredentials(item, nested + 1);
+      if (Array.isArray(item)) return item.map(function (child) { return scrub(child, nested + 1); });
+      if (item && typeof item === 'object') {
+        const out = Object.create(null);
+        Object.keys(item).forEach(function (key) {
+          out[redactCredentials(key, nested + 1)] = sensitiveKey(key) ? '[redacted]' : scrub(item[key], nested + 1);
+        });
+        return out;
+      }
+      return item;
+    }
+    // Keep valid JSON byte-for-byte unless a credential is actually removed.
+    try {
+      const parsed = JSON.parse(source);
+      const safe = scrub(parsed, level);
+      if (JSON.stringify(parsed) !== JSON.stringify(safe)) return JSON.stringify(safe);
+    } catch (error) { /* Free text and embedded JSON use the same field policy below. */ }
+    let text = source.replace(/"(?:\\.|[^"\\])*"/g, function (token, offset) {
+      try {
+        const decoded = JSON.parse(token);
+        if (/^\s*:/.test(source.slice(offset + token.length))) {
+          return sensitiveKey(decoded) ? JSON.stringify(decoded) : token;
+        }
+        const safe = redactCredentials(decoded, level + 1);
+        return safe === decoded ? token : JSON.stringify(safe);
+      } catch (error) { return token; }
+    });
+    let complex = false;
+    text = text.replace(ASSIGNMENT, function (match, value) {
+      // In non-JSON text, an object-valued credential has no safe scalar boundary.
+      if (/^[{\[]/.test(value)) complex = true;
+      return /^(?:"\[redacted\]"|'\[redacted\]'|\[redacted\])$/.test(value) ? match : '[redacted]';
+    });
+    return complex ? '[redacted]' : text.replace(SECRET, '[redacted]').replace(ABSOLUTE_PATH, '[absolute-path]');
+  }
   const ABSOLUTE_PATH = /file:\/\/[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:\/])\/(?:Users|home|var|etc|mnt|volume\d*)\/[^\s'"`]+/gi;
   const RESULT_STATUS = new Set(['complete', 'incomplete', 'blocked', 'failed']);
   const TEST_STATUS = new Set(['passed', 'failed', 'skipped']);
@@ -15,7 +64,9 @@
     const source = String(value == null ? '' : value).replace(/\r\n?/g, '\n');
     let redactions = 0;
     const replace = function () { redactions += 1; return '[redacted]'; };
-    const text = source.replace(SECRET, replace).replace(ABSOLUTE_PATH, function () {
+    const credentials = redactCredentials(source);
+    if (credentials !== source) redactions += 1;
+    const text = credentials.replace(SECRET, replace).replace(ABSOLUTE_PATH, function () {
       redactions += 1; return '[absolute-path]';
     }).replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ').trim().slice(0, limit || 4000);
     return { text: text, redactions: redactions };
@@ -23,16 +74,16 @@
 
   function clean(value, limit) { return cleanWithCount(value, limit).text; }
 
-  function sanitize(value, depth) {
+  function sanitize(value, depth, field) {
     const level = depth || 0;
     if (level > 8) return null;
-    if (typeof value === 'string') return clean(value, 12000);
-    if (Array.isArray(value)) return value.slice(0, 100).map(function (item) { return sanitize(item, level + 1); });
-    if (value && Object.getPrototypeOf(value) === Object.prototype) {
+    if (typeof value === 'string') return clean(value, field === 'pasteText' ? 32000 : 12000);
+    if (Array.isArray(value)) return value.slice(0, 500).map(function (item) { return sanitize(item, level + 1, field); });
+    if (value && typeof value === 'object') {
       const result = {};
-      Object.keys(value).sort().slice(0, 100).forEach(function (key) {
-        if (['__proto__', 'prototype', 'constructor'].includes(key)) return;
-        result[key] = sanitize(value[key], level + 1);
+      Object.keys(value).sort().slice(0, 500).forEach(function (key) {
+        if (['__proto__', 'prototype', 'constructor'].includes(key) || sensitiveKey(key)) return;
+        result[clean(key, 500)] = sanitize(value[key], level + 1, key);
       });
       return result;
     }
@@ -82,6 +133,13 @@
   }
 
   async function finalize(document, promptBuilder, target) {
+    const safe = sanitize(document, 0);
+    const changed = stable(safe) !== stable(document);
+    Object.keys(document).forEach(function (key) { delete document[key]; });
+    Object.assign(document, safe);
+    if (document.security && changed) document.security.redactionCount = (Number(document.security.redactionCount) || 0) + 1;
+    document.assistantGuide = document.assistantGuide || {};
+    document.assistantGuide.target = target || document.assistantGuide.target || 'universal';
     document.schemaVersion = 3;
     document.workflow = Object.assign({ handoffId: '', iteration: 1, parentResultId: null, status: 'ready' }, document.workflow || {});
     document.workflow.status = 'ready';
@@ -243,7 +301,7 @@
   }
 
   global.VASAgentContract = Object.freeze({
-    clean: clean, sanitize: sanitize, stable: stable, digest: digest, finalize: finalize,
+    clean: clean, sanitize: sanitize, sensitiveKey: sensitiveKey, redactCredentials: redactCredentials, stable: stable, digest: digest, finalize: finalize,
     approvedRag: approvedRag, normalizeHandoff: normalizeHandoff, validateResult: validateResult,
     continuation: continuation, safeRelative: safeRelative
   });

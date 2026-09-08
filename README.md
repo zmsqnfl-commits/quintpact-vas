@@ -1,12 +1,16 @@
-# VAS 2.7.0
+# VAS 2.7.1
 
-![VAS 2.7.0 release cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
+![VAS 2.7.0 design collection cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
 
 **From design direction to working apps.**
 
 VAS (Vibecoding Agent System) is a local tool for preparing a project brief, choosing a visual direction, and handing complete instructions to a coding AI. Describe the work, compare real design previews, refine the details, and copy a prompt into your coding tool with the actual project folder open.
 
-**[Download VAS 2.7.0](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.0)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0)** · **[Read the release notes](docs/releases/2.7.0.md)**
+**[Download VAS 2.7.1](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.1)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.1)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.1)** · **[Read the release notes](docs/releases/2.7.1.md)**
+
+## Privacy and font fixes in 2.7.1
+
+This patch sanitizes the final downloaded handoff, blocks quoted and nested JSON credentials, removes application-managed history copies on explicit memory deletion, and restores bundled TrueType fonts on Windows. The design collections and Morrow introduced in 2.7.0 remain available. See the [patch notes](docs/releases/2.7.1.md) for verification and upgrade details.
 
 ## What VAS helps you do
 
@@ -38,7 +42,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four sample websites you can actually explore
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.1). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -73,7 +77,7 @@ See the [handoff guide](docs/HANDOFF.md) and [agent workflow](.agents/HANDOFF-WO
 
 ## Morrow: built through the VAS workflow
 
-[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
+[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.1) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
 
 You can create and edit tasks, set categories and due dates, combine search and status filters, mark work complete, archive and restore tasks, undo the latest deletion, and export records as JSON. Data persists in the browser, with empty states, input validation, and storage-error guidance.
 
@@ -87,16 +91,16 @@ The [verification record](docs/verification/README.md) includes the request, ori
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. The packaged distribution contains the local launcher, Design Studio, handoff tools, sample sites, and Morrow.
 
-1. Open the [v2.7.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.0) and download `VAS-2.7.0-windows.zip`.
+1. Open the [v2.7.1 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.1) and download `VAS-2.7.1-windows.zip`.
 2. Extract the entire archive into a new folder.
 3. Double-click `Run-VAS-System.bat`.
 4. Choose a new project or an existing project, enter the request, and select a design.
 5. Choose whether VAS may remember confirmed design choices, then review and copy the prompt.
 6. Open the actual project folder in your coding tool and paste the prompt.
 
-The separate `VAS-Client-Form-2.7.0.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+The separate `VAS-Client-Form-2.7.1.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
 
-When upgrading, keep your previous installation folder and user data. Version 2.7.0 retains the handoff v3 and result v1 formats and existing design storage keys. The browser demos let you explore the designs and Morrow; the Windows ZIP provides the complete local workflow.
+When upgrading, keep your previous installation folder and user data. Version 2.7.1 retains the handoff v3 and result v1 formats and existing design storage keys. The browser demos let you explore the designs and Morrow; the Windows ZIP provides the complete local workflow.
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -109,9 +113,9 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 ## Verification and development
 
-The **2.7.0 release validation** recorded 111 passing Python checks with one environment-dependent skip, 75 browser scenarios, 7 package checks, an extracted Windows package execution check, and release boundary/source-hash verification. These results describe the tested workflows and environments; host capabilities still determine how agent instructions execute.
+The **2.7.0 design release validation** recorded 111 passing Python checks with one environment-dependent skip, 75 browser scenarios, 7 package checks, an extracted Windows package execution check, and release boundary/source-hash verification. The **2.7.1 patch validation** passed 140 Python checks (one symlink permission skip), 77 browser scenarios, 7 package checks, and extracted Windows runtime and font-rendering checks. These results describe the tested workflows and environments; host capabilities still determine how agent instructions execute.
 
-See the [release notes](docs/releases/2.7.0.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
+See the [release notes](docs/releases/2.7.1.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
 
 For source development, install the Node and Python test dependencies and Chromium, then run the checks from the repository directory:
 

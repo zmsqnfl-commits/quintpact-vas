@@ -19,12 +19,82 @@ SAFE_HANDOFF_ID = re.compile(r"^h_[a-f0-9]{32}$", re.I)
 SAFE_RESULT_ID = re.compile(r"^r_[a-z0-9_-]{16,64}$", re.I)
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 ABSOLUTE = re.compile(r'''(?i)(?:file://[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:/])/(?:Users|home|var|etc|mnt|volume\d*)/[^\s'"`]+)''')
+CREDENTIAL_NAMES = r"(?:[a-z0-9]+[_-])*(?:password|passwd|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key)"
+CREDENTIAL_KEY = re.compile(rf"^{CREDENTIAL_NAMES}$", re.I)
+GAP = r"\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*"
+ASSIGNMENT = re.compile(rf"""\b{CREDENTIAL_NAMES}\b["']?{GAP}[:=]{GAP}("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|`(?:\\.|[^`\\])*(?:`|$)|(?:Bearer|Basic)\s+[^\s,;]+|[^\s,;]+)""", re.I)
+JSON_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
 SECRET = re.compile(
-    r"(?i)(?:\b(?:password|passwd|secret|credential|api[_ -]?key|access[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+|"
-    r"\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|"
+    r"(?i)(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|"
     r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|"
     r"\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4}\b)"
 )
+
+
+def sensitive_key(key: Any) -> bool:
+    return bool(CREDENTIAL_KEY.fullmatch(str(key)))
+
+
+def redact_credentials(value: Any, depth: int = 0) -> str:
+    source = str(value if value is not None else "")
+    if depth > 24:
+        return "[redacted]"
+
+    def scrub(item: Any, nested: int) -> Any:
+        if nested > 24:
+            return "[redacted]"
+        if isinstance(item, str):
+            return redact_credentials(item, nested + 1)
+        if isinstance(item, list):
+            return [scrub(child, nested + 1) for child in item]
+        if isinstance(item, dict):
+            return {redact_credentials(key, nested + 1): "[redacted]" if sensitive_key(key) else scrub(child, nested + 1)
+                    for key, child in item.items()}
+        return item
+
+    try:
+        parsed = json.loads(source)
+        safe = scrub(parsed, depth)
+        if parsed != safe:
+            return json.dumps(safe, ensure_ascii=False)
+    except (ValueError, RecursionError):
+        pass
+
+    def token(match: re.Match[str]) -> str:
+        try:
+            decoded = json.loads(match.group())
+            if re.match(r"\s*:", source[match.end():]):
+                return json.dumps(decoded) if sensitive_key(decoded) else match.group()
+            safe = redact_credentials(decoded, depth + 1)
+            return match.group() if safe == decoded else json.dumps(safe, ensure_ascii=False)
+        except ValueError:
+            return match.group()
+
+    text = JSON_STRING.sub(token, source)
+    complex_value = False
+
+    def assignment(match: re.Match[str]) -> str:
+        nonlocal complex_value
+        if match.group(1).startswith(("{", "[")):
+            complex_value = True
+        return match.group() if match.group(1).strip("\"'") == "[redacted]" else "[redacted]"
+
+    text = ASSIGNMENT.sub(assignment, text)
+    return "[redacted]" if complex_value else ABSOLUTE.sub("[absolute-path]", SECRET.sub("[redacted]", text))
+
+
+def sanitize(value: Any, depth: int = 0, field: str = "") -> Any:
+    if depth > 8:
+        return None
+    if isinstance(value, dict):
+        return {clean(key, 500): sanitize(child, depth + 1, str(key))
+                for key, child in list(value.items())[:500]
+                if str(key) not in {"__proto__", "prototype", "constructor"} and not sensitive_key(key)}
+    if isinstance(value, list):
+        return [sanitize(child, depth + 1, field) for child in value[:500]]
+    if isinstance(value, str):
+        return clean(value, 32_000 if field == "pasteText" else 12_000)
+    return value
 
 
 def canonical(value: Any) -> bytes:
@@ -34,7 +104,7 @@ def canonical(value: Any) -> bytes:
 def clean(value: Any, maximum: int = 4_000) -> str:
     text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
     text = re.sub(r"[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]", " ", text)
-    text = SECRET.sub("[redacted]", text)
+    text = SECRET.sub("[redacted]", redact_credentials(text))
     text = ABSOLUTE.sub("[absolute-path]", text)
     return text.strip()[:maximum]
 
@@ -87,6 +157,12 @@ def finalize_handoff(
     document: dict[str, Any],
     prompt_builder: Callable[[dict[str, Any]], str],
 ) -> dict[str, Any]:
+    safe = sanitize(document)
+    changed = safe != document
+    document.clear()
+    document.update(safe)
+    if changed and isinstance(document.get("security"), dict):
+        document["security"]["redactionCount"] = int(document["security"].get("redactionCount") or 0) + 1
     document["schemaVersion"] = HANDOFF_SCHEMA
     workflow = document.setdefault("workflow", {})
     workflow["iteration"] = max(1, int(workflow.get("iteration") or 1))

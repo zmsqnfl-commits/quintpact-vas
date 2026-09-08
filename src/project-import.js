@@ -73,12 +73,12 @@
 
   function syncDesign() {
     if (!preview) return;
-    const request = document.getElementById('taskRequest').value.trim();
-    preview.document.project.name = document.getElementById('projectName').value.trim();
+    const request = VASAgentContract.clean(document.getElementById('taskRequest').value, 4000);
+    preview.document.project.name = VASAgentContract.clean(document.getElementById('projectName').value, 80);
     preview.document.project.summary = request;
     preview.document.task.request = request;
     preview.document.context.requirements = { included: Boolean(request), value: { request: request } };
-    preview.document.context.design = VASSetupDesign.context();
+    preview.document.context.design = VASAgentContract.sanitize(VASSetupDesign.context());
     preview.document.context.rag = { included: false, items: [] };
     preview.document.context.continuation = { included: false };
     preview.document.context.preferences = { included: false, items: [] };
@@ -149,7 +149,7 @@
       if (!preview && !await prepare()) return;
       syncDesign();
       await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
-      VASAgentHandoffWeb.save(preview.document, 'VAS-AI-HANDOFF.json');
+      await VASAgentHandoffWeb.save(preview.document, 'VAS-AI-HANDOFF.json');
       document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 폴더 위치가 포함된 프롬프트를 코딩 AI에 붙여넣으세요.';
     } catch (error) { showError(error); }
   }

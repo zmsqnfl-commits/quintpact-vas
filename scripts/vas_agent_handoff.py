@@ -12,7 +12,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from vas_ai_contract import approved_rag, build_prompt as _prompt, finalize_handoff
+from vas_ai_contract import approved_rag, build_prompt as _prompt, finalize_handoff, clean, redact_credentials
 
 from vas_project_import import (
     ENTRYPOINT_NAMES,
@@ -25,7 +25,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 3
-VAS_VERSION = "2.7.0"
+VAS_VERSION = "2.7.1"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500
@@ -59,7 +59,6 @@ MANIFEST_NAMES = {
 }
 SECRET_CONTENT = [
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----", re.I),
-    re.compile(r"\b(?:api[_-]?key|access[_-]?token|client[_-]?secret|password)\b\s*[:=]\s*['\"]?[^\s'\"]{8,}", re.I),
     re.compile(r"\b(?:sk|ghp|github_pat|xox[baprs])[-_][A-Za-z0-9_-]{16,}\b"),
     re.compile(r"https?://[^\s/@:]+:[^\s/@]+@", re.I),
     re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I),
@@ -109,7 +108,7 @@ def _clean_string(value: Any, maximum: int = 4_000) -> str:
     text = ABSOLUTE_PATH.sub("[absolute-path]", text)
     for pattern in SECRET_CONTENT:
         text = pattern.sub("[redacted]", text)
-    return text.strip()[:maximum]
+    return clean(text, maximum)
 
 
 def _sanitize(value: Any, depth: int = 0, path: tuple[str, ...] = ()) -> Any:
@@ -222,7 +221,7 @@ def _read_text(path: Path, maximum: int = MAX_SOURCE_BYTES) -> str:
 
 
 def _has_secret(text: str) -> bool:
-    return any(pattern.search(text) for pattern in SECRET_CONTENT)
+    return redact_credentials(text) != text or any(pattern.search(text) for pattern in SECRET_CONTENT)
 
 
 def _package_details(records: list[dict[str, Any]]) -> tuple[list[dict[str, str]], list[dict[str, str]], list[str], list[str]]:

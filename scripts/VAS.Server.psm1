@@ -103,7 +103,7 @@ function Get-VASContentType {
         '.js' = 'text/javascript; charset=utf-8'; '.json' = 'application/json; charset=utf-8'
         '.md' = 'text/markdown; charset=utf-8'; '.txt' = 'text/plain; charset=utf-8'
         '.svg' = 'image/svg+xml'; '.png' = 'image/png'; '.jpg' = 'image/jpeg'; '.jpeg' = 'image/jpeg'
-        '.gif' = 'image/gif'; '.webp' = 'image/webp'; '.ico' = 'image/x-icon'; '.woff2' = 'font/woff2'
+        '.gif' = 'image/gif'; '.webp' = 'image/webp'; '.ico' = 'image/x-icon'; '.woff2' = 'font/woff2'; '.ttf' = 'font/ttf'
     }
     $key = $Extension.ToLowerInvariant()
     if ($types.ContainsKey($key)) { return $types[$key] }
@@ -273,7 +273,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.7.0'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.7.1'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
         Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
@@ -374,7 +374,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.7.0-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.7.1-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -478,7 +478,7 @@ function Start-VASRequestLoop {
                 $context = $listener.EndGetContext($pending)
                 $State.LastActivity = [DateTime]::UtcNow
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.7.0'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.7.1'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

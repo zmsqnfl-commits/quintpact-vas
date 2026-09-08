@@ -59,6 +59,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Install Python regression dependencies
+        run: python -m pip install -r tests/requirements-dev.txt
+      - name: Run privacy and font regressions on Windows
+        run: python -m pytest -q tests/test_privacy_regressions.py
       - name: Run PowerShell 5.1 runtime integration
         run: python tests/test_windows_runtime.py
       - name: Build and smoke-test the extracted Windows release

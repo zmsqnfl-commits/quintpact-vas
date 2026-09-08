@@ -39,7 +39,7 @@
   async function exportJson() {
     try {
       const result = await prepare();
-      VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
+      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
       if (global.VASClientDraft) VASClientDraft.clear();
       showStatus('JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.');
     } catch (error) {

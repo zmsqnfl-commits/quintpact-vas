@@ -1,19 +1,8 @@
 (function (global) {
   'use strict';
 
-  function redact(value) {
-    return String(value || '')
-      .replace(/\b(?:password|passwd|secret|credential|api[_ -]?key|access[_ -]?token|authorization)\s*[:=]\s*[^\s,;]+/gi, '[secret]')
-      .replace(/\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}\b/gi, '[secret]')
-      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[contact]')
-      .replace(/\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4}\b/g, '[contact]');
-  }
-
   function clean(value, limit) {
-    return redact(value).replace(/\r\n?/g, '\n')
-      .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ')
-      .replace(/file:\/\/[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:\/])\/(?:Users|home|var|etc|mnt|volume\d*)\/[^\s'"`]+/gi, '[absolute-path]')
-      .trim().slice(0, limit || 2000);
+    return VASAgentContract.clean(value, limit || 2000);
   }
 
   function redactionCount(value) { return String(value || '') === clean(value, 100000) ? 0 : 1; }
@@ -25,7 +14,7 @@
     if (value && typeof value === 'object') {
       const result = {};
       Object.keys(value).slice(0, 500).forEach(function (key) {
-        if (key === '__proto__' || key === 'prototype' || key === 'constructor') return;
+        if (key === '__proto__' || key === 'prototype' || key === 'constructor' || VASAgentContract.sensitiveKey(key)) return;
         result[key] = sanitize(value[key], (depth || 0) + 1);
       });
       return result;
@@ -42,7 +31,7 @@
     const suppliedRag = settings.rag || context && context.rag;
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.0' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.1' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),
@@ -188,7 +177,8 @@
     return folder ? result.replace(folderToken, function () { return folder; }) : result;
   }
 
-  function save(document, fileName) {
+  async function save(document, fileName) {
+    await refreshIntegrity(document);
     const blob = new Blob([JSON.stringify(document, null, 2) + '\n'], { type: 'application/json' });
     const link = documentElement('a');
     link.href = URL.createObjectURL(blob);
