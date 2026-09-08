@@ -5,6 +5,8 @@
   const RECEIPT_KEY = 'vasHandoffReceipts.v1';
   const MAX_RECEIPTS = 20;
   let continuationState = null;
+  const acceptedResults = new Set();
+  function resultKey(result) { return result.handoffId + ":" + result.resultId; }
 
   function readReceipts() {
     if (!global.VASStorage) return [];
@@ -40,6 +42,7 @@
   function verifyResult(result) {
     const current = readReceipts();
     const found = current.find(function (item) { return item && item.handoffId === result.handoffId; });
+    if (acceptedResults.has(resultKey(result))) return { status: 'duplicate', message: '이미 다음 작업에 반영한 결과입니다.' };
     if (!found) return { status: 'unverified', message: '이 기기의 인계 기록을 찾지 못했습니다. 원본 인계가 맞는지 직접 확인해 주세요.' };
     if (found.sourceType !== result.sourceType && !(found.sourceType === 'existing' && result.sourceType === 'registered')) {
       return { status: 'mismatch', message: '인계 작업 종류와 결과의 작업 종류가 다릅니다.' };
@@ -61,11 +64,13 @@
   }
 
   function acceptResult(result, verdict, note) {
+    if (['duplicate', 'mismatch'].includes(verifyResult(result).status)) return null;
     continuationState = {
       context: VASAgentContract.continuation(result, verdict, note),
       workflow: { iteration: Number(result.iteration) + 1, parentResultId: result.resultId, status: 'ready' },
       sourceType: result.sourceType
     };
+    acceptedResults.add(resultKey(result));
     markResult(result);
     return continuationState;
   }

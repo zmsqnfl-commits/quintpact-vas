@@ -12,7 +12,7 @@
   }
 
   function normalizeMode(value) {
-    return value === AUTO_PROFILE || getProfiles()[value] ? value : AUTO_PROFILE;
+    return value === AUTO_PROFILE || Object.hasOwn(getProfiles(), value) ? value : AUTO_PROFILE;
   }
 
   function getSelectedMode() {

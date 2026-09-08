@@ -45,7 +45,7 @@ test('IndexedDB request success followed by transaction abort is a failure', asy
     const database = { transaction(storeName) {
       const transaction = { objectStore() {
         const request = (value, abort) => { const r = { result: value }; setTimeout(() => { if (r.onsuccess) r.onsuccess(); if (abort) transaction.onabort(); else transaction.oncomplete(); }, 0); return r; };
-        return { get: key => request({ value: key === 'consent' }), getAll: () => request([{ id: 'control', timestamp: '2026-09-08' }]), clear: () => request(undefined, true) };
+        return { get: key => request({ value: key === 'consent' }), put: () => request(undefined, false), getAll: () => request([{ id: 'control', timestamp: '2026-09-08' }]), clear: () => request(undefined, true) };
       } }; return transaction;
     } };
     Object.defineProperty(window, 'indexedDB', { configurable: true, value: { open() { const r = { result: database }; setTimeout(() => r.onsuccess(), 0); return r; } } });

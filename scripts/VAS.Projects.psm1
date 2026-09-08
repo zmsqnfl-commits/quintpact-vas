@@ -151,7 +151,7 @@ function Get-VASSafeRagMetadata {
     if ((Get-Item -LiteralPath $path).Length -gt 20971520) { return @() }
     try { $index = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) | ConvertFrom-Json }
     catch { return @() }
-    if ((Get-VASProjectValue $index 'schema' 0) -ne 2) { return @() }
+    if ((Get-VASProjectValue $index 'schema' 0) -ne 3) { return @() }
     $entries = if ($null -ne $index.PSObject.Properties['entries']) { @($index.entries) } else { @() }
     return @($entries | Where-Object { $_.projectId -eq $ProjectId } | Select-Object -First 500 | ForEach-Object {
         [ordered]@{
@@ -191,7 +191,7 @@ function Export-VASProjectHandoff {
     [IO.Directory]::CreateDirectory($content) | Out-Null
     try {
         $summary = [ordered]@{
-            schema = 1; vasVersion = '2.7.3'; projectId = $project.projectId
+            schema = 1; vasVersion = '2.7.4'; projectId = $project.projectId
             name = $project.name; sourceType = $project.sourceType; goal = $project.goal
             stage = $project.stage; exportedAt = [DateTime]::UtcNow.ToString('o')
         }
@@ -235,7 +235,7 @@ function Export-VASProjectHandoff {
         [IO.Compression.ZipFile]::CreateFromDirectory($content, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
         $safeName = ([string]$project.name -replace '[^A-Za-z0-9가-힣._-]', '-').Trim('-')
         if (-not $safeName) { $safeName = 'vas-project' }
-        return [ordered]@{ fileName = $safeName + '-VAS-2.7.3-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
+        return [ordered]@{ fileName = $safeName + '-VAS-2.7.4-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
     } finally {
         if (Test-Path -LiteralPath $temporary -PathType Container) { [IO.Directory]::Delete($temporary, $true) }
     }

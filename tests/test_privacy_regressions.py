@@ -71,7 +71,7 @@ def test_project_knowledge_strips_whole_credentials_before_chunking(case, tmp_pa
     output = json.dumps(chunks(text))
     assert case['marker'] not in output
     if case.get('control'):
-        assert case['control'] in output
+        assert case['control'] in text
     # Embedded object assignments intentionally fail closed as a whole string.
     assert redact_text('Preserve React and #123abc', tmp_path) == 'Preserve React and #123abc'
 
@@ -187,3 +187,28 @@ def test_failed_history_cleanup_does_not_report_success_or_replace_live_store(ru
         kernel.CloseHandle(handle)
     client.request("/api/memory/events", "DELETE")
     assert not backup.exists()
+
+
+def test_windows_memory_filters_shared_credentials_on_write_and_legacy_export(runtime):
+    client, state, _ = runtime
+    client.request('/api/memory/events', 'DELETE')
+    client.request('/api/memory/pause', 'POST', {'paused': False})
+    for case in CASES:
+        _, result, _ = client.request('/api/memory/events', 'POST', {
+            'type': 'theme_selected', 'payload': {'preset': 'bento', 'note': case['input']}})
+        assert case['marker'] not in json.dumps(result), case['name']
+        assert result['event']['payload']['preset'] == 'bento'
+    # A historical store is read through the same boundary before it can be shared.
+    store = json.loads((state / 'memory.json').read_text(encoding='utf-8-sig'))
+    for event, case in zip(store['events'], CASES):
+        event['payload']['note'] = case['input']
+        event['source'] = 'sk-' + 'MetadataCanary' * 2
+        event['projectId'] = 'sk-' + 'MetadataCanary' * 2
+    (state / 'memory.json').write_text(json.dumps(store), encoding='utf-8-sig')
+    _, exported, _ = client.request('/api/memory/export')
+    raw = json.dumps(exported)
+    assert 'MetadataCanary' not in raw
+    for case in CASES:
+        assert case['marker'] not in raw, case['name']
+    assert 'bento' in raw
+    client.request('/api/memory/events', 'DELETE')

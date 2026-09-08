@@ -7,9 +7,20 @@
   const CREDENTIAL_KEY = new RegExp('^' + CREDENTIAL_NAMES + '$', 'i');
   const GAP = String.raw`\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*`;
   const ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + '[:=]' + GAP + '("(?:\\\\.|[^"\\\\])*(?:"|$)|\'(?:\\\\.|[^\'\\\\])*(?:\'|$)|`(?:\\\\.|[^`\\\\])*(?:`|$)|(?:Bearer|Basic)\\s+[^\\s,;]+|[^\\s,;]+)', 'gi');
+  const TRIPLE_ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + "[:=]" + GAP + "(?:[rbuf]{0,2})(\"{3}|'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)", 'gi');
   const SECRET = /(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
 
   function sensitiveKey(key) { return CREDENTIAL_KEY.test(String(key)); }
+
+  const ADJACENT_LITERAL = /^\s*(?:(?:\+|\\)\s*)?(?:[rbuf]{0,2})?["'`]/i;
+  function redactTriples(source) {
+    let ambiguous = false;
+    const safe = source.replace(TRIPLE_ASSIGNMENT, function (match, quote, offset) {
+      if (ADJACENT_LITERAL.test(source.slice(offset + match.length))) ambiguous = true;
+      return '[redacted]';
+    });
+    return ambiguous ? '[redacted]' : safe;
+  }
 
   function redactYamlBlocks(source) {
     const lines = source.split(/\r?\n/), output = [];
@@ -30,7 +41,7 @@
   const CREDENTIAL_VALUE = /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z]+ )*PRIVATE KEY-----|$)|\b(?:Bearer|Basic)\s+[a-z0-9._~+\/=-]{10,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\+[a-z0-9_.-]+)?:\/\/[^\s"'<>`]+/gi;
 
   function redactCredentials(value, depth) {
-    const source = redactYamlBlocks(String(value == null ? '' : value));
+    const source = redactYamlBlocks(redactTriples(String(value == null ? '' : value)));
     const level = depth || 0;
     if (level > 24) return '[redacted]';
     function scrub(item, nested) {
@@ -63,9 +74,9 @@
       } catch (error) { return token; }
     });
     let complex = false;
-    text = text.replace(ASSIGNMENT, function (match, value) {
+    text = text.replace(ASSIGNMENT, function (match, value, offset) {
       // In non-JSON text, an object-valued credential has no safe scalar boundary.
-      if (/^[{\[]/.test(value)) complex = true;
+      if (/^[{\[(]/.test(value) || ADJACENT_LITERAL.test(text.slice(offset + match.length))) complex = true;
       return /^(?:"\[redacted\]"|'\[redacted\]'|\[redacted\])$/.test(value) ? match : '[redacted]';
     });
     return complex ? '[redacted]' : text.replace(CREDENTIAL_VALUE, '[redacted]').replace(SECRET, '[redacted]').replace(ABSOLUTE_PATH, '[absolute-path]');

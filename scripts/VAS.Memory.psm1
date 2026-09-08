@@ -1,10 +1,7 @@
 ﻿Set-StrictMode -Version 2.0
 
 $script:SchemaVersion = 1
-$script:SensitiveKeyPattern = '(?i)(password|passwd|secret|token|credential|database[-_ ]?url|aws[-_ ]?access[-_ ]?key[-_ ]?id|github[-_ ]?pat|api[-_ ]?key|file(name|path|content)?|(^|_)path$)'
-$script:SensitiveValuePattern = '(?i)(bearer\s+[a-z0-9._~-]+|sk-[a-z0-9_-]{12,}|(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis)://\S+|(?:DATABASE_URL|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY)\s*=\s*\S+|(?:AKIA|ASIA)[A-Z0-9]{16}|github_pat_[a-z0-9_]{20,}|gh[pousr]_[a-z0-9]{20,}|AIza[a-z0-9_-]{20,}|xox[baprs]-[a-z0-9-]{10,}|eyJ[a-z0-9_-]{8,}\.eyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|-----BEGIN [A-Z ]+PRIVATE KEY-----)'
-$script:PathValuePattern = '(?i)(?:^|[\s''"(])(?:[a-z]:[\\/]|\\\\|file:/+|/(?:home|users?|var|tmp|etc)/)'
-$script:FileValuePattern = '(?i)(?:^|[\s''"(])[^\\/\r\n\s''"]+\.(?:env|pem|key|pfx|p12|crt|cer|txt|md|json|ya?ml|toml|ini|csv|log|zip|pdf|docx?|xlsx?|pptx?|html?|css|js|tsx?|jsx?|py|ps1|bat|cmd)(?=$|[\s''"),.;:!?])'
+. (Join-Path $PSScriptRoot 'VAS.Memory.Privacy.ps1')
 
 function Get-VASMemoryRoot {
     param([string]$Root)
@@ -145,49 +142,11 @@ function Get-VASProperty {
     return $property.Value
 }
 
-function ConvertTo-VASSafeValue {
-    param($Value, [int]$Depth = 0)
-
-    if ($Depth -gt 8) { return '[depth-limit]' }
-    if ($null -eq $Value) { return $null }
-    if ($Value -is [string]) {
-        $text = $Value
-        if ($text.Length -gt 4000) { $text = $text.Substring(0, 4000) }
-        if ($text -match $script:PathValuePattern -or $text.Trim() -match $script:FileValuePattern) { return '[redacted]' }
-        if ($text -match $script:SensitiveValuePattern) { return '[redacted]' }
-        return $text
-    }
-    if ($Value -is [bool] -or $Value -is [ValueType]) { return $Value }
-    if ($Value -is [Collections.IDictionary]) {
-        $safe = [ordered]@{}
-        foreach ($key in $Value.Keys) {
-            $name = [string]$key
-            if ($name -notmatch $script:SensitiveKeyPattern) {
-                $safe[$name] = ConvertTo-VASSafeValue $Value[$key] ($Depth + 1)
-            }
-        }
-        return $safe
-    }
-    if ($Value -is [Collections.IEnumerable] -and -not ($Value -is [string])) {
-        $items = @()
-        foreach ($item in $Value) { $items += ,(ConvertTo-VASSafeValue $item ($Depth + 1)) }
-        return $items
-    }
-
-    $safeObject = [ordered]@{}
-    foreach ($property in $Value.PSObject.Properties) {
-        if ($property.Name -notmatch $script:SensitiveKeyPattern) {
-            $safeObject[$property.Name] = ConvertTo-VASSafeValue $property.Value ($Depth + 1)
-        }
-    }
-    return $safeObject
-}
-
 function ConvertTo-VASMemoryEvent {
     param($InputObject, [string]$ExistingId)
 
     $type = [string](Get-VASProperty $InputObject 'type' '')
-    if (-not $type -or $type.Length -gt 80 -or $type -notmatch '^[a-zA-Z0-9._-]+$') {
+    if (-not $type -or $type.Length -gt 80 -or $type -notmatch '^[a-zA-Z0-9._-]+$' -or $type -match $script:SensitiveValuePattern) {
         throw '이벤트 type 형식이 올바르지 않습니다.'
     }
     $id = $ExistingId
@@ -201,8 +160,8 @@ function ConvertTo-VASMemoryEvent {
         v = $script:SchemaVersion
         id = $id
         type = $type
-        source = ([string](Get-VASProperty $InputObject 'source' 'vas'))
-        projectId = ([string](Get-VASProperty $InputObject 'projectId' ''))
+        source = ConvertTo-VASSafeMemoryIdentifier (Get-VASProperty $InputObject 'source' 'vas') 'vas'
+        projectId = ConvertTo-VASSafeMemoryIdentifier (Get-VASProperty $InputObject 'projectId' '')
         timestamp = $parsed.ToUniversalTime().ToString('o')
         payload = ConvertTo-VASSafeValue (Get-VASProperty $InputObject 'payload' ([ordered]@{}))
         feedback = ConvertTo-VASSafeValue (Get-VASProperty $InputObject 'feedback' $null)
@@ -232,7 +191,7 @@ function Get-VASMemoryEvents {
     $events = @($store.events)
     if ($ProjectId) { $events = @($events | Where-Object { $_.projectId -eq $ProjectId }) }
     if ($Type) { $events = @($events | Where-Object { $_.type -eq $Type }) }
-    return $events
+    return @($events | ForEach-Object { ConvertTo-VASMemoryEvent $_ ([string]$_.id) })
 }
 
 function Add-VASMemoryEvent {
@@ -314,7 +273,7 @@ function Export-VASMemory {
         version = $script:SchemaVersion
         exportedAt = [DateTime]::UtcNow.ToString('o')
         paused = [bool]$store.paused
-        events = @($store.events)
+        events = @(Get-VASMemoryEvents $Root)
     }
 }
 

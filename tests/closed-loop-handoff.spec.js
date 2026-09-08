@@ -178,3 +178,60 @@ test('blocked storage still allows a handoff without optional review UI', async 
   expect(handoff.context.rag).toEqual({ included: false, items: [] });
   expect(handoff.qualityGate.ragReviewed).toBe(true);
 });
+
+test('late file reads cannot restore rejected input or supersede a newer file', async ({ page }) => {
+  await prepareExisting(page);
+  const handoff = await downloadHandoff(page, '#downloadJson');
+  await openCompatibilityResultImport(page);
+  await page.evaluate(() => {
+    window.readers = [];
+    window.FileReader = class { constructor() { readers.push(this); } readAsText() {} };
+  });
+  await page.locator('#vasResultFile').setInputFiles({ name: 'old.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await page.evaluate(raw => {
+    VASAIResultImport.readText('{invalid');
+    readers[0].result = JSON.stringify(raw); readers[0].onload();
+  }, aiResult(handoff));
+  expect(await page.evaluate(() => VASAIResultImport.current())).toBeNull();
+  await expect(page.locator('#vasResultReview')).toBeHidden();
+  await page.locator('#vasResultFile').setInputFiles({ name: 'second.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await page.locator('#vasResultFile').setInputFiles({ name: 'third.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await page.evaluate(raw => {
+    readers[2].result = JSON.stringify(raw); readers[2].onload();
+    readers[1].result = '{invalid'; readers[1].onload();
+  }, aiResult(handoff));
+  await expect(page.locator('#vasResultReview')).toBeVisible();
+  expect(await page.evaluate(() => VASAIResultImport.current().resultId)).toBe('r_1234567890abcdef');
+});
+
+for (const blocked of [false, true]) {
+  test('manual result acceptance is once per session with ' + (blocked ? 'blocked storage' : 'missing receipt'), async ({ page }) => {
+    if (blocked) await page.addInitScript(() => {
+      Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw Error('blocked'); } });
+    });
+    await prepareExisting(page);
+    const handoff = await downloadHandoff(page, '#downloadJson');
+    await page.evaluate(() => VASHandoffWorkflow.clearReceipts());
+    await openCompatibilityResultImport(page);
+    const raw = aiResult(handoff);
+    const result = await page.evaluate(value => {
+      let accepted = 0;
+      VASAIResultImport.init({ sourceType: 'existing', onAccepted: () => { accepted += 1; } });
+      VASAIResultImport.readText(JSON.stringify(value));
+      document.getElementById('vasResultManual').checked = true;
+      document.getElementById('vasResultAccept').click();
+      document.getElementById('vasResultAccept').click();
+      return accepted;
+    }, raw);
+    expect(result).toBe(1);
+    await page.evaluate(value => {
+      document.querySelector('[data-result-close]').click();
+      VASAIResultImport.open();
+      VASAIResultImport.readText(JSON.stringify({ ...value, resultId: 'r_fedcba0987654321' }));
+    }, raw);
+    // Deliberately cross the old close timer's deadline to verify cancellation.
+    await page.waitForTimeout(650);
+    await expect(page.locator('.result-dialog')).toHaveAttribute('open', '');
+    await expect(page.locator('#vasResultReview')).toBeVisible();
+  });
+}

@@ -5,6 +5,7 @@
   const mounts = [];
   const pendingConfirmations = new Map();
   let lastConfirmation = '';
+  let confirmationEpoch = 0;
 
   function title(key) { return PRESETS[key]?.label || key.charAt(0).toUpperCase() + key.slice(1); }
   function description(key) {
@@ -147,7 +148,7 @@
   global.addEventListener('focus', refresh);
   global.addEventListener('pageshow', refresh);
   global.addEventListener('vas-memory-change', function (event) {
-    if (['clear', 'delete', 'consent'].includes(event.detail.action)) lastConfirmation = '';
+    if (['clear', 'delete', 'consent'].includes(event.detail.action)) { lastConfirmation = ''; confirmationEpoch += 1; }
     mounts.forEach(refreshRecommendation);
   });
   global.addEventListener('vas-theme-state', function () {
@@ -158,11 +159,12 @@
     const state = VASThemeState.get();
     const key = state.basePreset || state.preset;
     if (!VAS_PRESET_KEYS.includes(key)) return;
-    const identity = JSON.stringify([key, state.tasteProfileMode, state.tokens]);
+    const epoch = confirmationEpoch;
+    const identity = JSON.stringify([epoch, key, state.tasteProfileMode, state.tokens]);
     if (identity === lastConfirmation) return;
     if (pendingConfirmations.has(identity)) return pendingConfirmations.get(identity);
     const pending = VASPersonalization.record({ type: 'theme_selected', source: 'setup-design', payload: { preset: key, confirmed: true } })
-      .then(function (recorded) { if (recorded) lastConfirmation = identity; return recorded; })
+      .then(function (recorded) { if (recorded && epoch === confirmationEpoch) lastConfirmation = identity; return recorded; })
       .finally(function () { pendingConfirmations.delete(identity); });
     pendingConfirmations.set(identity, pending);
     return pending;

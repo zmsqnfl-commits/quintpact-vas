@@ -1,4 +1,4 @@
-# VAS 2.7.3
+# VAS 2.7.4
 
 ![VAS 2.7.0 design collection cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
 
@@ -6,11 +6,11 @@
 
 VAS (Vibecoding Agent System) is a local tool for preparing a project brief, choosing a visual direction, and handing complete instructions to a coding AI. Describe the work, compare real design previews, refine the details, and copy a prompt into your coding tool with the actual project folder open.
 
-**[Download VAS 2.7.3](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.3)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.3)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.3)** · **[Read the release notes](docs/releases/2.7.3.md)**
+**[Download VAS 2.7.4](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.4)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.4)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.4)** · **[Read the release notes](docs/releases/2.7.4.md)**
 
-## Connected workflow and privacy fixes in 2.7.3
+## Connected workflow recheck in 2.7.4
 
-This patch verifies the complete setup-to-handoff flow on the Windows runtime. It makes memory failures visible, resets designs across open tabs, recommends only confirmed designs, preserves long constraints, and removes attachment names and additional credential formats from outgoing instructions. The optional legacy export and result-review paths receive the same privacy and state checks. See the [patch notes](docs/releases/2.7.3.md) for verification and upgrade details.
+This patch closes additional credential leaks in multi-line and concatenated strings, nested JSON, and work-memory exports. It also prevents stale file reads, duplicate result acceptance, and delayed design confirmations from corrupting the connected workflow. Historical knowledge indexes require explicit regeneration; recommendations are derived from currently filtered records. See the [patch notes](docs/releases/2.7.4.md) for verification and upgrade details.
 
 ## What VAS helps you do
 
@@ -42,7 +42,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four sample websites you can actually explore
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.3). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.4). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ See the [handoff guide](docs/HANDOFF.md) and [agent workflow](.agents/HANDOFF-WO
 
 ## Morrow: built through the VAS workflow
 
-[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.3) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
+[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.4) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
 
 You can create and edit tasks, set categories and due dates, combine search and status filters, mark work complete, archive and restore tasks, undo the latest deletion, and export records as JSON. Data persists in the browser, with empty states, input validation, and storage-error guidance.
 
@@ -91,16 +91,16 @@ The [verification record](docs/verification/README.md) includes the request, ori
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. The packaged distribution contains the local launcher, Design Studio, handoff tools, sample sites, and Morrow.
 
-1. Open the [v2.7.3 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.3) and download `VAS-2.7.3-windows.zip`.
+1. Open the [v2.7.4 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.4) and download `VAS-2.7.4-windows.zip`.
 2. Extract the entire archive into a new folder.
 3. Double-click `Run-VAS-System.bat`.
 4. Choose a new project or an existing project, enter the request, and select a design.
 5. Choose whether VAS may remember confirmed design choices, then review and copy the prompt.
 6. Open the actual project folder in your coding tool and paste the prompt.
 
-The separate `VAS-Client-Form-2.7.3.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+The separate `VAS-Client-Form-2.7.4.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
 
-When upgrading, keep your previous installation folder and user data. Version 2.7.3 retains the handoff v3 and result v1 formats and existing design storage keys. The browser demos let you explore the designs and Morrow; the Windows ZIP provides the complete local workflow.
+When upgrading, keep your previous installation folder and user data. Version 2.7.4 retains the handoff v3 and result v1 formats and existing design storage keys. The browser demos let you explore the designs and Morrow; the Windows ZIP provides the complete local workflow.
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -113,9 +113,9 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 ## Verification and development
 
-Version **2.7.3** adds connected Windows browser tests for deletion failure and retry, cross-tab reset, desktop/mobile project submission, and legacy ZIP export. Shared synthetic credential fixtures exercise the browser and Python handoff boundaries. The [release notes](docs/releases/2.7.3.md) record the complete validation results and limits; host capabilities still determine how agent instructions execute.
+Version **2.7.4** extends the connected Windows and browser checks with delayed file reads, storage failure, manual-result deduplication, and historical-memory export. Shared synthetic credential fixtures exercise browser, Python, Windows memory, and project-knowledge boundaries. The [release notes](docs/releases/2.7.4.md) record the complete validation results and limits; host capabilities still determine how agent instructions execute.
 
-See the [release notes](docs/releases/2.7.3.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
+See the [release notes](docs/releases/2.7.4.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
 
 For source development, install the Node and Python test dependencies and Chromium, then run the checks from the repository directory:
 

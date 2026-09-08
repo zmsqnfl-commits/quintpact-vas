@@ -12,7 +12,7 @@
   ]);
   const TYPE_SET = new Set(EVENT_TYPES);
   const BLOCKED_KEY = /(pass(word|phrase)?|secret|credential|api.?key|auth|token|database.?url|db.?pass|aws.?access|file|path|folder|directory|attachment|upload|(project|client).?name|contact|phone|e.?mail)/i;
-  const SECRET_VALUE = /(?:\b(?:password|passwd|secret|api[_ -]?key|authorization|client[_ -]?secret|database[_ -]?url|aws[_ -]?(?:access[_ -]?key[_ -]?id|secret[_ -]?access[_ -]?key))\s*[:=]|\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}|bearer\s+[a-z0-9._~-]{12,}|\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|mssql):\/\/\S+)/i;
+  const SECRET_VALUE = new RegExp("(?:\\b(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)\\b[\"']?\\s*(?:(?:/\\*[\\s\\S]*?\\*/|//[^\\r\\n]*)\\s*)*[:=]|(?:\\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\\b(?:AKIA|ASIA)[A-Z0-9]{16}|\\b(?:Bearer|Basic)\\s+[a-z0-9._~+/=-]{10,}|\\beyJ[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}\\.[a-z0-9_-]{8,}|-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----|\\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\\+[a-z0-9_.-]+)?://\\S+|\\b[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|\\b(?:\\+?82[- ]?0?1[016789]|01[016789])[- ]?\\d{3,4}[- ]?\\d{4}))", 'i');
   const PATH_VALUE = /(?:^|[\s"'(])(?:[a-z]:[\\/]|\\\\|\/(?:users|home|etc|var|tmp|mnt|volumes)\/|\.{1,2}[\\/])|[\\/][\w .-]+\.[a-z0-9]{1,8}(?:$|[\s"',)])/i;
   const FILE_VALUE = /(?:^|[\s"'(])[^<>:"/\\|?*\r\n]{1,100}\.[a-z0-9]{1,8}(?:$|[\s"',)])/i;
   let activeAdapter = null;
@@ -189,15 +189,23 @@
   }
   function safeIdentifier(value, fallbackValue) {
     const text = String(value == null ? '' : value).trim();
-    return /^[a-z0-9_-]{1,64}$/i.test(text) ? text : fallbackValue;
+    return /^[a-z0-9_-]{1,64}$/i.test(text) && !SECRET_VALUE.test(text) ? text : fallbackValue;
+  }
+  function privateText(value) {
+    let decoded = String(value);
+    for (let i = 0; i < 4; i += 1) {
+      const next = decoded.replace(/"(?:\\.|[^"\\])*"/g, function (token) { try { return ' ' + JSON.parse(token) + ' '; } catch (error) { return token; } });
+      if (next === decoded) break; if (i === 3) return true;
+      decoded = next;
+    }
+    return SECRET_VALUE.test(decoded) || PATH_VALUE.test(decoded) || FILE_VALUE.test(decoded);
   }
   function sanitizeString(value) {
-    const text = String(value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!text || SECRET_VALUE.test(text) || PATH_VALUE.test(text) || FILE_VALUE.test(text)) return undefined;
-    return text.slice(0, 500);
+    if (privateText(value)) return undefined;
+    return String(value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500) || undefined;
   }
   function sanitizeValue(value, key, depth) {
-    if (depth > 5 || (key && BLOCKED_KEY.test(key))) return undefined;
+    if (depth > 5 || (key && (BLOCKED_KEY.test(key) || SECRET_VALUE.test(key + '=')))) return undefined;
     if (typeof value === 'string') return sanitizeString(value);
     if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
     if (typeof value === 'boolean' || value === null) return value;
@@ -262,10 +270,9 @@
     const matches = String(value).toLowerCase().match(/[가-힣]{2,}|[a-z0-9]{2,}/g) || [];
     return Array.from(new Set(matches)).slice(0, 80);
   }
-  async function recomputeProfile() {
-    const events = await call('list');
+  function profileFor(events) {
     const scores = new Map();
-    const counts = {};
+    const counts = Object.create(null);
     events.forEach(function (event) {
       counts[event.type] = (counts[event.type] || 0) + 1;
       const strings = [];
@@ -277,9 +284,7 @@
     const terms = Array.from(scores.entries()).filter(function (row) { return row[1] > 0; })
       .sort(function (left, right) { return right[1] - left[1] || left[0].localeCompare(right[0]); })
       .slice(0, 20).map(function (row) { return row[0]; });
-    const profile = { schema: SCHEMA, terms: terms, eventCounts: counts };
-    await call('setMeta', 'profile', profile);
-    return profile;
+    return { schema: SCHEMA, terms: terms, eventCounts: counts };
   }
   async function consent(enabled) {
     await init();
@@ -317,14 +322,15 @@
     if (!event) return null;
     const stored = await call('put', event);
     if (!stored) return null;
-    await recomputeProfile();
     changed('record');
     return stored;
   }
 
   async function list(filter) {
     const settings = filter || {};
-    let events = await call('list');
+    let events = (await call('list')).map(function (event) {
+      return { v: SCHEMA, id: safeIdentifier(event.id, ''), type: TYPE_SET.has(event.type) ? event.type : 'navigation', source: safeIdentifier(event.source, 'ui'), projectId: safeIdentifier(event.projectId, null), timestamp: new Date(Number.isFinite(Date.parse(event.timestamp)) ? Date.parse(event.timestamp) : 0).toISOString(), payload: sanitizeValue(event.payload, '', 0) || {}, feedback: normalizeFeedback(event.feedback) };
+    });
     if (settings.type) events = events.filter(function (event) { return event.type === settings.type; });
     if (settings.projectId) events = events.filter(function (event) { return event.projectId === settings.projectId; });
     events.sort(function (a, b) {
@@ -336,15 +342,15 @@
   }
 
   async function remove(id) {
+    await call('setMeta', 'profile', null);
     await call('remove', safeIdentifier(id, ''));
-    await recomputeProfile();
     changed('delete');
     return true;
   }
 
   async function clear() {
+    await call('setMeta', 'profile', null);
     await call('clear');
-    await recomputeProfile();
     changed('clear');
     return true;
   }
@@ -365,6 +371,7 @@
     }
     if (!data || data.schema !== SCHEMA || !Array.isArray(data.events)) return 0;
     const mode = options && options.replace === true ? 'replace' : 'merge';
+    if (mode === 'replace') await call('setMeta', 'profile', null);
     const safeEvents = [];
     let imported = 0;
     for (const raw of data.events) {
@@ -381,7 +388,6 @@
       if (mode === 'replace') await call('clear');
       for (const event of safeEvents) await call('put', event);
     }
-    await recomputeProfile();
     changed('import');
     return imported;
   }
@@ -445,7 +451,7 @@
       memory.forEach(function (event) { collectStrings(event.payload, values); });
       profile = { terms: profileTokens(values.join(' ')).slice(0, 20) };
     } else if (consentState === true) {
-      profile = await call('getMeta', 'profile') || profile;
+      profile = profileFor(memory);
     }
     const settings = Object.assign({}, options || {}, {
       memory: memory,

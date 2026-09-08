@@ -7,6 +7,8 @@
   let options = {};
   let current = null;
   let verification = null;
+  let inputRevision = 0;
+  let closeTimer = null;
 
   function node(id) { return dialog.querySelector('#' + id); }
   function setStatus(message, error) {
@@ -22,6 +24,7 @@
 
   function open() {
     if (!dialog) return;
+    global.clearTimeout(closeTimer);
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
     updateMemoryOption();
     node('vasResultFileButton').focus();
@@ -93,6 +96,8 @@
   }
 
   function readText(text) {
+    inputRevision += 1;
+    global.clearTimeout(closeTimer);
     current = null;
     verification = null;
     node('vasResultReview').hidden = true;
@@ -110,13 +115,15 @@
   }
 
   function readFile(file) {
+    const revision = ++inputRevision;
+    global.clearTimeout(closeTimer);
     current = null;
     verification = null;
     node('vasResultReview').hidden = true;
     if (file.size > MAX_BYTES) { setStatus('결과 JSON은 256KiB보다 작아야 합니다.', true); return; }
     const reader = new FileReader();
-    reader.onload = function () { readText(reader.result); };
-    reader.onerror = function () { setStatus('결과 파일을 읽지 못했습니다.', true); };
+    reader.onload = function () { if (revision === inputRevision) readText(reader.result); };
+    reader.onerror = function () { if (revision === inputRevision) setStatus('결과 파일을 읽지 못했습니다.', true); };
     reader.readAsText(file, 'utf-8');
   }
 
@@ -134,6 +141,7 @@
     if (verdict === 'needs-revision' && !correction) { setStatus('수정이 필요한 내용을 적어주세요.', true); node('vasResultCorrection').focus(); return; }
     delete current.__redactions;
     const state = VASHandoffWorkflow.acceptResult(current, verdict, correction);
+    if (!state) { setStatus('이미 반영했거나 연결할 수 없는 결과입니다.', true); return; }
     if (node('vasResultRemember').checked && global.VASPersonalization) {
       VASPersonalization.record({
         type: 'workflow_completed', source: 'ai-result',
@@ -142,7 +150,7 @@
     }
     if (typeof options.onAccepted === 'function') options.onAccepted(state, current);
     setStatus('이 결과를 다음 작업에 연결했습니다. 반복 번호는 ' + state.workflow.iteration + '입니다.');
-    global.setTimeout(close, 500);
+    closeTimer = global.setTimeout(close, 500);
   }
 
   function init(settings) {

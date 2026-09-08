@@ -28,7 +28,7 @@ function Get-VASHandoffContext {
     $design = Read-VASHandoffJson (Join-Path $path 'design-tokens.json') 262144
     $ragItems = @()
     $knowledge = Read-VASHandoffJson (Join-Path $Root 'workspace\.vas\project-knowledge.json') 20971520
-    if ([bool](Get-VASHandoffValue $Project 'indexEnabled' (Get-VASHandoffValue $Project 'createIndex' $false)) -and (Get-VASHandoffValue $knowledge 'schema' 0) -eq 2) {
+    if ([bool](Get-VASHandoffValue $Project 'indexEnabled' (Get-VASHandoffValue $Project 'createIndex' $false)) -and (Get-VASHandoffValue $knowledge 'schema' 0) -eq 3) {
         $entries = Get-VASHandoffValue $knowledge 'entries' @()
         $ragItems = @($entries | Where-Object { [string](Get-VASHandoffValue $_ 'projectId' '') -eq [string]$Project.projectId } | Select-Object -First 5 | ForEach-Object {
             [ordered]@{

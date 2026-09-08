@@ -23,6 +23,7 @@ CREDENTIAL_NAMES = r"(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphr
 CREDENTIAL_KEY = re.compile(rf"^{CREDENTIAL_NAMES}$", re.I)
 GAP = r"\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*"
 ASSIGNMENT = re.compile(rf"""\b{CREDENTIAL_NAMES}\b["']?{GAP}[:=]{GAP}("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|`(?:\\.|[^`\\])*(?:`|$)|(?:Bearer|Basic)\s+[^\s,;]+|[^\s,;]+)""", re.I)
+TRIPLE_ASSIGNMENT = re.compile(r"\b" + CREDENTIAL_NAMES + r"\b[\"']?" + GAP + "[:=]" + GAP + '(?:[rbuf]{0,2})("{3}|\'{3})(?:\\\\[\\s\\S]|(?!\\1)[^\\\\])*(?:\\1|\\\\?$)', re.I)
 JSON_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
 SECRET = re.compile(
     r"(?i)(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|"
@@ -60,8 +61,22 @@ def redact_yaml_blocks(source: str) -> str:
     return '\n'.join(output)
 
 
+ADJACENT_LITERAL = re.compile(r"\s*(?:(?:\+|\\)\s*)?(?:[rbuf]{0,2})?[\"'`]", re.I)
+
+
+def redact_triples(source: str) -> str:
+    ambiguous = False
+    def replace(match: re.Match[str]) -> str:
+        nonlocal ambiguous
+        if ADJACENT_LITERAL.match(source[match.end():]):
+            ambiguous = True
+        return "[redacted]"
+    safe = TRIPLE_ASSIGNMENT.sub(replace, source)
+    return "[redacted]" if ambiguous else safe
+
+
 def redact_credentials(value: Any, depth: int = 0) -> str:
-    source = redact_yaml_blocks(str(value if value is not None else ""))
+    source = redact_yaml_blocks(redact_triples(str(value if value is not None else "")))
     if depth > 24:
         return "[redacted]"
 
@@ -100,7 +115,7 @@ def redact_credentials(value: Any, depth: int = 0) -> str:
 
     def assignment(match: re.Match[str]) -> str:
         nonlocal complex_value
-        if match.group(1).startswith(("{", "[")):
+        if match.group(1).startswith(("{", "[", "(")) or ADJACENT_LITERAL.match(text[match.end():]):
             complex_value = True
         return match.group() if match.group(1).strip("\"'") == "[redacted]" else "[redacted]"
 

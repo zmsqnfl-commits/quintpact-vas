@@ -273,7 +273,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.7.3'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.7.4'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
         Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
@@ -374,7 +374,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.7.3-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.7.4-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -392,7 +392,7 @@ function Invoke-VASApiRequest {
             if ((Get-Item -LiteralPath $knowledgePath).Length -gt 20971520) { Write-VASError $Context 413 '지식 색인이 너무 큽니다.'; return }
             try {
                 $knowledge = [IO.File]::ReadAllText($knowledgePath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-                if ((Get-VASBodyProperty $knowledge 'schema' 0) -ne 2) { Write-VASResponse $Context 200 ([ordered]@{ entries = @(); warning = 'knowledge_rebuild_required' }); return }
+                if ((Get-VASBodyProperty $knowledge 'schema' 0) -ne 3) { Write-VASResponse $Context 200 ([ordered]@{ entries = @(); warning = 'knowledge_rebuild_required' }); return }
                 if ($null -ne $knowledge.PSObject.Properties['entries']) { $entries = @($knowledge.entries | Where-Object { $_.projectId -eq $projectId }) }
             } catch { Write-VASError $Context 500 '프로젝트 지식 색인을 읽을 수 없습니다.'; return }
         }
@@ -479,7 +479,7 @@ function Start-VASRequestLoop {
                 $context = $listener.EndGetContext($pending)
                 $State.LastActivity = [DateTime]::UtcNow
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.7.3'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.7.4'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

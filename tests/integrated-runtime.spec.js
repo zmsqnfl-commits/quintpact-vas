@@ -121,7 +121,7 @@ test('server rejects old knowledge indexes and compatibility ZIP strips credenti
   fs.writeFileSync(path.join(registry, 'projects.json'), JSON.stringify({ version: 2, projects: [{ projectId: 'synthetic', path: project, name: 'demo', sourceType: 'new', goal: 'manage', stage: 'ready', createIndex: true }] }));
   fs.writeFileSync(path.join(project, 'rag-context.json'), '{"request":"Preserve React","password":"LegacyPasswordCanary"}');
   fs.writeFileSync(path.join(project, 'design-tokens.json'), '{"colors":{"primary":"#123abc"},"AWS_SECRET_ACCESS_KEY":"LegacyAwsCanary"}');
-  fs.writeFileSync(path.join(registry, 'project-knowledge.json'), JSON.stringify({ schema: 1, entries: [{ projectId: 'synthetic', text: '[redacted] OldTrailingSecretCanary' }] }));
+  fs.writeFileSync(path.join(registry, 'project-knowledge.json'), JSON.stringify({ schema: 2, entries: [{ projectId: 'synthetic', text: '[redacted] OldTrailingSecretCanary' }] }));
   await open(page);
   const old = await page.evaluate(() => VASRuntime.request('/api/knowledge/projects?projectId=synthetic'));
   expect(old.entries).toEqual([]); expect(old.warning).toBe('knowledge_rebuild_required');

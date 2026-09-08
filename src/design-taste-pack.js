@@ -63,13 +63,13 @@
   }
 
   function getTasteProfileKey(presetKey, preset, overrideProfileKey) {
-    if (overrideProfileKey && TASTE_PROFILES[overrideProfileKey]) {
+    if (overrideProfileKey && Object.hasOwn(TASTE_PROFILES, overrideProfileKey)) {
       return overrideProfileKey;
     }
-    if (preset && preset.tasteProfile && TASTE_PROFILES[preset.tasteProfile]) {
+    if (preset && preset.tasteProfile && Object.hasOwn(TASTE_PROFILES, preset.tasteProfile)) {
       return preset.tasteProfile;
     }
-    return PRESET_TASTE_PROFILE_MAP[presetKey] || DEFAULT_TASTE_PROFILE;
+    return Object.hasOwn(PRESET_TASTE_PROFILE_MAP, presetKey) ? PRESET_TASTE_PROFILE_MAP[presetKey] : DEFAULT_TASTE_PROFILE;
   }
 
   function composeAgentPrompt(presetKey, preset, overrideProfileKey, tokens) {
