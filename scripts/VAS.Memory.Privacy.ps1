@@ -13,6 +13,7 @@ function Test-VASPrivateText {
         $decoded = $next
     }
     if ($decoded -match $script:PathValuePattern -or $decoded.Trim() -match $script:FileValuePattern) { return $true }
+    if ($decoded -match '(?i)\b[a-z][a-z0-9+.-]*://[^\s/\\"<>`?#]+@') { return $true }
     $xmlLabels = [regex]::Replace($decoded, '<(?:[^\s<>/=:]+:)?([a-z0-9_-]+)(?=[\s/>])', ' $1=', [Text.RegularExpressions.RegexOptions]::IgnoreCase)
     $indexedLabels = [regex]::Replace($decoded, '["''`]?\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*\]', '=')
     if ($indexedLabels -match $script:SensitiveValuePattern -or $xmlLabels -match $script:SensitiveValuePattern) { return $true }

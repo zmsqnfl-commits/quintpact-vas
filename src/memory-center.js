@@ -82,6 +82,16 @@
   document.getElementById('togglePause').addEventListener('click', function () { run(async function () { await VASPersonalization.pause(!paused); await refresh(); }); });
   document.getElementById('deleteAll').addEventListener('click', function () { run(async function () { if (confirm('저장된 사용 기록을 모두 지울까요?')) { await VASPersonalization.clear(); await refresh(); } }); });
   document.getElementById('exportMemory').addEventListener('click', function () { run(async function () { download('vas-personalization-memory.json', await VASPersonalization.export()); }); });
-  document.getElementById('importMemory').addEventListener('change', function (event) { run(async function () { const file = event.target.files[0]; if (!file) return; const count = await VASPersonalization.import(await file.text()); alert(count + '건을 가져왔습니다.'); await refresh(); }); });
+  document.getElementById('importMemory').addEventListener('change', function (event) {
+    const input = event.target, file = input.files[0];
+    if (!file) return;
+    input.disabled = true;
+    run(async function () {
+      try {
+        const count = await VASPersonalization.import(await file.text());
+        alert(count + '건을 가져왔습니다.'); await refresh();
+      } finally { input.value = ''; input.disabled = false; }
+    });
+  });
   run(refresh);
 })();

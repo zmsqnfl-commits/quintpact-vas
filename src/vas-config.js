@@ -3,7 +3,7 @@
   'use strict';
 
   global.VASConfig = Object.freeze({
-    version: '2.7.5',
+    version: '2.7.6',
     themeStateSchema: 1,
     personalizationSchema: 1,
     knowledgeSchema: 1,

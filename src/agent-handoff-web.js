@@ -31,7 +31,7 @@
     const suppliedRag = settings.rag || context && context.rag;
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.5' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.6' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),

@@ -40,9 +40,11 @@
     try {
       const result = await prepare();
       await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
-      if (global.VASClientDraft) VASClientDraft.clear();
-      showStatus('JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.');
-      try { await VASSetupDesign.confirm(); } catch (error) { showStatus('JSON을 저장했습니다. 작업 기억은 저장하지 못했습니다.'); }
+      const draftFailed = global.VASClientDraft && VASClientDraft.clear() === false;
+      let message = 'JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.';
+      if (draftFailed) message += ' 브라우저 초안은 삭제하지 못했습니다.';
+      showStatus(message);
+      try { await VASSetupDesign.confirm(); } catch (error) { showStatus(message + ' 작업 기억은 저장하지 못했습니다.'); }
     } catch (error) {
       showStatus(error && error.message ? error.message : 'JSON을 만들지 못했습니다.');
     }

@@ -14,6 +14,7 @@ test('memory filters current and historical values before export and recommendat
     window.VASRagLite = { tokenize: value => value.toLowerCase().match(/[a-z0-9]{2,}/g) || [], recommend: (query, settings) => settings };
   }, cases);
   await page.addScriptTag({ path: script('memory-identity.js') });
+  await page.addScriptTag({ path: script('memory-browser-adapter.js') });
   await page.addScriptTag({ path: script('personalization-store.js') });
   const result = await page.evaluate(async input => {
     const legacy = await VASPersonalization.export();
@@ -39,6 +40,7 @@ test('profile cache failure cannot turn a committed event into a failed write', 
     addEventListener('vas-memory-change', event => changes.push(event.detail.action));
   });
   await page.addScriptTag({ path: script('memory-identity.js') });
+  await page.addScriptTag({ path: script('memory-browser-adapter.js') });
   await page.addScriptTag({ path: script('personalization-store.js') });
   const result = await page.evaluate(async () => {
     const saved = await VASPersonalization.record('theme_selected', { preset: 'bento' });
@@ -61,6 +63,7 @@ test('private memory property names are removed on record, import and historical
       put: async event => { rows.push(event); return event; }, remove: async () => {}, clear: async () => { rows.length = 0; } };
   }, privateKeys);
   await page.addScriptTag({ path: script('memory-identity.js') });
+  await page.addScriptTag({ path: script('memory-browser-adapter.js') });
   await page.addScriptTag({ path: script('personalization-store.js') });
   const outputs = await page.evaluate(async () => {
     const old = await VASPersonalization.export();
@@ -96,6 +99,7 @@ test('legacy Windows envelope merges UUID and fallback identities without losing
 test('fallback browser events merge with Windows identities without Web Crypto', async ({ page }) => {
   await page.evaluate(() => { Object.defineProperty(window, 'crypto', { value: undefined }); });
   await page.addScriptTag({ path: script('memory-identity.js') });
+  await page.addScriptTag({ path: script('memory-browser-adapter.js') });
   await page.addScriptTag({ path: script('personalization-store.js') });
   const event = await page.evaluate(async () => {
     await VASPersonalization.consent(true);

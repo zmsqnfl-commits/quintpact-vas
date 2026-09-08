@@ -6,6 +6,15 @@
   const key = 'vasClientDraft.v1.' + mode;
   const enabledKey = 'vasClientDraftEnabled.v1.' + mode;
   const form = document.getElementById('projectForm');
+  const feedback = document.createElement('p');
+  feedback.id = 'draftFeedback'; feedback.setAttribute('role', 'status'); feedback.hidden = true;
+  document.querySelector('.draft-policy').insertAdjacentElement('afterend', feedback);
+  const errors = {};
+  function report(operation, message) {
+    errors[operation] = message || '';
+    feedback.textContent = Object.values(errors).filter(Boolean).join(' ');
+    feedback.hidden = !feedback.textContent;
+  }
   let timer = null;
   let suspended = false;
   let enabled = VASStorage.readText(enabledKey, '1') !== '0';
@@ -36,7 +45,7 @@
       language: global.currentLang || 'ko',
       fields: collectFields()
     };
-    VASStorage.writeJson(key, pending);
+    report('save', VASStorage.writeJson(key, pending) ? '' : '초안을 자동 저장하지 못했습니다. 브라우저 저장소 접근을 확인해 주세요.');
   }
 
   function schedule() {
@@ -75,14 +84,21 @@
 
   function clear() {
     suspended = true;
+    global.clearTimeout(timer);
+    if (!VASStorage.remove(key)) {
+      report('delete', '초안을 삭제하지 못했습니다. 브라우저 저장소 접근을 확인한 뒤 다시 삭제해 주세요.');
+      showNotice();
+      return false;
+    }
     pending = null;
-    VASStorage.remove(key);
+    document.getElementById('draftNotice').hidden = true;
+    report('delete', '');
+    report('save', '');
+    return true;
   }
 
   function discard() {
-    clear();
-    suspended = false;
-    document.getElementById('draftNotice').hidden = true;
+    if (clear()) suspended = false;
   }
 
   function renderPolicy() {
@@ -96,8 +112,13 @@
   }
 
   function toggle() {
-    enabled = !enabled;
-    VASStorage.writeText(enabledKey, enabled ? '1' : '0');
+    const next = !enabled;
+    if (!VASStorage.writeText(enabledKey, next ? '1' : '0')) {
+      report('policy', '자동 저장 설정을 변경하지 못했습니다. 브라우저 저장소 접근을 확인해 주세요.');
+      return;
+    }
+    report('policy', '');
+    enabled = next;
     if (enabled) schedule();
     else clear();
     renderPolicy();

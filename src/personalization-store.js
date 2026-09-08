@@ -28,76 +28,9 @@
     if (value === undefined) return undefined;
     return JSON.parse(JSON.stringify(value));
   }
-  function memoryAdapter() {
-    const events = new Map();
-    const metadata = new Map();
-    return {
-      init: async function () {},
-      list: async function () { return Array.from(events.values()).map(clone); },
-      put: async function (event) { events.set(event.id, clone(event)); return clone(event); },
-      remove: async function (id) { events.delete(id); },
-      clear: async function () { events.clear(); },
-      getMeta: async function (key) { return clone(metadata.get(key)); },
-      setMeta: async function (key, value) { metadata.set(key, clone(value)); }
-    };
-  }
-  function idbAdapter() {
-    try { if (!global.indexedDB) return null; } catch (error) { return null; }
-    let databasePromise;
-    function open() {
-      if (databasePromise) return databasePromise;
-      databasePromise = new Promise(function (resolve, reject) {
-        let request;
-        try {
-          request = global.indexedDB.open(DB_NAME, 1);
-        } catch (error) {
-          reject(error);
-          return;
-        }
-        request.onupgradeneeded = function () {
-          const database = request.result;
-          if (!database.objectStoreNames.contains('events')) {
-            database.createObjectStore('events', { keyPath: 'id' });
-          }
-          if (!database.objectStoreNames.contains('meta')) {
-            database.createObjectStore('meta', { keyPath: 'key' });
-          }
-        };
-        request.onsuccess = function () { resolve(request.result); };
-        request.onerror = function () { reject(request.error || new Error('IndexedDB open failed')); };
-        request.onblocked = function () { reject(new Error('IndexedDB blocked')); };
-      });
-      return databasePromise;
-    }
-    function request(storeName, mode, operation) {
-      return open().then(function (database) {
-        return new Promise(function (resolve, reject) {
-          const transaction = database.transaction(storeName, mode);
-          const result = operation(transaction.objectStore(storeName));
-          transaction.oncomplete = function () { resolve(result.result); };
-          result.onerror = function () { reject(result.error || new Error('IndexedDB request failed')); };
-          transaction.onabort = function () { reject(transaction.error || new Error('IndexedDB transaction aborted')); };
-        });
-      });
-    }
-    return {
-      init: open,
-      list: function () { return request('events', 'readonly', function (store) { return store.getAll(); }); },
-      put: function (event) {
-        return request('events', 'readwrite', function (store) { return store.put(event); })
-          .then(function () { return clone(event); });
-      },
-      remove: function (id) { return request('events', 'readwrite', function (store) { return store.delete(id); }); },
-      clear: function () { return request('events', 'readwrite', function (store) { return store.clear(); }); },
-      getMeta: function (key) {
-        return request('meta', 'readonly', function (store) { return store.get(key); })
-          .then(function (row) { return row ? row.value : undefined; });
-      },
-      setMeta: function (key, value) {
-        return request('meta', 'readwrite', function (store) { return store.put({ key: key, value: value }); });
-      }
-    };
-  }
+  const adapters = global.VASMemoryAdapters || (typeof require === 'function' ? require('./memory-browser-adapter.js') : null);
+  function memoryAdapter() { return adapters.temporary(); }
+  function idbAdapter() { return adapters.indexedDB(DB_NAME); }
   function runtimeAdapter() {
     const runtime = global.VASRuntime;
     if (!runtime || typeof runtime.isAvailable !== 'function' || !runtime.isAvailable()) return null;
@@ -199,6 +132,7 @@
       if (next === decoded) break; if (i === 3) return true;
       decoded = next;
     }
+    if (/\b[a-z][a-z0-9+.-]*:\/\/[^\s/\\"<>`?#]+@/i.test(decoded)) return true;
     const xmlLabels = decoded.replace(/<(?:[^\s<>\/=:]+:)?([a-z0-9_-]+)(?=[\s/>])/gi, ' $1=');
     const indexedLabels = decoded.replace(/["'`]?\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\r\n]*)\s*)*\]/g, '=');
     return SECRET_VALUE.test(indexedLabels) || SECRET_VALUE.test(xmlLabels) || PATH_VALUE.test(decoded) || FILE_VALUE.test(decoded);
@@ -368,7 +302,7 @@
     const legacy = data && !Object.hasOwn(data, 'schema') && data.format === 'vas-personalization-memory' && data.version === SCHEMA;
     if (!data || (data.schema !== SCHEMA && !legacy) || !Array.isArray(data.events)) return 0;
     const mode = options && options.replace === true ? 'replace' : 'merge';
-    if (mode === 'replace') await call('setMeta', 'profile', null);
+    if (mode === 'replace' && !['browser', 'temporary'].includes(storageMode)) await call('setMeta', 'profile', null);
     const safeEvents = [];
     let imported = 0;
     for (const raw of data.events) {

@@ -16,6 +16,35 @@ function verifyHash(document) {
   payload.assistantGuide.pasteText = '';
   expect(crypto.createHash('sha256').update(stable(payload)).digest('hex')).toBe(document.integrity.payloadSha256);
 }
+for (const flow of ['new', 'existing']) test(`${flow} final copy and download exclude HTTP authentication`, async ({ page }) => {
+  await page.goto(source(flow === 'new' ? 'client-application.html' : 'project-import.html'));
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedHandoff = text; } } }));
+  const input = 'Authorization: Token FinalHeaderCanary012345\nhttps://user:FinalUrlCanary012345@127.0.0.1:8080/demo\nPreserve calendar keyboard navigation.';
+  if (flow === 'new') {
+    await page.locator('[name="problem_desc"]').fill(input);
+    await page.evaluate(() => copyNewProjectPrompt());
+  } else {
+    await page.locator('#folderPath').fill('Z:\\synthetic-project');
+    await page.locator('#projectName').fill('HTTP boundary fixture');
+    await page.locator('#taskRequest').fill(input);
+    await page.locator('#continueSettings').click();
+    await page.locator('#copyPrompt').click();
+  }
+  const copied = await page.evaluate(() => window.copiedHandoff);
+  const downloadPromise = page.waitForEvent('download');
+  if (flow === 'new') await page.evaluate(() => exportJson());
+  else await page.locator('#downloadAgain').click();
+  const download = await downloadPromise;
+  const raw = fs.readFileSync(await download.path(), 'utf8');
+  for (const output of [copied, raw]) {
+    expect(output).not.toContain('FinalHeaderCanary012345');
+    expect(output).not.toContain('FinalUrlCanary012345');
+    expect(output).toContain('Preserve calendar keyboard navigation.');
+    expect(output).toContain('[ROLE INSTRUCTIONS: implementer]');
+  }
+  if (flow === 'existing') { expect(copied).toContain('Z:\\synthetic-project'); expect(raw).not.toContain('synthetic-project'); }
+  verifyHash(JSON.parse(raw));
+});
 test('existing UI downloads redact the entire payload after edits and provider changes', async ({ page }) => {
   await page.goto(source('project-import.html'));
   await page.locator('#folderPath').fill('Z:\\work\\real-project');

@@ -42,6 +42,10 @@
 
   const CREDENTIAL_VALUE = /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z]+ )*PRIVATE KEY-----|$)|\b(?:Bearer|Basic)\s+[a-z0-9._~+\/=-]{10,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\+[a-z0-9_.-]+)?:\/\/[^\s"'<>`]+/gi;
 
+  // An authorization value owns its full line and any folded continuation.
+  const AUTHORIZATION_FIELD = new RegExp(String.raw`\b(?:[a-z0-9]+[_-])*authorization\b["']?` + GAP + String.raw`[:=][ \t]*(?![ \t]*["'\x60])[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*`, 'gi');
+  const URI_USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/\\"<>`?#]+@/gi;
+
   function redactCredentials(value, depth) {
     const raw = String(value == null ? '' : value);
     const labels = raw.replace(/\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/gi, (_, unicode, hex) => String.fromCharCode(parseInt(unicode || hex, 16)));
@@ -80,6 +84,7 @@
         return safe === decoded ? token : JSON.stringify(safe);
       } catch (error) { return token; }
     });
+    text = text.replace(AUTHORIZATION_FIELD, '[redacted]').replace(URI_USERINFO, '$1[redacted]@');
     let complex = false;
     text = text.replace(ASSIGNMENT, function (match, value, offset) {
       // In non-JSON text, an object-valued credential has no safe scalar boundary.

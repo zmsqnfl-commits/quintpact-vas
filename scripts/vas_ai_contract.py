@@ -77,6 +77,11 @@ def redact_triples(source: str) -> str:
     return "[redacted]" if ambiguous else safe
 
 
+# Authorization has a complete field value, not a scheme-specific scalar.
+AUTHORIZATION_FIELD = re.compile(r"\b(?:[a-z0-9]+[_-])*authorization\b[\"']?" + GAP + r"[:=][ \t]*(?![ \t]*[\"'\x60])[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*", re.I)
+URI_USERINFO = re.compile(r'''\b([a-z][a-z0-9+.-]*://)[^\s/\\"<>`?#]+@''', re.I)
+
+
 def redact_credentials(value: Any, depth: int = 0) -> str:
     raw = str(value if value is not None else "")
     labels = re.sub(r"\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))", lambda m: chr(int(m[1] or m[2], 16)), raw, flags=re.I)
@@ -120,6 +125,7 @@ def redact_credentials(value: Any, depth: int = 0) -> str:
             return match.group()
 
     text = JSON_STRING.sub(token, source)
+    text = URI_USERINFO.sub(lambda match: match[1] + "[redacted]@", AUTHORIZATION_FIELD.sub("[redacted]", text))
     complex_value = False
 
     def assignment(match: re.Match[str]) -> str:
