@@ -1,40 +1,146 @@
 # VAS 2.7.0
 
-VAS는 `작업·디자인 설정 → 프롬프트 생성 → 코딩 AI 전달`을 위한 로컬 도구입니다.
+![VAS 2.7.0 release cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
 
-2.7.0에는 새 디자인 컬렉션 10종, 실제로 둘러볼 수 있는 추천 샘플 4종, 전체 디자인 지침 전달과 에이전트 실행 검증이 포함됩니다. [변경 내역](docs/releases/2.7.0.md)을 확인하세요.
+**From design direction to working apps.**
 
-[디자인 스튜디오](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0)에서 스타일을 비교하고, VAS 인계로 만든 [Morrow 검증 웹앱](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0)을 직접 사용해 볼 수 있습니다. [검증 기록](docs/verification/README.md)도 함께 제공합니다.
+VAS (Vibecoding Agent System) is a local tool for preparing a project brief, choosing a visual direction, and handing complete instructions to a coding AI. Describe the work, compare real design previews, refine the details, and copy a prompt into your coding tool with the actual project folder open.
 
-## 한눈에 보는 작업 흐름
+**[Download VAS 2.7.0](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.0)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0)** · **[Read the release notes](docs/releases/2.7.0.md)**
 
-![VAS 2.7.0 AI 작업 인계 워크플로](docs/assets/vas-workflow.svg)
+## What VAS helps you do
 
-## 사용 방법
+- **Start with your project.** Prepare a new project request or describe changes to an existing application. The coding agent reads the real source before making implementation decisions.
+- **Choose a design you can see.** Compare 10 new visual collections and 4 curated styles with interactive sample websites.
+- **Carry the details into implementation.** The handoff includes the project requirements, selected design, confirmed tokens, references, role instructions, and verification expectations.
+- **Keep implementation accountable.** The workflow asks the coding agent to inspect, plan, build, review, correct problems, and report the checks it actually ran.
 
-1. ZIP을 새 폴더에 전부 압축 해제합니다.
-2. `Run-VAS-System.bat`를 더블클릭합니다.
-3. **새 프로젝트 만들기** 또는 **기존 프로그램 AI로 연결**을 고릅니다.
-4. 이전 디자인 선택을 추천받을지 직접 고릅니다. 작업 기억 원본은 인계에 포함되지 않습니다.
-5. Codex·Claude·Antigravity에서 실제 작업 폴더를 열고 프롬프트를 붙여넣습니다.
+VAS prepares the handoff. Implementation runs in your coding host, such as Codex, Claude, or Antigravity, using that host's available tools and permissions.
 
-프롬프트를 복사한 뒤에는 VAS를 닫아도 됩니다. `VAS-AI-HANDOFF.json` 저장은 선택입니다. 화면 위의 **사용 방법**은 어느 단계에서든 다시 열 수 있고, 완료 화면에서 작업 기억 설정을 다시 바꿀 수 있습니다.
+## Design directions with real previews
 
-VAS는 기존 프로그램의 구조나 기술 스택을 추정하지 않습니다. 선택한 폴더 위치는 복사되는 프롬프트에만 들어가며 JSON·작업 기억에는 저장하지 않습니다. 코딩 AI는 RBG(Read Before Generate) 규칙에 따라 실제 원본부터 읽고 작업합니다.
+The Design Studio combines distinct compositions, typography, colors, imagery, spacing, and interaction guidance. You can refine the selected style and carry those settings into a sample before copying the handoff.
 
-자세한 설명은 [`00-처음-사용하기.txt`](00-처음-사용하기.txt), 시스템 구조는 [docs/index.md](docs/index.md)를 확인하세요.
+| Collection | Visual direction | Good fit |
+| --- | --- | --- |
+| Bento Studio | Irregular modular layouts, lavender and lime, expressive graphics | Creative studios and personal workspaces |
+| Aurora Glass | Dark atmosphere and translucent panels | Immersive product interfaces |
+| Clay Pop | Soft peach colors and rounded 3D objects | Learning and friendly consumer products |
+| Noir Luxe | Dark surfaces, champagne accents, editorial serif type | Premium brands and product showcases |
+| Botanical Atelier | Botanical photography, olive tones, warm ivory | Lifestyle and wellness |
+| Retro Sunset | Warm retro colors and record-inspired compositions | Music and independent brands |
+| Swiss Poster | Strong type, disciplined grids, exhibition-style hierarchy | Events, portfolios, and editorial pages |
+| Cyber Deck | Technical consoles and high-contrast information | Developer tools and operational interfaces |
+| Kinetic Type | Oversized typography with controllable motion | Creative campaigns and studio presentations |
+| Paper Collage | Layered photographs and tactile editorial compositions | Visual storytelling and publications |
 
-## 검증·배포
+The main picker offers **14 curated choices**. The full set of 28 preset definitions remains available for compatibility with earlier saved selections. Fonts, artwork, and preview media are bundled locally, with font license files included.
+
+### Four sample websites you can actually explore
+
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.7.0). Each recommendation includes a screenshot of its rendered site.
+
+| Style | Sample | Working interactions |
+| --- | --- | --- |
+| Awwwards | **FORM / FIELD** architecture studio | Project disclosures, section navigation, inquiry preview |
+| Linear | **ORBIT** project board | Task search, task creation, status changes |
+| Stripe | **RELAY** subscription service | Monthly/yearly billing comparison, plan selection |
+| Notion | **FIELDNOTES** team wiki | Document search, document opening, checklist updates |
+
+These are demonstrations: inquiry previews do not send messages, and subscription examples do not process payments. Exploring another sample preserves the design settings you started with. Fictional sample content is a visual reference, not your project's business data.
+
+## How the handoff works
+
+| Step | What happens |
+| --- | --- |
+| **1. Describe** | Choose a new or existing project and enter the work you want done. |
+| **2. Design** | Compare styles, open sample sites, and confirm colors, typography, spacing, and other settings. |
+| **3. Review and copy** | Review the final brief and copy the generated prompt. Saving `VAS-AI-HANDOFF.json` is optional. |
+| **4. Inspect and build** | Open the actual project in your coding host and paste the prompt. The agent reads the source, plans the work, and implements it. |
+| **5. Verify and improve** | The agent checks the result, corrects identified issues, and reports evidence and remaining limits. |
+
+You can close VAS after copying the prompt. Help can be reopened during setup, and work-memory preferences can be changed again on the completion screen.
+
+### Agent roles and execution
+
+VAS includes shared role instructions and native agent definitions for supported hosts. When a host supports only general subagents, the workflow requires the full role text, task scope, assigned files, design rules, and completion criteria to be passed into each delegated task.
+
+The main agent remains responsible for collecting results, reviewing evidence, routing corrections, and repeating affected checks. Reviewers are instructed to inspect without editing source files. These instructions operate within the host's actual permissions; they do not create a separate security sandbox.
+
+For existing applications, the **Read Before Generate** rule requires the coding agent to inspect the real files and preserve the project's technology stack. VAS does not infer the application's architecture from a folder path.
+
+See the [handoff guide](docs/HANDOFF.md) and [agent workflow](.agents/HANDOFF-WORKFLOW.md) for the detailed execution contract.
+
+## Morrow: built through the VAS workflow
+
+[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.7.0) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
+
+You can create and edit tasks, set categories and due dates, combine search and status filters, mark work complete, archive and restore tasks, undo the latest deletion, and export records as JSON. Data persists in the browser, with empty states, input validation, and storage-error guidance.
+
+Verification covered keyboard interaction, responsive layouts at 1440, 768, 390, and 320 pixels, and persistence after creating a 5,001st task. It found and corrected dialog focus handling, small mobile completion targets, and a save/reload limit mismatch.
+
+Morrow stores data locally in the browser. It has no accounts, backend, AI API connection, JSON import, or cross-device synchronization. The cover above is a promotional composition based on the application and sample screens.
+
+The [verification record](docs/verification/README.md) includes the request, original handoff, design specification, and execution results. The original development handoff retains its VAS 2.6.4 version and integrity hash.
+
+## Get started on Windows
+
+**Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. The packaged distribution contains the local launcher, Design Studio, handoff tools, sample sites, and Morrow.
+
+1. Open the [v2.7.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.7.0) and download `VAS-2.7.0-windows.zip`.
+2. Extract the entire archive into a new folder.
+3. Double-click `Run-VAS-System.bat`.
+4. Choose a new project or an existing project, enter the request, and select a design.
+5. Choose whether VAS may remember confirmed design choices, then review and copy the prompt.
+6. Open the actual project folder in your coding tool and paste the prompt.
+
+The separate `VAS-Client-Form-2.7.0.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+
+When upgrading, keep your previous installation folder and user data. Version 2.7.0 retains the handoff v3 and result v1 formats and existing design storage keys. The browser demos let you explore the designs and Morrow; the Windows ZIP provides the complete local workflow.
+
+For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
+
+## Privacy and project boundaries
+
+- Work memory is opt-in and uses confirmed design selections for recommendations. Raw work-memory records are not included in the handoff.
+- The existing project path belongs only in the copied prompt. It is excluded from exported JSON and work-memory records.
+- Preparing a handoff does not run, copy, or modify the existing target project.
+- Runtime pages use local assets and fonts without external font services or CDNs.
+
+## Verification and development
+
+The **2.7.0 release validation** recorded 111 passing Python checks with one environment-dependent skip, 75 browser scenarios, 7 package checks, an extracted Windows package execution check, and release boundary/source-hash verification. These results describe the tested workflows and environments; host capabilities still determine how agent instructions execute.
+
+See the [release notes](docs/releases/2.7.0.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
+
+For source development, install the Node and Python test dependencies and Chromium, then run the checks from the repository directory:
 
 ```powershell
+npm.cmd ci
+python -m pip install -r tests/requirements-dev.txt
+npx.cmd playwright install chromium
+
 npm.cmd run agents:build
 npm.cmd run knowledge:index
 npm.cmd run test:python
 npm.cmd run test:browser
 npm.cmd run test:package
+npm.cmd run agent:security
 ```
 
-10회 스트레스 검사는 명시적으로 필요할 때만 `npm.cmd run test:release`로 실행합니다.
+On Windows, use a local or mapped-drive path when npm cannot run from a UNC directory. The optional `npm.cmd run test:release` command includes the ten-run stress suite; run it only when explicitly needed. `agent:verify` runs the actual Python and browser checks, while `agent:security` checks the generated release's file boundaries and source hashes.
 
-디자인·역할 지침은 `.agents/skills/`에서 관리합니다. `agent:verify`는 실제 Python·브라우저 검사를,
-`agent:security`는 생성된 배포의 파일 경계·원본 해시를 확인합니다. 자세한 실행 범위는 [인계 가이드](docs/HANDOFF.md)를 참고하세요.
+| Location | Purpose |
+| --- | --- |
+| `src/` | Runtime pages, Design Studio, sample sites, and Morrow |
+| `.agents/skills/` | Shared design and role instructions |
+| `.codex/agents/`, `.claude/agents/` | Native agent definitions for supported hosts |
+| `docs/` | Guides, release notes, and verification records |
+| `scripts/`, `tests/` | Build tools and automated checks |
+| `dist/` | Generated distributions; excluded from Git |
+
+Further reading: [documentation index](docs/index.md) · [test guide](tests/README.md) · [asset notices](src/assets/README.md).
+
+## License
+
+VAS is distributed under the [MIT License](LICENSE). See [NOTICE.md](NOTICE.md) for third-party notices.
