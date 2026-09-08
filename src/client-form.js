@@ -179,19 +179,6 @@ function showDone() {
     if (window.VASNewHandoff) window.VASNewHandoff.prepare().catch(function () {
         document.getElementById('handoffReview').textContent = '최종 내용을 준비하지 못했습니다. 입력 내용을 다시 확인해 주세요.';
     });
-    if (window.VASPersonalization) {
-        const selected = name => Array.from(document.querySelectorAll(`[name="${name}"]:checked`)).map(input => input.value || 'selected');
-        const capabilities = ['vision', 'audio', 'text', 'auto'].filter(name => document.querySelector(`[name="sense_${name}"]`).checked);
-        const environments = ['web', 'mobile', 'windows', 'edge'].filter(name => document.querySelector(`[name="env_${name}"]`).checked);
-        window.VASPersonalization.record({
-            type: 'form_completed',
-            source: 'client-application',
-            payload: {
-                language: currentLang, schema: 1, capabilities: capabilities,
-                environments: environments, dataStatus: selected('data_status'), budget: selected('budget')
-            }
-        });
-    }
 }
 
 /* 완료 화면 → 폼으로 복귀 */

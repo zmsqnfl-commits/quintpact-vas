@@ -15,7 +15,7 @@ def prompt_details(document: dict) -> str:
     selected = {key: details[key] for key in keys if key in details}
     sections = ["추가 요구사항(JSON):\n" + clean(json.dumps(selected, ensure_ascii=False, indent=2), 8000)]
     attachments = details.get("attachments") or {}
-    if attachments.get("files"):
+    if attachments.get("count") or attachments.get("files"):
         sections.append("참고 파일 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 내용을 전송하지 않았습니다. AI는 받지 않은 내용을 추정하지 마세요.")
     design = context.get("design") or {}
     if design.get("included") and design.get("tokens"):

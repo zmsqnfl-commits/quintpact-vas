@@ -33,6 +33,8 @@ MAX_SECTION_CHARS = 1400
 def is_allowed(path: Path, root: Path) -> bool:
     relative = path.relative_to(root)
     lowered = {part.lower() for part in relative.parts}
+    if path.name.lower().startswith('log-archive-') or relative.as_posix().startswith(('docs/releases/', 'docs/verification/')):
+        return False
     if lowered & EXCLUDED_PARTS or path.name.lower() in EXCLUDED_NAMES or SENSITIVE_NAME.search(path.name):
         return False
     if path.suffix.lower() != ".md":

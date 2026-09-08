@@ -122,6 +122,38 @@ test('unsafe or mismatched result cannot be connected', async ({ page }) => {
   await expect(page.locator('#vasResultReview')).toBeHidden();
 });
 
+test('compatibility review clears rejected input and rechecks duplicate acceptance', async ({ page }) => {
+  await prepareExisting(page);
+  const handoff = await downloadHandoff(page, '#downloadJson');
+  await page.evaluate(document => VASHandoffWorkflow.remember(document), handoff);
+  await openCompatibilityResultImport(page);
+  const result = aiResult(handoff);
+  await page.evaluate(raw => VASAIResultImport.readText(JSON.stringify(raw)), result);
+  await expect(page.locator('#vasResultReview')).toBeVisible();
+  await page.evaluate(() => VASAIResultImport.readText('{invalid'));
+  await expect(page.locator('#vasResultReview')).toBeHidden();
+  expect(await page.evaluate(() => VASAIResultImport.current())).toBeNull();
+  await page.evaluate(raw => VASAIResultImport.readText(JSON.stringify(raw)), result);
+  await page.evaluate(() => { document.getElementById('vasResultAccept').click(); document.getElementById('vasResultAccept').click(); });
+  await expect(page.locator('#vasResultStatus')).toContainText(/이미|중복/);
+  expect(await page.evaluate(() => VASHandoffWorkflow.current().workflow.iteration)).toBe(2);
+});
+
+test('a removed receipt requires a new visible manual confirmation before acceptance', async ({ page }) => {
+  await prepareExisting(page);
+  const handoff = await downloadHandoff(page, '#downloadJson');
+  await page.evaluate(document => VASHandoffWorkflow.remember(document), handoff);
+  await openCompatibilityResultImport(page);
+  await page.evaluate(raw => VASAIResultImport.readText(JSON.stringify(raw)), aiResult(handoff));
+  await page.evaluate(() => VASHandoffWorkflow.clearReceipts());
+  await page.locator('#vasResultAccept').click();
+  await expect(page.locator('#vasResultManualRow')).toBeVisible();
+  await expect(page.locator('#vasResultManual')).not.toBeChecked();
+  expect(await page.evaluate(() => VASHandoffWorkflow.current())).toBeNull();
+  await page.locator('#vasResultManual').check(); await page.locator('#vasResultAccept').click();
+  expect(await page.evaluate(() => VASHandoffWorkflow.current().workflow.iteration)).toBe(2);
+});
+
 test('compatibility import rejects results without the payload hash', async ({ page }) => {
   await prepareExisting(page);
   const handoff = await downloadHandoff(page, '#downloadJson');

@@ -122,11 +122,6 @@ function applyPreset(name, element) {
   document.getElementById('letterSpacing').value = p.ls;
   document.getElementById('fontFamily').value = p.font;
   update(false, name);
-  if (window.VASPersonalization) {
-    window.VASPersonalization.record({
-      type: 'theme_selected', source: 'design-studio', payload: { preset: name }
-    });
-  }
 }
 function getValues() {
   const fs = +document.getElementById('fontSize').value;
@@ -271,11 +266,6 @@ function downloadJSON() {
   a.download = 'design-tokens.json';
   a.click();
   showToast('디자인 토큰 다운로드 완료!');
-  if (window.VASPersonalization) {
-    window.VASPersonalization.record({
-      type: 'export', source: 'design-studio', payload: { format: 'design-tokens' }
-    });
-  }
 }
 function triggerFileInput() {
   document.getElementById('fileInput').click();
@@ -378,16 +368,13 @@ async function copyAgentPrompt() {
       if (status) status.textContent = prompt === basePrompt
         ? '연결할 로컬 맥락이 없어 기본 프롬프트를 복사했습니다.'
         : '로컬 RAG 맥락을 포함해 복사했습니다.';
-      window.VASPersonalization.record({
-        type: 'recommendation_used', source: 'design-studio',
-        payload: { preset: currentPreset, augmented: prompt !== basePrompt }
-      });
     } catch (error) {
       if (status) status.textContent = '기본 프롬프트를 복사했습니다.';
     }
   } else if (status) {
     status.textContent = '로컬 맥락 없이 기본 프롬프트를 복사했습니다.';
   }
+  prompt = VASAgentContract.clean(prompt, 32000);
   try {
     await navigator.clipboard.writeText(prompt);
   } catch (error) {
@@ -431,6 +418,10 @@ async function applyProjectTheme() {
   const status = document.getElementById('applyProjectStatus');
   const context = VASProjectContext.get();
   if (!context) {
+    if (window.VASPersonalization && button.dataset.memoryFailed !== 'true') {
+      try { await VASPersonalization.record({ type: 'theme_selected', source: 'design-studio', payload: { preset: currentBasePreset, confirmed: true } }); }
+      catch (error) { button.dataset.memoryFailed = 'true'; status.hidden = false; status.textContent = '디자인은 적용했습니다. 작업 기억 저장에 실패했습니다. 다시 누르면 기억 없이 돌아갑니다.'; return; }
+    }
     showToast('공통 디자인 설정으로 저장했습니다.');
     const destination = returnDestination();
     window.close();

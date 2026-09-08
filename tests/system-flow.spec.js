@@ -29,6 +29,30 @@ test('declining work memory does not record the start navigation', async ({ page
   expect(events).toEqual([]);
 });
 
+test('search history and old unconfirmed previews cannot become a design recommendation', async ({ page }) => {
+  await page.goto(clientUrl);
+  await page.evaluate(async () => {
+    await VASPersonalization.consent(true);
+    await VASPersonalization.record('search', { query: 'bento' });
+    await VASPersonalization.record('theme_selected', { preset: 'linear' });
+    await VASSetupDesign.refresh();
+  });
+  await expect(page.locator('[data-design-memory-suggestion]')).toBeHidden();
+  await page.evaluate(async () => { VASSetupDesign.apply('bento'); await VASSetupDesign.confirm(); VASSetupDesign.apply('awwwards'); await VASSetupDesign.refresh(); });
+  await expect(page.locator('[data-design-memory-suggestion]')).toContainText('Bento');
+  await page.evaluate(async () => { await VASPersonalization.consent(false); await VASSetupDesign.refresh(); });
+  await expect(page.locator('[data-design-memory-suggestion]')).toBeHidden();
+});
+
+test('blocked browser storage allows explicitly unremembered work with temporary status', async ({ page }) => {
+  await page.addInitScript(() => { Object.defineProperty(window, 'indexedDB', { configurable: true, get() { throw Error('blocked'); } }); });
+  await page.goto(hubUrl);
+  await page.locator('.start-card:not(.import)').click(); await page.locator('#vasStartWithoutMemory').click();
+  await expect(page).toHaveURL(/client-application\.html/);
+  await page.waitForFunction(() => typeof VASPersonalization !== 'undefined');
+  expect(await page.evaluate(() => VASPersonalization.status())).toMatchObject({ storageMode: 'temporary', consent: null, count: 0 });
+});
+
 test('both start choices require an explicit work-memory decision', async ({ page }) => {
   await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('.start-card:not(.import)').click();
@@ -93,7 +117,7 @@ test('consented work memory offers a user-confirmed RAG design recommendation', 
     await VASPersonalization.consent(true);
     await VASPersonalization.clear();
     await VASPersonalization.record({
-      type: 'theme_selected', source: 'design-studio', payload: { preset: 'linear' }
+      type: 'theme_selected', source: 'design-studio', payload: { preset: 'linear', confirmed: true }
     });
     await VASSetupDesign.refresh();
     const button = document.querySelector('[data-design-memory-suggestion]');

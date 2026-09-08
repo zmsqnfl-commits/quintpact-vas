@@ -3,7 +3,7 @@
   'use strict';
 
   // Match credential field names, never the plural design.tokens container.
-  const CREDENTIAL_NAMES = '(?:[a-z0-9]+[_-])*(?:password|passwd|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key)';
+  const CREDENTIAL_NAMES = '(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)';
   const CREDENTIAL_KEY = new RegExp('^' + CREDENTIAL_NAMES + '$', 'i');
   const GAP = String.raw`\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*`;
   const ASSIGNMENT = new RegExp(String.raw`\b` + CREDENTIAL_NAMES + String.raw`\b["']?` + GAP + '[:=]' + GAP + '("(?:\\\\.|[^"\\\\])*(?:"|$)|\'(?:\\\\.|[^\'\\\\])*(?:\'|$)|`(?:\\\\.|[^`\\\\])*(?:`|$)|(?:Bearer|Basic)\\s+[^\\s,;]+|[^\\s,;]+)', 'gi');
@@ -11,8 +11,26 @@
 
   function sensitiveKey(key) { return CREDENTIAL_KEY.test(String(key)); }
 
+  function redactYamlBlocks(source) {
+    const lines = source.split(/\r?\n/), output = [];
+    const header = new RegExp('^([ \\t]*)(?:-[ \\t]+)?["\']?' + CREDENTIAL_NAMES + '["\']?[ \\t]*:[ \\t]*[|>][1-9+-]{0,2}[ \\t]*(?:#.*)?$', 'i');
+    for (let i = 0; i < lines.length; i += 1) {
+      const match = header.exec(lines[i]);
+      if (!match) { output.push(lines[i]); continue; }
+      output.push(match[1] + '[redacted]');
+      while (i + 1 < lines.length) {
+        const next = lines[i + 1];
+        if (next.trim() && /^[ \t]*/.exec(next)[0].length <= match[1].length) break;
+        i += 1;
+      }
+    }
+    return output.join('\n');
+  }
+
+  const CREDENTIAL_VALUE = /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z]+ )*PRIVATE KEY-----|$)|\b(?:Bearer|Basic)\s+[a-z0-9._~+\/=-]{10,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\+[a-z0-9_.-]+)?:\/\/[^\s"'<>`]+/gi;
+
   function redactCredentials(value, depth) {
-    const source = String(value == null ? '' : value);
+    const source = redactYamlBlocks(String(value == null ? '' : value));
     const level = depth || 0;
     if (level > 24) return '[redacted]';
     function scrub(item, nested) {
@@ -50,7 +68,7 @@
       if (/^[{\[]/.test(value)) complex = true;
       return /^(?:"\[redacted\]"|'\[redacted\]'|\[redacted\])$/.test(value) ? match : '[redacted]';
     });
-    return complex ? '[redacted]' : text.replace(SECRET, '[redacted]').replace(ABSOLUTE_PATH, '[absolute-path]');
+    return complex ? '[redacted]' : text.replace(CREDENTIAL_VALUE, '[redacted]').replace(SECRET, '[redacted]').replace(ABSOLUTE_PATH, '[absolute-path]');
   }
   const ABSOLUTE_PATH = /file:\/\/[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:\/])\/(?:Users|home|var|etc|mnt|volume\d*)\/[^\s'"`]+/gi;
   const RESULT_STATUS = new Set(['complete', 'incomplete', 'blocked', 'failed']);

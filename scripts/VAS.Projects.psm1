@@ -151,6 +151,7 @@ function Get-VASSafeRagMetadata {
     if ((Get-Item -LiteralPath $path).Length -gt 20971520) { return @() }
     try { $index = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) | ConvertFrom-Json }
     catch { return @() }
+    if ((Get-VASProjectValue $index 'schema' 0) -ne 2) { return @() }
     $entries = if ($null -ne $index.PSObject.Properties['entries']) { @($index.entries) } else { @() }
     return @($entries | Where-Object { $_.projectId -eq $ProjectId } | Select-Object -First 500 | ForEach-Object {
         [ordered]@{
@@ -178,12 +179,19 @@ function Export-VASProjectHandoff {
     $project = Get-VASProjectRecord $Root $ProjectId
     if ($null -eq $project) { throw 'VAS_PROJECT_NOT_FOUND' }
     $path = Resolve-VASRegisteredProjectPath $Root $project
+    foreach ($name in @('rag-context.json', 'design-tokens.json')) {
+        $inputFile = Join-Path $path $name
+        if (Test-Path -LiteralPath $inputFile) {
+            $item = Get-Item -LiteralPath $inputFile -Force
+            if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $item.Length -gt 2097152) { throw 'VAS_EXPORT_INPUT_INVALID' }
+        }
+    }
     $temporary = Join-Path ([IO.Path]::GetTempPath()) ('vas-handoff-' + [Guid]::NewGuid().ToString('N'))
     $content = Join-Path $temporary 'handoff'
     [IO.Directory]::CreateDirectory($content) | Out-Null
     try {
         $summary = [ordered]@{
-            schema = 1; vasVersion = '2.7.1'; projectId = $project.projectId
+            schema = 1; vasVersion = '2.7.2'; projectId = $project.projectId
             name = $project.name; sourceType = $project.sourceType; goal = $project.goal
             stage = $project.stage; exportedAt = [DateTime]::UtcNow.ToString('o')
         }
@@ -210,6 +218,14 @@ function Export-VASProjectHandoff {
 4. `SHA256SUMS.txt`로 파일 무결성을 확인합니다.
 "@
         [IO.File]::WriteAllText((Join-Path $content 'README.md'), $readme.Trim() + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+        if (-not (Get-Command Find-VASPythonCommand -ErrorAction SilentlyContinue)) {
+            Import-Module (Join-Path $PSScriptRoot 'VAS.Migration.psm1') -DisableNameChecking
+        }
+        $python = Find-VASPythonCommand
+        if ($null -eq $python) { throw 'PYTHON_UNAVAILABLE' }
+        $arguments = @($python.Prefix) + @((Join-Path $PSScriptRoot 'vas_sanitize_export.py'), $content)
+        $execution = Invoke-VASPythonUtf8 $python.File $arguments
+        if ($execution.ExitCode -ne 0) { throw 'VAS_EXPORT_SANITIZATION_FAILED' }
         $lines = Get-ChildItem -LiteralPath $content -File | Sort-Object Name | ForEach-Object {
             (Get-VASFileSha256 $_.FullName) + '  ' + $_.Name
         }
@@ -219,7 +235,7 @@ function Export-VASProjectHandoff {
         [IO.Compression.ZipFile]::CreateFromDirectory($content, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
         $safeName = ([string]$project.name -replace '[^A-Za-z0-9가-힣._-]', '-').Trim('-')
         if (-not $safeName) { $safeName = 'vas-project' }
-        return [ordered]@{ fileName = $safeName + '-VAS-2.7.1-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
+        return [ordered]@{ fileName = $safeName + '-VAS-2.7.2-handoff.zip'; bytes = [IO.File]::ReadAllBytes($zip) }
     } finally {
         if (Test-Path -LiteralPath $temporary -PathType Container) { [IO.Directory]::Delete($temporary, $true) }
     }

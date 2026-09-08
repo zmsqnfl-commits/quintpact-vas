@@ -35,7 +35,9 @@ test('all presets carry exact tokens, requirements and complete selected skill',
     expect(item.prompt).toContain('90 days');
     expect(item.prompt).toContain('enterprise');
     expect(item.prompt).toContain('mobile');
-    expect(item.prompt).toContain('reference.png');
+    expect(item.prompt).not.toContain('reference.png');
+    expect(item.requirements.attachments.count).toBe(1);
+    expect(item.requirements.attachments.namesIncluded).toBe(false);
     expect(item.prompt).toContain('Preserve React');
     expect(item.prompt).not.toContain('Use only standalone HTML');
     expect(item.requirements.attachments.contentsIncluded).toBe(false);

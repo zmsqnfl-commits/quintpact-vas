@@ -10,7 +10,7 @@ VAS 디자인 스튜디오는 프리셋과 Taste Profile을 조정하고 실제 
 4. 설정을 저장한 뒤 신청서에서 프롬프트를 복사합니다. JSON 저장은 선택입니다.
 5. 코딩 AI에서 실제 작업 폴더를 열고 프롬프트와 참고 파일 원본을 전달합니다.
 
-새 환경은 `awwwards / Editorial Motion`으로 시작합니다. 기존 선택과 사용자 토큰이 우선합니다.
+새 환경은 `awwwards / Architecture Editorial (curatedEditorial)`으로 시작합니다. 기존 선택과 사용자 토큰이 우선합니다.
 
 ## 프리셋과 Taste Profile
 

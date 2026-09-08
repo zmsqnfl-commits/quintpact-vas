@@ -68,7 +68,7 @@
       pause.disabled = true;
       return;
     }
-    state.textContent = status.consent !== true ? '사용 안 함' : status.paused ? '잠시 중지됨' : '사용 중 · ' + status.count + '건';
+    state.textContent = (status.consent !== true ? '사용 안 함' : status.paused ? '잠시 중지됨' : '사용 중 · ' + status.count + '건') + (status.storageMode === 'temporary' ? ' · 이 화면에서만 임시 저장' : '');
     toggle.textContent = status.consent === true ? '기억 사용 끄기' : '기억 사용 켜기';
     pause.textContent = status.paused ? '기억 다시 시작' : '기억 잠시 중지';
     pause.disabled = status.consent !== true;
@@ -111,22 +111,28 @@
       ['vasPersonalizationConsent', 'vasFavorites', 'vasThemeHistory', 'vasThemeTokens', 'vasCurrentPreset', 'vasTasteProfileMode', 'vasThemeTokensVersion', 'vasThemeStateMeta'].forEach(function (key) { VASStorage.remove(key); });
     }
     if (global.VASHandoffWorkflow) VASHandoffWorkflow.clearReceipts();
-    feedback('설정을 초기화했습니다. 다음 화면부터 기본 디자인을 사용합니다.');
+    if (global.VASThemeState) VASThemeState.reset();
+    feedback('설정을 초기화했습니다. 기본 디자인을 적용했습니다.');
     await refresh();
   }
 
   async function openSettings() {
     feedback('');
-    await refresh();
     open(settingsDialog);
+    try { await refresh(); } catch (error) {
+      document.getElementById('vasSetupMemoryState').textContent = '저장소 연결 실패';
+      feedback('작업 기억을 확인하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.');
+    }
   }
 
   async function openStartChoice(link) {
     startDestination = link.href;
-    const status = await memoryStatus();
+    let status;
+    try { status = await memoryStatus(); } catch (error) { status = { available: false, consent: false }; }
     const state = document.getElementById('vasStartMemoryState');
     state.textContent = status.consent !== true ? '사용 안 함' : status.paused ? '잠시 중지됨' : '사용 중';
     document.getElementById('vasStartWithMemory').disabled = !status.available;
+    if (!status.available) state.textContent = '저장소 연결 실패 · 다시 시도해 주세요';
     open(startDialog);
   }
 
@@ -140,7 +146,8 @@
       }
       if (global.VASStorage) VASStorage.writeText('vasPersonalizationConsent', enabled ? 'accepted' : 'declined');
     } catch (error) {
-      // 저장소가 차단되어도 선택한 작업 화면은 계속 엽니다.
+      document.getElementById('vasStartMemoryState').textContent = '기억 설정 실패 · 연결을 확인한 뒤 다시 시도해 주세요.';
+      return;
     }
     close(startDialog);
     global.location.assign(destination);

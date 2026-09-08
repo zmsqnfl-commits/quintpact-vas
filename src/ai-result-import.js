@@ -93,6 +93,9 @@
   }
 
   function readText(text) {
+    current = null;
+    verification = null;
+    node('vasResultReview').hidden = true;
     const source = String(text || '').replace(/^\uFEFF/, '');
     if (new Blob([source]).size > MAX_BYTES) { setStatus('결과 JSON은 256KiB보다 작아야 합니다.', true); return; }
     let raw;
@@ -107,6 +110,9 @@
   }
 
   function readFile(file) {
+    current = null;
+    verification = null;
+    node('vasResultReview').hidden = true;
     if (file.size > MAX_BYTES) { setStatus('결과 JSON은 256KiB보다 작아야 합니다.', true); return; }
     const reader = new FileReader();
     reader.onload = function () { readText(reader.result); };
@@ -115,6 +121,12 @@
   }
 
   function accept(verdict) {
+    if (current && global.VASHandoffWorkflow) {
+      const previousStatus = verification && verification.status;
+      verification = VASHandoffWorkflow.verifyResult(current);
+      if (verification.status !== previousStatus) { render(current, verification); setStatus(verification.message, verification.status !== 'verified'); return; }
+      if (['mismatch', 'duplicate'].includes(verification.status)) { setStatus(verification.message, true); render(current, verification); return; }
+    }
     if (!current || !verification || ['mismatch', 'duplicate'].includes(verification.status)) return;
     if (verification.status === 'unverified' && !node('vasResultManual').checked) { setStatus('원본 인계와 연결된 결과인지 확인해 주세요.', true); node('vasResultManual').focus(); return; }
     if (current.__redactions && !node('vasResultRedaction').checked) { setStatus('민감 정보 제거 후 계속하는 것에 확인해 주세요.', true); node('vasResultRedaction').focus(); return; }
@@ -126,7 +138,7 @@
       VASPersonalization.record({
         type: 'workflow_completed', source: 'ai-result',
         payload: { status: current.status, summary: current.changes.summary, nextTask: current.nextRecommendedTask, verdict: verdict }
-      });
+      }).catch(function () { setStatus('결과는 연결했지만 작업 기억을 저장하지 못했습니다.', true); });
     }
     if (typeof options.onAccepted === 'function') options.onAccepted(state, current);
     setStatus('이 결과를 다음 작업에 연결했습니다. 반복 번호는 ' + state.workflow.iteration + '입니다.');

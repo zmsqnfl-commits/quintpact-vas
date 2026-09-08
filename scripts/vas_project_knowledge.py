@@ -10,8 +10,9 @@ import stat
 import tempfile
 from pathlib import Path
 from typing import Any
+from vas_ai_contract import redact_credentials
 
-SCHEMA = 1
+SCHEMA = 2
 MAX_FILE_BYTES = 256 * 1024
 MAX_PROJECT_BYTES = 2 * 1024 * 1024
 MAX_CHUNK_CHARS = 1400
@@ -202,6 +203,7 @@ def redact_text(text: str, project: Path) -> str:
     text = WINDOWS_PATH.sub("[path]", text)
     text = UNC_PATH.sub("[path]", text)
     text = POSIX_PATH.sub("[path]", text)
+    text = redact_credentials(text)
     text = CREDENTIAL_VALUE.sub("[redacted]", text)
     text = SECRET_ASSIGNMENT.sub(lambda match: match.group(1) + match.group(2) + "[redacted]", text)
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", text)

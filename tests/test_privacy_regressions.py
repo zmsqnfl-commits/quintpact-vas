@@ -26,6 +26,8 @@ CASES = json.loads((ROOT / "tests/fixtures/secret-redaction-cases.json").read_te
 def test_python_handoff_and_source_export_block_json_credentials(case, tmp_path):
     text = clean(case["input"])
     assert case["marker"] not in text
+    if case.get('control'):
+        assert case['control'] in text
     assert clean(text) == text
     request = {"source": str(tmp_path), "task": {"request": case["input"]}}
     built = build_preview(request)
@@ -60,6 +62,30 @@ def test_safe_json_source_keeps_exact_excerpt_bytes(tmp_path):
     export_package({"source":str(tmp_path),"task":{"request":"review config"},"format":"source-zip","approvedFiles":["config.json"],"output":str(target)})
     with zipfile.ZipFile(target) as archive:
         assert archive.read("excerpts/0001.txt") == ("[Lines 1-1]\n" + original).encode()
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case["name"])
+def test_project_knowledge_strips_whole_credentials_before_chunking(case, tmp_path):
+    from vas_project_knowledge import redact_text, chunks
+    text = redact_text(case['input'], tmp_path)
+    output = json.dumps(chunks(text))
+    assert case['marker'] not in output
+    if case.get('control'):
+        assert case['control'] in output
+    # Embedded object assignments intentionally fail closed as a whole string.
+    assert redact_text('Preserve React and #123abc', tmp_path) == 'Preserve React and #123abc'
+
+
+def test_document_search_excludes_archived_operating_instructions(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('index_builder', ROOT / 'scripts/build-knowledge-index.py')
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    for name in ['docs/OPERATIONS.md', 'docs/log-archive-2025.md', 'docs/releases/2.0.md', 'docs/verification/README.md']:
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text('# Instructions\nExample', encoding='utf-8')
+    assert [p.relative_to(tmp_path).as_posix() for p in builder.source_files(tmp_path)] == ['docs/OPERATIONS.md']
 
 
 @pytest.fixture(scope="module")

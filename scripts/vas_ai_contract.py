@@ -19,7 +19,7 @@ SAFE_HANDOFF_ID = re.compile(r"^h_[a-f0-9]{32}$", re.I)
 SAFE_RESULT_ID = re.compile(r"^r_[a-z0-9_-]{16,64}$", re.I)
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 ABSOLUTE = re.compile(r'''(?i)(?:file://[^\s'"`]+|(?<![A-Za-z0-9_])[A-Z]:[\\/][^\s'"`]+|\\\\[^\s]+|(?<![A-Za-z0-9_:/])/(?:Users|home|var|etc|mnt|volume\d*)/[^\s'"`]+)''')
-CREDENTIAL_NAMES = r"(?:[a-z0-9]+[_-])*(?:password|passwd|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key)"
+CREDENTIAL_NAMES = r"(?:[a-z0-9]+[_-])*(?:password|pgpassword|passwd|pwd|passphrase|secret|secrets|credential|credentials|api[_ -]?key|(?:access|refresh|auth|session)[_ -]?token|token|client[_ -]?secret|authorization|private[_ -]?key|database[_ -]?url|db[_ -]?(?:url|password|pass)|(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|aws[_ -]?(?:secret[_ -]?)?access[_ -]?key(?:[_ -]?id)?|connection[_ -]?string|github[_ -]?pat)"
 CREDENTIAL_KEY = re.compile(rf"^{CREDENTIAL_NAMES}$", re.I)
 GAP = r"\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*"
 ASSIGNMENT = re.compile(rf"""\b{CREDENTIAL_NAMES}\b["']?{GAP}[:=]{GAP}("(?:\\.|[^"\\])*(?:"|$)|'(?:\\.|[^'\\])*(?:'|$)|`(?:\\.|[^`\\])*(?:`|$)|(?:Bearer|Basic)\s+[^\s,;]+|[^\s,;]+)""", re.I)
@@ -29,14 +29,39 @@ SECRET = re.compile(
     r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|"
     r"\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4}\b)"
 )
+CREDENTIAL_VALUE = re.compile(
+    r"(?i)-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z]+ )*PRIVATE KEY-----|$)|"
+    r"\b(?:Bearer|Basic)\s+[a-z0-9._~+/=-]{10,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|"
+    r"\beyJ[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}\.[a-z0-9_-]{8,}|"
+    r'''\b(?:postgres(?:ql)?|mysql|mariadb|mongodb|rediss?|mssql)(?:\+[a-z0-9_.-]+)?://[^\s"'<>`]+'''
+)
 
 
 def sensitive_key(key: Any) -> bool:
     return bool(CREDENTIAL_KEY.fullmatch(str(key)))
 
 
+def redact_yaml_blocks(source: str) -> str:
+    header = re.compile(rf'''^([ \t]*)(?:-[ \t]+)?["']?{CREDENTIAL_NAMES}["']?[ \t]*:[ \t]*[|>][1-9+-]{{0,2}}[ \t]*(?:#.*)?$''', re.I)
+    lines, output, index = source.split('\n'), [], 0
+    while index < len(lines):
+        match = header.match(lines[index].rstrip('\r'))
+        if not match:
+            output.append(lines[index])
+            index += 1
+            continue
+        output.append(match[1] + '[redacted]')
+        index += 1
+        while index < len(lines):
+            line = lines[index]
+            if line.strip() and len(line) - len(line.lstrip(' \t')) <= len(match[1]):
+                break
+            index += 1
+    return '\n'.join(output)
+
+
 def redact_credentials(value: Any, depth: int = 0) -> str:
-    source = str(value if value is not None else "")
+    source = redact_yaml_blocks(str(value if value is not None else ""))
     if depth > 24:
         return "[redacted]"
 
@@ -80,6 +105,7 @@ def redact_credentials(value: Any, depth: int = 0) -> str:
         return match.group() if match.group(1).strip("\"'") == "[redacted]" else "[redacted]"
 
     text = ASSIGNMENT.sub(assignment, text)
+    text = CREDENTIAL_VALUE.sub("[redacted]", text)
     return "[redacted]" if complex_value else ABSOLUTE.sub("[absolute-path]", SECRET.sub("[redacted]", text))
 
 
@@ -196,8 +222,8 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
         direction = "기존 프로젝트의 디자인 규칙을 우선하며, 별도 지시가 없으면 현재 모습을 유지하세요."
     constraints = task.get("constraints", []) if isinstance(task, dict) else []
     criteria = task.get("acceptanceCriteria", []) if isinstance(task, dict) else []
-    constraint_text = "\n".join(f"- {clean(item, 1_000)}" for item in constraints) or "- 없음"
-    criteria_text = "\n".join(f"- {clean(item, 1_000)}" for item in criteria) or "- 없음"
+    constraint_text = "\n".join(f"- {clean(item, 12_000)}" for item in constraints) or "- 없음"
+    criteria_text = "\n".join(f"- {clean(item, 12_000)}" for item in criteria) or "- 없음"
     from vas_handoff_details import prompt_details
     details_text = prompt_details(document)
     text = f"""{opening}
@@ -260,10 +286,10 @@ def validate_result(raw: Any, expected_source_type: str | None = None) -> dict[s
     payload_hash = str(raw.get("handoffPayloadSha256", ""))
     if not re.fullmatch(r"[a-f0-9]{64}", payload_hash, re.I):
         raise ValueError("invalid_handoff_hash")
-    try:
-        iteration = int(raw.get("iteration"))
-    except (TypeError, ValueError):
-        raise ValueError("invalid_iteration") from None
+    iteration = raw.get("iteration")
+    if isinstance(iteration, bool) or not isinstance(iteration, (int, float)) or not float(iteration).is_integer():
+        raise ValueError("invalid_iteration")
+    iteration = int(iteration)
     if iteration < 1 or iteration > 9999:
         raise ValueError("invalid_iteration")
     source_type = raw.get("sourceType")

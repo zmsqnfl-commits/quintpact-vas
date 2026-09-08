@@ -14,7 +14,7 @@
         data[element.name] = element.value.trim();
       }
     });
-    data.attached_files = Array.isArray(files) ? files.slice() : [];
+    data.attachment_count = Array.isArray(files) ? files.length : 0;
     return data;
   }
 
@@ -42,6 +42,7 @@
       await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
       if (global.VASClientDraft) VASClientDraft.clear();
       showStatus('JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.');
+      try { await VASSetupDesign.confirm(); } catch (error) { showStatus('JSON을 저장했습니다. 작업 기억은 저장하지 못했습니다.'); }
     } catch (error) {
       showStatus(error && error.message ? error.message : 'JSON을 만들지 못했습니다.');
     }
@@ -52,6 +53,7 @@
       const result = await prepare();
       await VASAgentHandoffWeb.copy(VASAgentHandoffWeb.prompt(result.document, 'universal'));
       showStatus('프롬프트를 복사했습니다. 코딩 도구에 붙여넣은 뒤 VAS는 닫아도 됩니다.');
+      try { await VASSetupDesign.confirm(); } catch (error) { showStatus('프롬프트를 복사했습니다. 작업 기억은 저장하지 못했습니다.'); }
     } catch (error) {
       showStatus('자동 복사를 사용할 수 없습니다. JSON의 assistantGuide.pasteText를 복사해 주세요.');
     }

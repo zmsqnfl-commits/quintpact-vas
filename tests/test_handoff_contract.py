@@ -70,6 +70,16 @@ def test_finalize_is_deterministic_and_non_circular() -> None:
     assert first["workflow"]["handoffId"] in first["assistantGuide"]["pasteText"]
 
 
+@pytest.mark.parametrize('iteration', [True, False, 1.5, '1', None])
+def test_result_iteration_rejects_non_integer_json_numbers(iteration):
+    with pytest.raises(ValueError):
+        validate_result(result_document(iteration=iteration), 'existing')
+
+
+def test_result_iteration_accepts_integral_json_number():
+    assert validate_result(result_document(iteration=1.0), 'existing')['iteration'] == 1
+
+
 def test_default_prompt_is_one_shot_and_keeps_rbg() -> None:
     text = build_prompt(base_document(), "codex")
     assert "RBG(Read Before Generate)" in text

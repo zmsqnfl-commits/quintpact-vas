@@ -69,6 +69,7 @@ test('browser cleaners cover shared JSON encodings and preserve public design da
   }, cases);
   result.cases.forEach((item,index) => {
     for (const value of [item.clean,item.prompt,item.json]) expect(value,cases[index].name).not.toContain(cases[index].marker);
+    if (cases[index].control) expect(item.clean).toContain(cases[index].control);
     expect(item.twice,cases[index].name+' idempotence').toBe(item.clean);
   });
   expect(result.saved).not.toContain('NestedCanarySecret');

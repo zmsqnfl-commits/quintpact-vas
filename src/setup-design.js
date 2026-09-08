@@ -3,6 +3,7 @@
   'use strict';
 
   const mounts = [];
+  let lastConfirmation = '';
 
   function title(key) { return PRESETS[key]?.label || key.charAt(0).toUpperCase() + key.slice(1); }
   function description(key) {
@@ -65,30 +66,21 @@
     if (item.referenceLabel) item.referenceLabel.textContent = title(state.preset) + ' 디자인 예시·설정 보기';
   }
 
-  function recommendedPreset(result) {
-    const values = [];
-    if (result && Array.isArray(result.preferences)) values.push.apply(values, result.preferences);
-    if (result && Array.isArray(result.results)) result.results.forEach(function (entry) {
-      if (entry && entry.kind === 'memory') values.push(entry.text || '');
-    });
-    const combined = values.join(' ').toLowerCase();
-    return VAS_PRESET_KEYS.find(function (key) {
-      return new RegExp('(^|[^a-z0-9])' + key.toLowerCase() + '([^a-z0-9]|$)').test(combined);
-    }) || null;
-  }
-
   async function refreshRecommendation(item) {
+    const request = item.request = (item.request || 0) + 1;
     const button = item.recommendation;
     if (!button) return;
     button.hidden = true;
     button.disabled = false;
-    if (!global.VASPersonalization || !global.VASRagLite) return;
+    if (!global.VASPersonalization) return;
     try {
       const status = await VASPersonalization.status();
       if (status.consent !== true || status.paused) return;
       const keys = VAS_PRESET_KEYS;
-      const result = await VASPersonalization.recommend('디자인 프리셋 ' + keys.join(' '), { limit: 12 });
-      const key = recommendedPreset(result);
+      const events = await VASPersonalization.list({ type: 'theme_selected' });
+      const confirmed = events.find(function (event) { return event.payload && event.payload.confirmed === true && keys.includes(event.payload.preset); });
+      const key = confirmed && confirmed.payload.preset;
+      if (item.request !== request) return;
       if (!key) return;
       const current = VASThemeState.get().preset;
       button.dataset.preset = key;
@@ -134,13 +126,12 @@
     const item = { select: select, summary: summary, referenceLabel: referenceLabel, recommendation: recommendation };
     mounts.push(item);
     select.addEventListener('change', function () { apply(select.value); });
-    recommendation.addEventListener('click', function () {
+    recommendation.addEventListener('click', async function () {
       const key = recommendation.dataset.preset;
       if (!key) return;
+      const state = await VASPersonalization.status().catch(function () { return {}; });
+      if (state.consent !== true || state.paused || recommendation.hidden) return;
       apply(key);
-      if (global.VASPersonalization) VASPersonalization.record({
-        type: 'recommendation_used', source: 'setup-design', payload: { preset: key }
-      });
     });
     refreshMount(item);
     refreshRecommendation(item);
@@ -154,8 +145,22 @@
 
   global.addEventListener('focus', refresh);
   global.addEventListener('pageshow', refresh);
+  global.addEventListener('vas-memory-change', function (event) {
+    if (['clear', 'delete', 'consent'].includes(event.detail.action)) lastConfirmation = '';
+    mounts.forEach(refreshRecommendation);
+  });
   global.addEventListener('vas-theme-state', function () {
     mounts.forEach(refreshMount);
   });
-  global.VASSetupDesign = Object.freeze({ mount: mount, apply: apply, context: context, refresh: refresh });
+  async function confirm() {
+    if (!global.VASPersonalization) return;
+    const state = VASThemeState.get();
+    const key = state.basePreset || state.preset;
+    if (!VAS_PRESET_KEYS.includes(key)) return;
+    const identity = JSON.stringify([key, state.tasteProfileMode, state.tokens]);
+    if (identity === lastConfirmation) return;
+    const recorded = await VASPersonalization.record({ type: 'theme_selected', source: 'setup-design', payload: { preset: key, confirmed: true } });
+    if (recorded) lastConfirmation = identity;
+  }
+  global.VASSetupDesign = Object.freeze({ mount: mount, apply: apply, context: context, refresh: refresh, confirm: confirm });
 })(window);

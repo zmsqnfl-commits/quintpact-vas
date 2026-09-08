@@ -151,6 +151,7 @@
       await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
       await VASAgentHandoffWeb.save(preview.document, 'VAS-AI-HANDOFF.json');
       document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 폴더 위치가 포함된 프롬프트를 코딩 AI에 붙여넣으세요.';
+      try { await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
     } catch (error) { showError(error); }
   }
 
@@ -162,6 +163,7 @@
       await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
       await VASAgentHandoffWeb.copy(currentPrompt());
       document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. 프롬프트에 적힌 폴더 위치를 코딩 AI가 확인합니다.';
+      try { await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
       if (advance !== false) go(3);
     } catch (error) { showError(error); }
   }

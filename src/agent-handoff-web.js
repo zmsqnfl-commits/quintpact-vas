@@ -31,7 +31,7 @@
     const suppliedRag = settings.rag || context && context.rag;
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.1' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.7.2' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),
@@ -105,7 +105,7 @@
       deadline: clean(values.deadline, 200),
       budget: clean(first(values.budget), 80),
       notes: clean(values.extra, 2000),
-      attachments: { contentsIncluded: false, transfer: 'attach-in-coding-tool', files: (Array.isArray(values.attached_files) ? values.attached_files : []).slice(0, 20).map(function (name) { return clean(String(name).split(/[\\/]/).pop(), 120); }).filter(Boolean) }
+      attachments: { contentsIncluded: false, namesIncluded: false, transfer: 'attach-in-coding-tool', count: Math.max(0, Math.min(20, Number(values.attachment_count) || (Array.isArray(values.attached_files) ? values.attached_files.length : 0))) }
     };
     const context = {
       requirements: { included: true, value: requirements },
@@ -125,7 +125,7 @@
   }
 
   function listText(values) {
-    return Array.isArray(values) && values.length ? values.map(function (item) { return '- ' + clean(item, 1000); }).join('\n') : '- 없음';
+    return Array.isArray(values) && values.length ? values.map(function (item) { return '- ' + clean(item, 12000); }).join('\n') : '- 없음';
   }
 
   function localFolder(value) {
@@ -162,7 +162,7 @@
       '제약사항:\n' + listText(task.constraints) + '\n\n' +
       '완료 기준:\n' + listText(task.acceptanceCriteria) + '\n\n' +
       '추가 요구사항(JSON):\n' + JSON.stringify(requirementDetails, null, 2) + '\n\n' +
-      (details.attachments && Array.isArray(details.attachments.files) && details.attachments.files.length ? '참고 파일: 위 파일 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 내용을 전송하지 않았습니다. AI는 파일을 받기 전에는 내용을 추정하지 마세요.\n\n' : '') +
+      (details.attachments && details.attachments.count ? '참고 파일: 필요한 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 이름과 내용을 전송하지 않았습니다. AI는 파일을 받기 전에는 내용을 추정하지 마세요.\n\n' : '') +
       '디자인 방향:\n' + designDirection + '\n\n' +
       (design.included && design.tokens ? '확정 디자인 토큰(JSON):\n' + JSON.stringify(design.tokens, null, 2) + '\n\n' : '') +
       '에이전트 작업 방식:\n' + workflow + '\n\n' +

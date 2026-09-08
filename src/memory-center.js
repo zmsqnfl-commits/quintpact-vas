@@ -16,6 +16,13 @@
   let paused = false;
   let consent = null;
   let projectOnly = Boolean(projectContext);
+  const feedback = document.createElement('p');
+  feedback.id = 'memoryFeedback'; feedback.setAttribute('role', 'alert');
+  document.querySelector('main').prepend(feedback);
+  async function run(action) {
+    feedback.textContent = '';
+    try { await action(); } catch (error) { feedback.textContent = '작업 기억 처리 결과를 확인하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.'; }
+  }
 
   function download(name, content) {
     const blob = new Blob([content], { type: 'application/json' });
@@ -41,7 +48,7 @@
       const time = document.createElement('time'); time.dateTime = event.timestamp; time.textContent = new Date(event.timestamp).toLocaleString();
       const content = document.createElement('div'); const title = document.createElement('h3'); const detail = document.createElement('pre');
       title.textContent = event.type + ' · ' + event.source; detail.textContent = payloadText(event.payload); content.append(title, detail);
-      const button = document.createElement('button'); button.textContent = '삭제'; button.addEventListener('click', function () { removeEvent(event.id); });
+      const button = document.createElement('button'); button.textContent = '삭제'; button.addEventListener('click', function () { run(function () { return removeEvent(event.id); }); });
       row.append(time, content, button); listRoot.append(row);
     });
   }
@@ -66,15 +73,15 @@
   }
 
   VASPersonalization.eventTypes.forEach(function (type) { const option = document.createElement('option'); option.value = type; option.textContent = type; filter.append(option); });
-  filter.addEventListener('change', refresh);
-  document.getElementById('toggleScope').addEventListener('click', function () { projectOnly = !projectOnly; refresh(); });
-  document.getElementById('toggleConsent').addEventListener('click', async function () {
+  filter.addEventListener('change', function () { run(refresh); });
+  document.getElementById('toggleScope').addEventListener('click', function () { projectOnly = !projectOnly; run(refresh); });
+  document.getElementById('toggleConsent').addEventListener('click', function () { run(async function () {
     if (consent === true && !confirm('새 기록을 중지하시겠습니까? 기존 기록은 직접 삭제할 때까지 남습니다.')) return;
     await VASPersonalization.consent(consent !== true); await refresh();
-  });
-  document.getElementById('togglePause').addEventListener('click', async function () { await VASPersonalization.pause(!paused); await refresh(); });
-  document.getElementById('deleteAll').addEventListener('click', async function () { if (confirm('저장된 사용 기록을 모두 지울까요?')) { await VASPersonalization.clear(); await refresh(); } });
-  document.getElementById('exportMemory').addEventListener('click', async function () { download('vas-personalization-memory.json', await VASPersonalization.export()); });
-  document.getElementById('importMemory').addEventListener('change', async function (event) { const file = event.target.files[0]; if (!file) return; const count = await VASPersonalization.import(await file.text()); alert(count + '건을 가져왔습니다.'); await refresh(); });
-  refresh();
+  }); });
+  document.getElementById('togglePause').addEventListener('click', function () { run(async function () { await VASPersonalization.pause(!paused); await refresh(); }); });
+  document.getElementById('deleteAll').addEventListener('click', function () { run(async function () { if (confirm('저장된 사용 기록을 모두 지울까요?')) { await VASPersonalization.clear(); await refresh(); } }); });
+  document.getElementById('exportMemory').addEventListener('click', function () { run(async function () { download('vas-personalization-memory.json', await VASPersonalization.export()); }); });
+  document.getElementById('importMemory').addEventListener('change', function (event) { run(async function () { const file = event.target.files[0]; if (!file) return; const count = await VASPersonalization.import(await file.text()); alert(count + '건을 가져왔습니다.'); await refresh(); }); });
+  run(refresh);
 })();

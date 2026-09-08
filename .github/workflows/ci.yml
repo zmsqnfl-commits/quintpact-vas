@@ -65,6 +65,15 @@ jobs:
         run: python -m pytest -q tests/test_privacy_regressions.py
       - name: Run PowerShell 5.1 runtime integration
         run: python tests/test_windows_runtime.py
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Test connected Windows browser workflows
+        run: |
+          npm ci
+          npx playwright install chromium
+          npx playwright test -c tests/playwright.config.js tests/integrated-runtime.spec.js --workers=1
       - name: Build and smoke-test the extracted Windows release
         run: |
           python scripts/build_release.py

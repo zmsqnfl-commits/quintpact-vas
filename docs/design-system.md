@@ -12,7 +12,7 @@ VAS가 인계하는 대상 프로젝트는 해당 프로젝트의 기술 스택�
 2. 확정된 토큰·참고 화면·에셋을 시각 명세로 사용합니다.
 3. Taste Profile과 프리셋은 명세에서 결정하지 않은 부분을 보완합니다.
 
-새 설정의 기본값은 `awwwards / Editorial Motion`입니다. 기존 설정은 자동 전환하지 않습니다.
+새 설정의 기본값은 `awwwards / Architecture Editorial (curatedEditorial)`입니다. 기존 설정은 자동 전환하지 않습니다.
 세부 토큰을 편집해도 `basePreset`으로 원래 디자인 방향을 유지합니다.
 프로젝트 프리셋은 인계·디자인 예시에 적용하며 VAS 허브의 기본 셸 색은 유지합니다.
 

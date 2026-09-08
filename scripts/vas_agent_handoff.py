@@ -25,7 +25,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 3
-VAS_VERSION = "2.7.1"
+VAS_VERSION = "2.7.2"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500
@@ -103,7 +103,7 @@ def _safe_relative(value: str) -> str | None:
 
 
 def _clean_string(value: Any, maximum: int = 4_000) -> str:
-    text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
+    text = redact_credentials(str(value or "")).replace("\r\n", "\n").replace("\r", "\n")
     text = re.sub(r"[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]", " ", text)
     text = ABSOLUTE_PATH.sub("[absolute-path]", text)
     for pattern in SECRET_CONTENT:

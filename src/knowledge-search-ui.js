@@ -47,10 +47,12 @@
     event.preventDefault();
     const query = input.value.trim();
     if (query.length < 2) return;
-    await VASPersonalization.init();
-    const results = await VASPersonalization.retrieve(query, { limit: 12 });
-    render(results);
-    VASPersonalization.record({ type: 'search', source: 'knowledge', payload: { query: query, resultCount: results.length } });
+    try {
+      await VASPersonalization.init();
+      const results = await VASPersonalization.retrieve(query, { limit: 12 });
+      render(results);
+      await VASPersonalization.record({ type: 'search', source: 'knowledge', payload: { query: query, resultCount: results.length } });
+    } catch (error) { count.textContent = '저장소 연결을 확인하고 다시 검색해 주세요.'; }
   });
 
   document.querySelectorAll('[data-query]').forEach(function (button) {
@@ -89,6 +91,9 @@
 
   window.addEventListener('vas-rag-status', function (event) {
     if (event.detail && event.detail.mode === 'active') loadProjectRecommendation().catch(function () {});
+  });
+  window.addEventListener('vas-knowledge-warning', function () {
+    document.getElementById('ragScope').textContent = '이전 프로젝트 색인은 사용하지 않습니다. 관리자가 프로젝트 지식 색인을 다시 생성한 뒤 사용할 수 있습니다.';
   });
 
   const initialQuery = new URLSearchParams(window.location.search).get('q');

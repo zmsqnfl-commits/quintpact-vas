@@ -102,11 +102,18 @@
     }, null);
   }
 
-  function persist(state) {
+  function persist(state, updateNavigation) {
+    try {
+      if (updateNavigation || readHashState()) {
+        const fragments = new URLSearchParams(global.location.hash.slice(1));
+        fragments.set(HASH_KEY, encodeNavigationState(state));
+        global.history.replaceState(global.history.state, '', global.location.pathname + global.location.search + '#' + fragments);
+      }
+    } catch (error) { }
     VASStorage.writeJson('vasThemeTokens', state.tokens);
     VASStorage.writeText('vasCurrentPreset', state.preset);
     VASStorage.writeText('vasTasteProfileMode', state.tasteProfileMode);
-    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.7.1');
+    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.7.2');
     VASStorage.writeJson('vasThemeStateMeta', {
       v: STATE_VERSION, preset: state.preset, basePreset: state.basePreset, revision: state.revision, updatedAt: state.updatedAt
     });
@@ -146,7 +153,7 @@
     const next = normalizeState(state);
     const changed = !currentState || JSON.stringify(currentState) !== JSON.stringify(next);
     currentState = next;
-    persist(currentState);
+    persist(currentState, true);
     decorateLinks(document);
     if (changed && notify) global.dispatchEvent(new CustomEvent('vas-theme-state', { detail: get() }));
     return get();
@@ -195,7 +202,7 @@
       tasteProfileMode: input.tasteProfileMode === undefined ? base.tasteProfileMode : input.tasteProfileMode,
       tokens: input.tokens === undefined ? base.tokens : input.tokens
     });
-    persist(currentState);
+    persist(currentState, true);
     decorateLinks(document);
     announce();
     return get();
@@ -203,6 +210,7 @@
 
   global.VASThemeState = Object.freeze({
     init: init, get: get, sync: sync, commit: commit, decorateLinks: decorateLinks,
+    reset: function () { return commit({ preset: DEFAULT_PRESET, basePreset: DEFAULT_PRESET, tasteProfileMode: 'auto', tokens: VASStorage.getDefaultTheme() }); },
     encodeNavigationState: encodeNavigationState, decodeNavigationState: decodeNavigationState
   });
 
