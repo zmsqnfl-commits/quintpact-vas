@@ -1,4 +1,4 @@
-"""Safety and compatibility tests for VAS 2.7.6 AI handoff packages."""
+"""Safety and compatibility tests for VAS 2.8.0 AI handoff packages."""
 from __future__ import annotations
 
 import hashlib
@@ -84,7 +84,8 @@ class AgentHandoffTests(unittest.TestCase):
         self.assertTrue(all(item["userApproved"] for item in document["context"]["rag"]["items"]))
         self.assertLessEqual(len(document["context"]["rag"]["items"][0]["summary"]), 400)
         self.assertNotIn("excerpt", document["context"]["rag"]["items"][0])
-        self.assertTrue(document["qualityGate"]["ragReviewed"])
+        self.assertFalse(document["qualityGate"]["ragReviewed"])
+        self.assertEqual(document["qualityGate"]["userConfirmation"]["status"], "not-performed")
         self.assertTrue(document["security"]["approvedContextOnly"])
         self.assertTrue(document["security"]["sourceUnchanged"])
         self.assertFalse(document["security"]["projectCodeExecuted"])
@@ -101,7 +102,7 @@ class AgentHandoffTests(unittest.TestCase):
         preview = build_preview(self.request())
         output_a = self.base / "a.zip"
         output_b = self.base / "b.zip"
-        common = self.request(mode="reviewed-source", format="reviewed-zip", snapshotId=preview["snapshotId"], approvedFiles=["src/legacy.txt"])
+        common = self.request(mode="reviewed-source", format="reviewed-zip", inputReviewAcknowledged=True, snapshotId=preview["snapshotId"], approvedFiles=["src/legacy.txt"])
         export_package(dict(common, output=str(output_a)))
         export_package(dict(common, output=str(output_b)))
         self.assertEqual(output_a.read_bytes(), output_b.read_bytes())
@@ -129,7 +130,7 @@ class AgentHandoffTests(unittest.TestCase):
     def test_json_export_has_common_name_and_no_source_contents(self) -> None:
         preview = build_preview(self.request())
         output = self.base / "handoff.json"
-        result = export_package(self.request(output=str(output), format="json", snapshotId=preview["snapshotId"]))
+        result = export_package(self.request(output=str(output), format="json", inputReviewAcknowledged=True, snapshotId=preview["snapshotId"]))
         document = json.loads(output.read_text(encoding="utf-8"))
         self.assertTrue(result["fileName"].endswith("-VAS-AI-HANDOFF.json"))
         self.assertEqual(document["format"], "vas-ai-handoff")

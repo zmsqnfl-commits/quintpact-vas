@@ -96,6 +96,7 @@ function New-VASHandoffCliRequest {
     }
     if ($null -eq $context.rag) { $context.rag = [ordered]@{ included = $false; items = @() } }
     $context.preferences = [ordered]@{ included = $false; items = @() }
+    $reviewAcknowledged = Get-VASHandoffValue $Body 'inputReviewAcknowledged' $false
     return [ordered]@{
         source = $resolved.source
         sourceType = $resolved.sourceType
@@ -106,6 +107,7 @@ function New-VASHandoffCliRequest {
         context = $context
         workflow = Get-VASHandoffValue $Body 'workflow' ([ordered]@{ iteration = 1; parentResultId = $null })
         ragReviewed = [bool](Get-VASHandoffValue $Body 'ragReviewed' $true)
+        inputReviewAcknowledged = ($reviewAcknowledged -is [bool] -and $reviewAcknowledged -eq $true)
         mode = $mode
         snapshotId = [string](Get-VASHandoffValue $Body 'snapshotId' '')
         format = $format

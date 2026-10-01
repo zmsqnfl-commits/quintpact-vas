@@ -7,13 +7,30 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def design_direction(document: dict) -> str:
+    try:
+        from .vas_task_policy import design_direction as scope_direction
+        from .vas_ai_contract import clean
+    except ImportError:
+        from vas_task_policy import design_direction as scope_direction
+        from vas_ai_contract import clean
+    design = (document.get("context") or {}).get("design") or {}
+    direction = clean(design.get("direction", ""), 12000) if design.get("included") else ""
+    return scope_direction(document) + ("\n" + direction if direction else "")
+
+
 def prompt_details(document: dict) -> str:
-    from vas_ai_contract import clean
+    try:
+        from .vas_ai_contract import clean
+    except ImportError:
+        from vas_ai_contract import clean
     context = document.get("context") or {}
     details = (context.get("requirements") or {}).get("value") or {}
     keys = ("reference", "capabilities", "dataReadiness", "platforms", "deadline", "budget", "attachments")
     selected = {key: details[key] for key in keys if key in details}
     sections = ["추가 요구사항(JSON):\n" + clean(json.dumps(selected, ensure_ascii=False, indent=2), 8000)]
+    guidance = (document.get("task") or {}).get("validationGuidance") or []
+    sections.append("공통 확인 안내 (작업별 완료조건이나 확인 근거가 아님):\n" + "\n".join("- " + clean(item, 2000) for item in guidance))
     attachments = details.get("attachments") or {}
     if attachments.get("count") or attachments.get("files"):
         sections.append("참고 파일 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 내용을 전송하지 않았습니다. AI는 받지 않은 내용을 추정하지 마세요.")

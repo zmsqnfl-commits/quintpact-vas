@@ -36,7 +36,7 @@ def test_python_prompt_preserves_selections_and_tokens():
 def test_python_preview_keeps_design_tokens_and_complete_multiline_skill():
     direction = "Layout rule\n" * 700 + "[OUTPUT CONTRACT]\nCompare the actual screen."
     with tempfile.TemporaryDirectory() as directory:
-        result = build_preview({"source": directory, "task": {"request": "Apply design"}, "context": {
+        result = build_preview({"source": directory, "task": {"request": "Apply design", "designScope": {"mode": "redesign", "scope": "요청한 화면 전체"}}, "context": {
             "design": {"included": True, "tokens": {"colors": {"primary": "#123abc"}, "api_key": "fixture-private"}, "direction": direction},
             "tokens": {"secret": "fixture-private"}}})
     design = result["document"]["context"]["design"]

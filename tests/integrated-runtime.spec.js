@@ -76,6 +76,8 @@ test('reset reaches open tabs, navigation, downloads and recommendations', async
   await page.reload();
   await page.locator('#folderPath').fill('C:\\synthetic\\original'); await page.locator('#projectName').fill('Demo');
   await page.locator('#taskRequest').fill('Preserve working features'); await page.locator('#continueSettings').click();
+  await expect(page.locator('#designScopeMode')).toHaveValue('preserve');
+  await page.locator('#designScopeMode').selectOption('redesign');
   const doc = JSON.parse(await downloaded(page, '#downloadJson'));
   expect(doc.context.design.preset).toBe('awwwards');
   expect(await page.evaluate(async () => (await VASPersonalization.status()).count)).toBe(0);
@@ -99,6 +101,8 @@ for (const width of [1440, 390]) test('new-project copy and JSON agree with all 
   await page.locator('#projectDesignPreset').selectOption('bento');
   expect(await page.evaluate(async () => (await VASPersonalization.list()).length)).toBe(0);
   await page.locator('#nextBtn').click(); await expect(page.locator('#doneScreen')).toHaveClass(/active/);
+  await expect(page.locator('#handoffInputReview')).toContainText('필수');
+  await page.locator('#handoffInputReview input').check();
   await page.locator('[onclick="copyNewProjectPrompt()"]').click();
   await expect.poll(() => page.evaluate(() => window.copiedPrompt)).toContain('KeepLateRestrictionCanary');
   const raw = await downloaded(page, '#downloadHandoff');

@@ -7,6 +7,11 @@ import re
 from copy import deepcopy
 from typing import Any, Callable
 
+if __package__:
+    from .vas_result_validation import json_integer, validate
+else:
+    from vas_result_validation import json_integer, validate
+
 HANDOFF_SCHEMA = 3
 RESULT_SCHEMA = 1
 MAX_RAG_ITEMS = 3
@@ -247,14 +252,15 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
     opening = f"{tool}에서 새 프로젝트를 만들 빈 폴더를 여세요." if is_new else f"{tool}에서 실제 작업할 원본 프로젝트 폴더를 여세요."
     source_rule = ("현재 열린 빈 폴더에 요구사항에 맞는 구조를 직접 설계하세요." if is_new
                    else "프로젝트 구조·기술 스택·실행 방법은 현재 폴더의 실제 파일을 직접 읽어 판단하세요.")
-    direction = clean(design.get("direction"), 12_000) if isinstance(design, dict) else ""
-    if not direction:
-        direction = "기존 프로젝트의 디자인 규칙을 우선하며, 별도 지시가 없으면 현재 모습을 유지하세요."
+    try:
+        from .vas_handoff_details import prompt_details, design_direction
+    except ImportError:
+        from vas_handoff_details import prompt_details, design_direction
+    direction = design_direction(document)
     constraints = task.get("constraints", []) if isinstance(task, dict) else []
     criteria = task.get("acceptanceCriteria", []) if isinstance(task, dict) else []
     constraint_text = "\n".join(f"- {clean(item, 12_000)}" for item in constraints) or "- 없음"
     criteria_text = "\n".join(f"- {clean(item, 12_000)}" for item in criteria) or "- 없음"
-    from vas_handoff_details import prompt_details
     details_text = prompt_details(document)
     text = f"""{opening}
 
@@ -283,12 +289,20 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
 5. 비밀값·사용자 데이터·캐시·빌드 결과물은 읽거나 변경하지 마세요.
 6. RBG(Read Before Generate): 먼저 확인한 구조, 진입점, 적용 위치, 프로젝트 규칙, 검증 방법을 짧게 정리하세요.
 7. 불명확하거나 삭제·대규모 변경처럼 위험한 경우만 질문하고 나머지는 실제 파일을 기준으로 수정·테스트하세요."""
-    return text[:32_000]
+    if len(text) > 32_000:
+        raise ValueError("handoff_prompt_too_long")
+    return text
 
 
 def normalize_handoff(raw: dict[str, Any], prompt_builder: Callable[[dict[str, Any]], str]) -> dict[str, Any]:
-    if raw.get("format") != "vas-ai-handoff" or raw.get("schemaVersion") not in {2, 3}:
+    if not isinstance(raw, dict) or raw.get("format") != "vas-ai-handoff" or not json_integer(raw.get("schemaVersion"), 2, 3):
         raise ValueError("unsupported_handoff")
+    for key in ("workflow", "context", "task", "project", "assistantGuide", "integrity", "qualityGate", "security"):
+        if key in raw and not isinstance(raw[key], dict):
+            raise ValueError("invalid_handoff_object")
+    workflow = raw.get("workflow", {})
+    if raw["schemaVersion"] == 3 and "iteration" in workflow and not json_integer(workflow["iteration"], 1, 9999):
+        raise ValueError("invalid_iteration")
     document = deepcopy(raw)
     if document.get("schemaVersion") == 2:
         document["workflow"] = {
@@ -306,108 +320,29 @@ def normalize_handoff(raw: dict[str, Any], prompt_builder: Callable[[dict[str, A
     return finalize_handoff(document, prompt_builder)
 
 
+def repair_legacy_numbers(raw: Any) -> dict[str, Any]:
+    """Return a visible conversion proposal. Never used by normal validation."""
+    document, conversions = deepcopy(raw), []
+    if isinstance(document, dict):
+        slots = [(document, "schemaVersion", "schemaVersion", 1, 3)]
+        if document.get("format") == "vas-ai-result":
+            slots.append((document, "iteration", "iteration", 1, 9999))
+        if document.get("format") == "vas-ai-handoff" and isinstance(document.get("workflow"), dict):
+            slots.append((document["workflow"], "iteration", "workflow.iteration", 1, 9999))
+        for owner, key, field, minimum, maximum in slots:
+            value = owner.get(key)
+            if not isinstance(value, bool) and not (isinstance(value, str) and re.fullmatch(r"[0-9]+(?:\.0+)?", value.strip())):
+                continue
+            try:
+                number = float(value)
+            except (ValueError, OverflowError):
+                continue
+            if not json_integer(number, minimum, maximum):
+                continue
+            owner[key] = int(number)
+            conversions.append({"field": field, "from": value, "to": int(number)})
+    return {"document": document, "conversions": conversions, "requiresConfirmation": bool(conversions)}
+
+
 def validate_result(raw: Any, expected_source_type: str | None = None) -> dict[str, Any]:
-    if not isinstance(raw, dict) or raw.get("format") != "vas-ai-result" or raw.get("schemaVersion") != RESULT_SCHEMA:
-        raise ValueError("invalid_result_format")
-    if not SAFE_RESULT_ID.fullmatch(str(raw.get("resultId", ""))):
-        raise ValueError("invalid_result_id")
-    if not SAFE_HANDOFF_ID.fullmatch(str(raw.get("handoffId", ""))):
-        raise ValueError("invalid_handoff_id")
-    payload_hash = str(raw.get("handoffPayloadSha256", ""))
-    if not re.fullmatch(r"[a-f0-9]{64}", payload_hash, re.I):
-        raise ValueError("invalid_handoff_hash")
-    iteration = raw.get("iteration")
-    if isinstance(iteration, bool) or not isinstance(iteration, (int, float)) or not float(iteration).is_integer():
-        raise ValueError("invalid_iteration")
-    iteration = int(iteration)
-    if iteration < 1 or iteration > 9999:
-        raise ValueError("invalid_iteration")
-    source_type = raw.get("sourceType")
-    if source_type not in SOURCE_TYPES:
-        raise ValueError("invalid_source_type")
-    if expected_source_type and source_type != expected_source_type and not (expected_source_type == "existing" and source_type == "registered"):
-        raise ValueError("source_type_mismatch")
-    status = raw.get("status")
-    if status not in RESULT_STATUSES:
-        raise ValueError("invalid_result_status")
-    readback = raw.get("readback") if isinstance(raw.get("readback"), dict) else {}
-
-    def relative_list(values: Any, error: str, maximum: int) -> list[str]:
-        output: list[str] = []
-        for value in (values if isinstance(values, list) else [])[:maximum]:
-            path = safe_relative(value)
-            if not path:
-                raise ValueError(error)
-            output.append(path)
-        return output
-
-    def string_list(values: Any, maximum: int) -> list[str]:
-        return [text for text in (clean(value, 4_000) for value in (values if isinstance(values, list) else [])[:maximum]) if text]
-
-    commands: list[dict[str, Any]] = []
-    for item in (readback.get("commands") if isinstance(readback.get("commands"), list) else [])[:50]:
-        if not isinstance(item, dict):
-            continue
-        source = safe_relative(item.get("source")) if item.get("source") else None
-        if item.get("source") and not source:
-            raise ValueError("unsafe_command_source")
-        commands.append({"kind": clean(item.get("kind"), 20), "command": clean(item.get("command"), 500), "source": source})
-
-    changes = raw.get("changes") if isinstance(raw.get("changes"), dict) else {}
-    files: list[dict[str, Any]] = []
-    for item in (changes.get("relativeFiles") if isinstance(changes.get("relativeFiles"), list) else [])[:100]:
-        path = safe_relative(item.get("path")) if isinstance(item, dict) else None
-        action = item.get("action") if isinstance(item, dict) else None
-        from_path = safe_relative(item.get("fromPath")) if isinstance(item, dict) and item.get("fromPath") else None
-        if not path or action not in ACTIONS or (isinstance(item, dict) and item.get("fromPath") and not from_path):
-            raise ValueError("unsafe_result_path")
-        files.append({"path": path, "action": action, "fromPath": from_path})
-    tests: list[dict[str, Any]] = []
-    for item in (raw.get("tests") if isinstance(raw.get("tests"), list) else [])[:50]:
-        if not isinstance(item, dict):
-            continue
-        if item.get("status") not in TEST_STATUSES:
-            raise ValueError("invalid_test_status")
-        tests.append({
-            "name": clean(item.get("name"), 200) or "검증",
-            "command": clean(item.get("command"), 500),
-            "status": item.get("status"),
-            "summary": clean(item.get("summary"), 1_000),
-        })
-    if status == "complete" and any(item["status"] == "failed" for item in tests):
-        status = "incomplete"
-    remaining: list[dict[str, str]] = []
-    for item in (raw.get("remaining") if isinstance(raw.get("remaining"), list) else [])[:50]:
-        if not isinstance(item, dict):
-            continue
-        value = {
-            "severity": item.get("severity") if item.get("severity") in SEVERITIES else "medium",
-            "summary": clean(item.get("summary"), 1_000),
-            "nextAction": clean(item.get("nextAction"), 1_000),
-        }
-        if value["summary"] or value["nextAction"]:
-            remaining.append(value)
-    safety = raw.get("safety") if isinstance(raw.get("safety"), dict) else {}
-    if any(safety.get(key) is not True for key in ("absolutePathsExcluded", "secretsExcluded", "rawCommandOutputExcluded")):
-        raise ValueError("invalid_safety_confirmation")
-    return {
-        "format": "vas-ai-result", "schemaVersion": RESULT_SCHEMA,
-        "resultId": raw["resultId"], "handoffId": raw["handoffId"],
-        "handoffPayloadSha256": payload_hash,
-        "iteration": iteration,
-        "sourceType": source_type, "status": status,
-        "generatedBy": {"tool": clean((raw.get("generatedBy") if isinstance(raw.get("generatedBy"), dict) else {}).get("tool"), 80) or "other"},
-        "readback": {
-            "checkedFiles": relative_list(readback.get("checkedFiles"), "unsafe_readback_path", 100),
-            "confirmedRules": string_list(readback.get("confirmedRules"), 50),
-            "confirmedEntrypoints": relative_list(readback.get("confirmedEntrypoints"), "unsafe_entrypoint_path", 50),
-            "commands": commands,
-            "facts": string_list(readback.get("facts"), 50),
-            "assumptions": string_list(readback.get("assumptions"), 50),
-        },
-        "changes": {"summary": clean(changes.get("summary"), 8_000), "relativeFiles": files},
-        "tests": tests,
-        "remaining": remaining,
-        "nextRecommendedTask": clean(raw.get("nextRecommendedTask"), 4_000),
-        "safety": {"absolutePathsExcluded": True, "secretsExcluded": True, "rawCommandOutputExcluded": True},
-    }
+    return validate(raw, expected_source_type, clean, safe_relative)

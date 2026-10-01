@@ -1,0 +1,11 @@
+[
+  {"name":"preserve-array","task":{"designScope":{"mode":["preserve"],"scope":""}}},
+  {"name":"partial-array","task":{"designScope":{"mode":["partial"],"scope":"Header colors"}}},
+  {"name":"redesign-array","task":{"designScope":{"mode":["redesign"],"scope":"All screens"}}},
+  {"name":"scope-number","task":{"designScope":{"mode":1,"scope":""}}},
+  {"name":"manual-array","task":{"completionCriteria":[{"description":"CSV","method":["manual"],"required":true}]}},
+  {"name":"automatic-array","task":{"completionCriteria":[{"description":"CSV","method":["automatic"],"required":true}]}},
+  {"name":"static-array","task":{"completionCriteria":[{"description":"CSV","method":["static"],"required":true}]}},
+  {"name":"method-object","task":{"completionCriteria":[{"description":"CSV","method":{},"required":true}]}},
+  {"name":"method-null","task":{"completionCriteria":[{"description":"CSV","method":null,"required":true}]}}
+]

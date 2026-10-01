@@ -58,6 +58,22 @@
 .result-correction textarea { min-height: 82px; margin-top: 8px; font-family: inherit; }
 .result-accept-actions button:first-child { background: #171715; color: #f2f0e8; }
 .result-accept-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.result-assessment,.result-legacy { margin-top: 18px; padding: 16px; border: 1px solid #97958c; background: #f4f2eb; }
+.result-assessment > span { display: block; margin-bottom: 8px; font-size: 11px; }
+.result-assessment > strong { display: block; font-size: 17px; }
+.result-assessment p,.result-evidence p,.result-legacy p { margin: 9px 0 0; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.result-evidence { margin-top: 20px; border: 1px solid #97958c; padding: 14px; }
+.result-evidence summary { cursor: pointer; font-weight: 750; font-size: 13px; }
+.result-evidence fieldset { min-width: 0; margin: 20px 0 0; padding: 14px; border: 1px solid #97958c; }
+.result-evidence legend { max-width: 100%; padding: 0 6px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.result-evidence label { display: grid; gap: 7px; margin: 13px 0; font-size: 12px; line-height: 1.6; }
+.result-evidence input[type="text"],.result-evidence select,.result-evidence textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 8px; border: 1px solid #97958c; background: #fffdf5; color: inherit; font: inherit; }
+.result-evidence textarea { min-height: 90px; resize: vertical; }
+.result-evidence input[type="checkbox"] { justify-self: start; width: 18px; height: 18px; }
+.result-evidence button,.result-legacy button { min-height: 44px; padding: 10px 14px; border: 1px solid #171715; background: #171715; color: #f2f0e8; cursor: pointer; font-weight: 700; }
+.result-evidence button:disabled { opacity: .4; cursor: not-allowed; }
+.result-evidence :focus-visible { outline: 3px solid #9a7300; outline-offset: 3px; }
+.result-confirmations small { display: block; margin-top: 5px; color: #565650; }
 
 @media (max-width: 620px) {
   .context-review-head,.context-review-foot,.result-import-callout { align-items: stretch; flex-direction: column; }

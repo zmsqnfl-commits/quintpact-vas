@@ -50,6 +50,8 @@ test('new project produces the common safe VAS-AI-HANDOFF.json', async ({ page }
   await expect(page.locator('#handoffReview')).toContainText('사용 중인 코딩 도구에서 새 프로젝트를 만들 빈 폴더를 여세요');
   await expect(page.locator('#handoffReview')).toContainText('Preset: awwwards');
   await expect(page.locator('#handoffReview')).not.toContainText('VAS-AI-RESULT.json');
+  await expect(page.locator('#handoffInputReview')).toContainText('필수');
+  await page.locator('#handoffInputReview input').check();
   const download = page.waitForEvent('download');
   await page.locator('#downloadHandoff').click();
   const result = await download;

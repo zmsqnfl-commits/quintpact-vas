@@ -1,0 +1,17 @@
+.task-conditions { margin:28px 0; padding:18px 0; border-block:1px solid var(--line,#97958c); }
+.task-conditions h3 { margin:0 0 9px; font-size:16px; }
+.task-conditions p,.handoff-review-note { font-size:12px; line-height:1.6; }
+.criterion-row { margin:16px 0; padding:12px; border:1px solid var(--line,#97958c); min-width:0; }
+.criterion-row label { display:block; margin-bottom:8px; font-size:12px; }
+.criterion-row textarea { width:100%; min-height:75px; padding:10px; font:inherit; background:var(--soft,#f4f2eb); color:inherit; }
+.criterion-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.criterion-controls label { margin:0; }
+.criterion-controls select,.criterion-controls button,.task-conditions > button { min-height:40px; padding:8px; font:inherit; color:inherit; background:transparent; border:1px solid currentColor; }
+.criterion-controls select { max-width:100%; }
+.task-conditions input[type=checkbox],.handoff-review-note input { width:auto; accent-color:var(--ink,#171715); }
+.handoff-review-note { margin:18px 0; padding:12px; border:1px solid var(--line,#97958c); }
+.handoff-review-note label { display:flex; align-items:flex-start; gap:8px; }
+.handoff-review-note input { margin-top:4px; }
+.scope-detail { width:100%; min-height:100px; padding:12px; border:1px solid currentColor; font:inherit; background:var(--soft,#f4f2eb); color:inherit; }
+.task-conditions :focus-visible,.handoff-review-note :focus-visible,.scope-detail:focus-visible { outline:3px solid #9b6808; outline-offset:2px; }
+[hidden] { display:none!important; }

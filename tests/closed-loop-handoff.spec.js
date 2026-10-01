@@ -71,7 +71,7 @@ test('default handoff skips repeat import and RAG review UI', async ({ page }) =
   const handoff = await downloadHandoff(page, '#downloadHandoff');
   expect(handoff.schemaVersion).toBe(3);
   expect(handoff.context.rag).toEqual({ included: false, items: [] });
-  expect(handoff.qualityGate.ragReviewed).toBe(true);
+  expect(handoff.qualityGate.ragReviewed).toBe(false);
   expect(handoff.assistantGuide.pasteText).not.toContain('승인된 작업 기억(RAG)');
   expect(handoff.assistantGuide.pasteText).not.toContain('VAS-AI-RESULT.json');
 });
@@ -176,7 +176,7 @@ test('blocked storage still allows a handoff without optional review UI', async 
   await expect(page.locator('[data-context-item], [data-context-confirm]')).toHaveCount(0);
   const handoff = await downloadHandoff(page, '#downloadJson');
   expect(handoff.context.rag).toEqual({ included: false, items: [] });
-  expect(handoff.qualityGate.ragReviewed).toBe(true);
+  expect(handoff.qualityGate.ragReviewed).toBe(false);
 });
 
 test('late file reads cannot restore rejected input or supersede a newer file', async ({ page }) => {

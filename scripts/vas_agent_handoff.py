@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from vas_ai_contract import approved_rag, build_prompt as _prompt, finalize_handoff, clean, redact_credentials
+from vas_task_policy import apply_task, quality, safe_text
 
 from vas_project_import import (
     ENTRYPOINT_NAMES,
@@ -25,7 +26,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 3
-VAS_VERSION = "2.7.6"
+VAS_VERSION = "2.8.0"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500
@@ -300,12 +301,7 @@ def build_preview(request: dict[str, Any]) -> dict[str, Any]:
         },
         "task": _sanitize(request.get("task", {"request": "", "constraints": [], "acceptanceCriteria": []})),
         "context": context,
-        "qualityGate": {
-            "requirementsConfirmed": bool(context.get("requirements", {}).get("included")) if isinstance(context.get("requirements"), dict) else False,
-            "designConfirmed": bool(context.get("design", {}).get("included")) if isinstance(context.get("design"), dict) else False,
-            "sourceHandlingConfirmed": True, "privacyChecked": True,
-            "ragReviewed": bool(request.get("ragReviewed", True)), "continuationReviewed": True,
-        },
+        "qualityGate": quality(),
         "security": {
             "sourceUnchanged": True, "projectCodeExecuted": False,
             "actualSourceRequired": True, "projectStructureInferred": False,
@@ -317,6 +313,12 @@ def build_preview(request: dict[str, Any]) -> dict[str, Any]:
         "assistantGuide": {"target": "universal", "originalFolderRequired": True, "pasteText": ""},
         "integrity": {"algorithm": "SHA-256", "payloadSha256": "", "sourcePackSha256": None},
     }
+    changes = []
+    safe_text(request.get("projectName") or source.name, 80, "프로젝트 이름", changes)
+    raw_context = request.get("context", {})
+    if _sanitize(raw_context) != raw_context:
+        changes.append("추가 요구사항·디자인")
+    apply_task(document, request.get("task", {}), changes)
     finalize_handoff(document, _prompt)
     encoded = json.dumps(document, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
     if len(encoded) > MAX_JSON_BYTES:
@@ -371,6 +373,11 @@ def export_package(request: dict[str, Any]) -> dict[str, Any]:
     output = Path(str(request.get("output", "")))
     output.parent.mkdir(parents=True, exist_ok=True)
     document = preview["document"]
+    if document["inputReview"]["required"]:
+        if request.get("inputReviewAcknowledged") is not True:
+            raise UnsafeSelectionError("정제로 변경된 최종 내용을 확인한 뒤 inputReviewAcknowledged를 명시하세요.")
+        document["inputReview"]["acknowledged"] = True
+        finalize_handoff(document, _prompt)
     project_name = re.sub(r"[^A-Za-z0-9가-힣._-]+", "-", document["project"]["name"]).strip("-") or "project"
     if request.get("format", "json") == "json":
         data = json.dumps(document, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"

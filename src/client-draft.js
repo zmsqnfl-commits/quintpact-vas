@@ -71,6 +71,7 @@
   function restore() {
     if (!pending) return;
     applyFields(pending.fields);
+    if (global.VASTaskInputs) VASTaskInputs.restore('completionConditions');
     global.cur = Math.min(5, Math.max(1, Number(pending.step) || 1));
     global.currentLang = pending.language === 'en' ? 'en' : 'ko';
     document.querySelectorAll('.step').forEach(function (step) {

@@ -59,5 +59,24 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
         self.assertNotIn("C:\\Users", json.dumps(mapped))
 
 
+    @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
+    def test_handoff_review_acknowledgement_preserves_boolean_boundary(self):
+        # Exercise the production PowerShell-to-Python request bridge with synthetic inputs.
+        command = r"""
+. './scripts/VAS.AgentHandoff.Core.ps1'
+function Resolve-VASHandoffInput { return @{source='fixture';project=$null;sourceType='existing';projectName='fixture';goal='modify'} }
+$answers = @()
+foreach ($value in @($true, $false, 'true', 1, $null)) {
+    $request = New-VASHandoffCliRequest 'fixture' @{inputReviewAcknowledged=$value}
+    $answers += $request.inputReviewAcknowledged
+}
+ConvertTo-Json -InputObject $answers -Compress
+"""
+        run = subprocess.run([POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+                             cwd=BASE, capture_output=True, timeout=10)
+        self.assertEqual(run.returncode, 0, run.stderr.decode("utf-8", errors="replace"))
+        self.assertEqual(json.loads(run.stdout.decode("utf-8-sig")), [True, False, False, False, False])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

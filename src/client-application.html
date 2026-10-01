@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.7.6 — 새 프로젝트</title>
+  <title>VAS 2.8.0 — 새 프로젝트</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
+  <link rel="stylesheet" href="task-inputs.css">
   <link rel="stylesheet" href="client-style.css">
 </head>
 <body>
@@ -73,6 +74,7 @@
             <label class="v-block"><input type="radio" name="budget" value="enterprise"><span class="vl-content">조직용 보안·관리 기능까지 포함하기</span></label>
             <label class="v-block"><input type="radio" name="budget" value="unknown"><span class="vl-content">요구사항을 보고 AI가 범위를 제안하기</span></label>
           </div></div>
+          <div class="task-conditions" id="completionConditions"><h3>작업별 완료조건 <small>선택</small></h3><p>한 조건에는 한 결과를 적고 확인 방법을 고르세요. 입력하지 않으면 조건 미정으로 전달되며 검증 완료를 뜻하지 않습니다. 최대 20개, 조건마다 500자까지 입력할 수 있습니다.</p><input type="hidden" name="completion_criteria" value="[]"><div data-criteria-rows></div><button type="button" data-add-criterion>완료조건 추가</button></div>
           <div class="q"><label for="projectExtra">추가로 꼭 지켜야 할 것 <small>선택</small></label><textarea id="projectExtra" name="extra" placeholder="사용 기술, 보안, 납기 등 중요한 조건을 적어주세요." maxlength="2000"></textarea></div>
         </section>
 
@@ -87,6 +89,7 @@
           <h2 class="done-graphic" tabindex="-1">READY.</h2>
           <p>아래 프롬프트를 복사해 코딩 도구에 붙여넣으세요. JSON 저장은 선택이며, 복사 후 VAS는 닫아도 됩니다.</p>
           <pre class="handoff-review" id="handoffReview" tabindex="0">최종 내용을 준비하고 있습니다.</pre>
+          <div class="handoff-review-note" id="handoffInputReview"><p data-review-change></p><label><input type="checkbox"><span data-review-label>최종 내용을 확인했습니다. (선택)</span></label></div>
           <div class="done-btns no-print">
             <button type="button" class="btn action-btn btn-primary-action" id="copyNewPrompt" onclick="copyNewProjectPrompt()">프롬프트 복사</button>
             <button type="button" class="btn action-btn" id="downloadHandoff" onclick="exportJson()">JSON 저장 (선택)</button>
@@ -113,6 +116,8 @@
   <script src="design-taste-pack.js"></script>
   <script src="setup-design.js"></script>
   <script src="agent-contract.js"></script>
+  <script src="task-policy.js"></script>
+  <script src="task-inputs.js"></script>
   <script src="agent-handoff-web.js"></script>
   <script src="client-form.js"></script>
   <script src="client-draft.js"></script>

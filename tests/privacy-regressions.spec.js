@@ -22,12 +22,14 @@ for (const flow of ['new', 'existing']) test(`${flow} final copy and download ex
   const input = 'Authorization: Token FinalHeaderCanary012345\nhttps://user:FinalUrlCanary012345@127.0.0.1:8080/demo\nPreserve calendar keyboard navigation.';
   if (flow === 'new') {
     await page.locator('[name="problem_desc"]').fill(input);
+    await page.evaluate(async () => { await VASNewHandoff.prepare(); document.querySelector('#handoffInputReview input').checked = true; });
     await page.evaluate(() => copyNewProjectPrompt());
   } else {
     await page.locator('#folderPath').fill('Z:\\synthetic-project');
     await page.locator('#projectName').fill('HTTP boundary fixture');
     await page.locator('#taskRequest').fill(input);
     await page.locator('#continueSettings').click();
+    await page.locator('#handoffInputReview input').check();
     await page.locator('#copyPrompt').click();
   }
   const copied = await page.evaluate(() => window.copiedHandoff);
@@ -61,6 +63,8 @@ test('existing UI downloads redact the entire payload after edits and provider c
       await page.locator('#continueSettings').click();
       await page.locator('#provider').selectOption('claude');
     }
+    await expect(page.locator('#handoffInputReview')).toContainText('필수');
+    await page.locator('#handoffInputReview input').check();
     const downloadPromise = page.waitForEvent('download');
     await page.locator('#downloadJson').click();
     const download = await downloadPromise;
@@ -85,16 +89,24 @@ test('browser cleaners cover shared JSON encodings and preserve public design da
     const document = (await VASAgentHandoffWeb.buildExisting('Demo','Preserve React',{
       design:{included:true,tokens:{colors:{primary:'#123abc'},password:'NestedCanarySecret'},direction:'Layout rule\n'.repeat(700)},
       requirements:{included:true,value:{reference:'https://example.com/home/design',nested:{apiKey:'NestedCanarySecret'}}}
-    })).document;
+    }, { designScope: { mode: 'redesign', scope: 'Selected test screen' } })).document;
     document.task.request += ' password=LateMutationCanary';
     document.context.requirements.value.credentials = {secret:'NestedCanarySecret'};
+    document.inputReview.acknowledged = true;
+    document.qualityGate.requirementsConfirmed = true;
+    document.qualityGate.designConfirmed = true;
+    document.qualityGate.userConfirmation = { status: 'confirmed', scope: ['requirements', 'design-scope'] };
+    await VASAgentHandoffWeb.refreshIntegrity(document);
+    const invalidated = document.inputReview.acknowledged === false;
+    const confirmationReset = document.qualityGate.requirementsConfirmed === false && document.qualityGate.designConfirmed === false && document.qualityGate.userConfirmation.status === 'not-performed';
+    document.inputReview.acknowledged = true;
     const serialized = [];
     const oldCreate = URL.createObjectURL;
     const oldClick = HTMLAnchorElement.prototype.click;
     URL.createObjectURL = blob => { serialized.push(blob.text()); return 'blob:fixture'; };
     HTMLAnchorElement.prototype.click = function () {};
     try { await VASAgentHandoffWeb.save(document); } finally { URL.createObjectURL=oldCreate; HTMLAnchorElement.prototype.click=oldClick; }
-    return {cases,saved:await serialized[0]};
+    return {cases,saved:await serialized[0],invalidated,confirmationReset};
   }, cases);
   result.cases.forEach((item,index) => {
     for (const value of [item.clean,item.prompt,item.json]) expect(value,cases[index].name).not.toContain(cases[index].marker);
@@ -102,6 +114,8 @@ test('browser cleaners cover shared JSON encodings and preserve public design da
     expect(item.twice,cases[index].name+' idempotence').toBe(item.clean);
   });
   expect(result.saved).not.toContain('NestedCanarySecret');
+  expect(result.invalidated).toBe(true);
+  expect(result.confirmationReset).toBe(true);
   expect(result.saved).not.toContain('LateMutationCanary');
   const document=JSON.parse(result.saved);
   expect(document.context.design.tokens.colors.primary).toBe('#123abc');

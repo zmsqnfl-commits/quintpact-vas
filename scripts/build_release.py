@@ -1,4 +1,4 @@
-"""VAS 2.7.6 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.8.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -19,7 +19,7 @@ DIST = ROOT / "dist"
 CONFIG = ROOT / "src" / "vas-config.js"
 ROOT_FILES = [
     "Run-VAS-System.bat", "README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
-    "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
+    "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md", "TASK.md",
 ]
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
 BLOCKED_PARTS = {
@@ -36,7 +36,7 @@ CLIENT_ASSETS = [
     "storage-utils.js", "theme-state.js", "editorial-shell.css",
     "editorial-theme.js", "setup-tools.css", "setup-tools.js",
     "design-presets.js", "agent-resources.js", "design-taste-pack.js", "setup-design.js",
-    "agent-contract.js", "agent-handoff-web.js",
+    "agent-contract.js", "agent-handoff-web.js", "task-policy.js", "task-inputs.js", "task-inputs.css",
 ]
 
 
@@ -149,7 +149,7 @@ def build_windows(stage: Path) -> Path:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
     (root / "README.md").write_text(
-        """# VAS 2.7.6 Windows 실행본
+        """# VAS 2.8.0 Windows 실행본
 
 ## 시작
 

@@ -361,6 +361,9 @@ test('existing flow asks for intent and leaves source discovery to the coding AI
   await page.locator('#taskRequest').fill('오류를 고쳐 주세요.');
   await page.locator('#continueSettings').click();
   await expect(page.locator('[data-step="2"]')).toHaveClass(/active/);
+  await expect(page.locator('#designScopeMode')).toHaveValue('preserve');
+  await expect(page.locator('#activeDesignSettings')).toBeHidden();
+  await page.locator('#designScopeMode').selectOption('redesign');
   await expect(page.locator('#handoffDesignSummary')).toContainText('FORM / FIELD');
   await expect(page.locator('[data-design-reference]')).toContainText('Awwwards 디자인 예시·설정 보기');
   await expect(page.locator('[data-design-reference]')).toHaveAttribute('href', /design-controller\.html/);

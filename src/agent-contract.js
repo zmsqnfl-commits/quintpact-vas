@@ -224,9 +224,13 @@
   }
 
   async function normalizeHandoff(raw) {
-    if (!raw || raw.format !== 'vas-ai-handoff' || ![2, 3].includes(Number(raw.schemaVersion))) throw new Error('지원하지 않는 VAS 인계 JSON입니다.');
+    if (!isObject(raw) || raw.format !== 'vas-ai-handoff' || !jsonInteger(raw.schemaVersion, 2, 3)) throw new Error('unsupported_handoff');
+    ['workflow', 'context', 'task', 'project', 'assistantGuide', 'integrity', 'qualityGate', 'security'].forEach(function (key) {
+      if (key in raw && !isObject(raw[key])) throw new Error('invalid_handoff_object');
+    });
+    if (raw.schemaVersion === 3 && raw.workflow && 'iteration' in raw.workflow && !jsonInteger(raw.workflow.iteration, 1, 9999)) throw new Error('invalid_iteration');
     const document = sanitize(raw, 0);
-    if (Number(raw.schemaVersion) === 2) {
+    if (raw.schemaVersion === 2) {
       document.schemaVersion = 3;
       document.workflow = { handoffId: '', iteration: 1, parentResultId: null, status: 'ready', legacySourceSchema: 2 };
       document.context = document.context || {};
@@ -237,97 +241,116 @@
     return finalize(document, function () { return document.assistantGuide && document.assistantGuide.pasteText || ''; }, document.assistantGuide && document.assistantGuide.target);
   }
 
-  function safeStringArray(value, limit, redactionState) {
-    if (!Array.isArray(value)) return [];
-    return value.slice(0, limit).map(function (item) {
-      const result = cleanWithCount(item, 4000); redactionState.count += result.redactions; return result.text;
-    }).filter(Boolean);
+  function isObject(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
+  function jsonInteger(value, minimum, maximum) {
+    return typeof value === 'number' && Number.isInteger(value) && value >= minimum && value <= maximum;
+  }
+
+  // Explicit recovery proposal only. Normal validation never invokes this helper.
+  function repairLegacyNumbers(raw) {
+    const document = clone(raw), conversions = [];
+    if (!isObject(document)) return { document: document, conversions: conversions, requiresConfirmation: false };
+    const slots = [[document, 'schemaVersion', 'schemaVersion', 1, 3]];
+    if (document.format === 'vas-ai-result') slots.push([document, 'iteration', 'iteration', 1, 9999]);
+    if (document.format === 'vas-ai-handoff' && isObject(document.workflow)) slots.push([document.workflow, 'iteration', 'workflow.iteration', 1, 9999]);
+    slots.forEach(function (slot) {
+      const value = slot[0][slot[1]];
+      if (typeof value !== 'boolean' && !(typeof value === 'string' && /^\d+(?:\.0+)?$/.test(value.trim()))) return;
+      const number = Number(value);
+      if (!jsonInteger(number, slot[3], slot[4])) return;
+      slot[0][slot[1]] = number;
+      conversions.push({ field: slot[2], from: value, to: number });
+    });
+    return { document: document, conversions: conversions, requiresConfirmation: conversions.length > 0 };
   }
 
   function validateResult(raw, expectedSourceType) {
-    const errors = [];
-    const warnings = [];
-    const redactionState = { count: 0 };
-    if (!raw || raw.format !== 'vas-ai-result' || Number(raw.schemaVersion) !== 1) errors.push('VAS-AI-RESULT.json 형식이 아닙니다.');
-    const resultId = safeIdentifier(raw && raw.resultId, 'r');
-    const handoffId = safeIdentifier(raw && raw.handoffId, 'h');
-    if (!resultId) errors.push('resultId 형식이 올바르지 않습니다.');
-    if (!handoffId) errors.push('handoffId 형식이 올바르지 않습니다.');
-    const iteration = Number(raw && raw.iteration);
-    if (!Number.isInteger(iteration) || iteration < 1 || iteration > 9999) errors.push('iteration 값이 올바르지 않습니다.');
-    const sourceType = SOURCE_TYPES.has(raw && raw.sourceType) ? raw.sourceType : '';
-    if (!sourceType) errors.push('sourceType이 필요합니다.');
-    if (expectedSourceType && sourceType && sourceType !== expectedSourceType && !(expectedSourceType === 'existing' && sourceType === 'registered')) errors.push('현재 선택한 작업 종류와 결과의 sourceType이 다릅니다.');
-    let status = RESULT_STATUS.has(raw && raw.status) ? raw.status : '';
-    if (!status) errors.push('결과 상태가 올바르지 않습니다.');
-    const hash = raw && raw.handoffPayloadSha256;
-    if (!/^[a-f0-9]{64}$/i.test(String(hash || ''))) errors.push('handoffPayloadSha256 형식이 올바르지 않습니다.');
-
-    const readback = raw && raw.readback || {};
-    const checkedFiles = [];
-    (Array.isArray(readback.checkedFiles) ? readback.checkedFiles : []).slice(0, 100).forEach(function (path) {
-      const safe = safeRelative(path); if (!safe) errors.push('읽은 파일에 안전하지 않은 경로가 있습니다.'); else checkedFiles.push(safe);
-    });
-    const confirmedEntrypoints = [];
-    (Array.isArray(readback.confirmedEntrypoints) ? readback.confirmedEntrypoints : []).slice(0, 50).forEach(function (path) {
-      const safe = safeRelative(path); if (!safe) errors.push('진입점에 안전하지 않은 경로가 있습니다.'); else confirmedEntrypoints.push(safe);
-    });
-    const commands = (Array.isArray(readback.commands) ? readback.commands : []).slice(0, 50).map(function (item) {
-      const command = cleanWithCount(item && item.command, 500); redactionState.count += command.redactions;
-      const source = item && item.source ? safeRelative(item.source) : null;
-      if (item && item.source && !source) errors.push('명령 출처에 안전하지 않은 경로가 있습니다.');
-      return { kind: clean(item && item.kind, 20), command: command.text, source: source };
-    });
-    const changes = raw && raw.changes || {};
-    const relativeFiles = [];
-    (Array.isArray(changes.relativeFiles) ? changes.relativeFiles : []).slice(0, 100).forEach(function (item) {
-      const path = safeRelative(item && item.path);
-      const action = ACTIONS.has(item && item.action) ? item.action : '';
-      const fromPath = item && item.fromPath ? safeRelative(item.fromPath) : null;
-      if (!path || !action || (item && item.fromPath && !fromPath)) errors.push('변경 파일 경로 또는 작업 형식이 올바르지 않습니다.');
-      else relativeFiles.push({ path: path, action: action, fromPath: fromPath });
-    });
-    const tests = (Array.isArray(raw && raw.tests) ? raw.tests : []).slice(0, 50).map(function (item) {
-      const state = TEST_STATUS.has(item && item.status) ? item.status : 'skipped';
-      if (!TEST_STATUS.has(item && item.status)) errors.push('테스트 상태가 올바르지 않습니다.');
-      const name = cleanWithCount(item && item.name, 200); const command = cleanWithCount(item && item.command, 500); const summary = cleanWithCount(item && item.summary, 1000);
-      redactionState.count += name.redactions + command.redactions + summary.redactions;
-      return { name: name.text || '검증', command: command.text, status: state, summary: summary.text };
-    });
-    if (status === 'complete' && tests.some(function (item) { return item.status === 'failed'; })) {
-      status = 'incomplete'; warnings.push('실패한 테스트가 있어 상태를 incomplete로 바꿨습니다.');
+    const warnings = [], redactionState = { count: 0 };
+    function fail(code) { throw new Error(code); }
+    function object(value, code) { if (!isObject(value)) fail(code); return value; }
+    function array(owner, key, maximum, itemType) {
+      if (!(key in owner)) return [];
+      const value = owner[key];
+      if (!Array.isArray(value)) fail('invalid_' + key + '_list');
+      if (value.length > maximum) fail('too_many_' + key);
+      if (value.some(function (item) { return itemType === 'object' ? !isObject(item) : typeof item !== 'string'; })) fail('invalid_' + key + '_item');
+      return value;
     }
-    const remaining = (Array.isArray(raw && raw.remaining) ? raw.remaining : []).slice(0, 50).map(function (item) {
-      const summary = cleanWithCount(item && item.summary, 1000); const action = cleanWithCount(item && item.nextAction, 1000);
-      redactionState.count += summary.redactions + action.redactions;
-      return { severity: SEVERITIES.has(item && item.severity) ? item.severity : 'medium', summary: summary.text, nextAction: action.text };
-    }).filter(function (item) { return item.summary || item.nextAction; });
-    const changeSummary = cleanWithCount(changes.summary, 8000); const nextTask = cleanWithCount(raw && raw.nextRecommendedTask, 4000);
-    redactionState.count += changeSummary.redactions + nextTask.redactions;
-    const safety = raw && raw.safety || {};
-    if (safety.absolutePathsExcluded !== true || safety.secretsExcluded !== true || safety.rawCommandOutputExcluded !== true) {
-      errors.push('결과 안전 확인 값이 올바르지 않습니다.');
+    function text(owner, key, maximum, required) {
+      const value = owner[key];
+      if (value === undefined) { if (required) fail('invalid_' + key); return ''; }
+      if (typeof value !== 'string') fail('invalid_' + key);
+      if (value.length > maximum) fail('too_long_' + key);
+      const safe = cleanWithCount(value, maximum); redactionState.count += safe.redactions;
+      if (required && !safe.text) fail('invalid_' + key);
+      return safe.text;
     }
-    const normalizedResult = {
-        format: 'vas-ai-result', schemaVersion: 1, resultId: resultId, handoffId: handoffId,
-        handoffPayloadSha256: /^[a-f0-9]{64}$/i.test(String(hash || '')) ? String(hash) : null,
-        iteration: iteration, sourceType: sourceType, status: status,
-        generatedBy: { tool: clean(raw && raw.generatedBy && raw.generatedBy.tool, 80) || 'other' },
-        readback: {
-          checkedFiles: checkedFiles,
-          confirmedRules: safeStringArray(readback.confirmedRules, 50, redactionState),
-          confirmedEntrypoints: confirmedEntrypoints, commands: commands,
-          facts: safeStringArray(readback.facts, 50, redactionState), assumptions: safeStringArray(readback.assumptions, 50, redactionState)
-        },
-        changes: { summary: changeSummary.text, relativeFiles: relativeFiles }, tests: tests, remaining: remaining,
-        nextRecommendedTask: nextTask.text,
+    function relative(value, code) { const safe = typeof value === 'string' && safeRelative(value); if (!safe) fail(code); return safe; }
+    function strings(owner, key, maximum) { return array(owner, key, maximum, 'string').map(function (value) { return text({ value: value }, 'value', 4000); }).filter(Boolean); }
+    try {
+      if (!isObject(raw) || raw.format !== 'vas-ai-result' || !jsonInteger(raw.schemaVersion, 1, 1)) fail('invalid_result_format');
+      const resultId = typeof raw.resultId === 'string' && safeIdentifier(raw.resultId, 'r');
+      const handoffId = typeof raw.handoffId === 'string' && safeIdentifier(raw.handoffId, 'h');
+      if (!resultId) fail('invalid_result_id');
+      if (!handoffId) fail('invalid_handoff_id');
+      if (typeof raw.handoffPayloadSha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(raw.handoffPayloadSha256)) fail('invalid_handoff_hash');
+      if (!jsonInteger(raw.iteration, 1, 9999)) fail('invalid_iteration');
+      if (!SOURCE_TYPES.has(raw.sourceType)) fail('invalid_source_type');
+      if (expectedSourceType && raw.sourceType !== expectedSourceType && !(expectedSourceType === 'existing' && raw.sourceType === 'registered')) fail('source_type_mismatch');
+      if (!RESULT_STATUS.has(raw.status)) fail('invalid_result_status');
+      const readback = object('readback' in raw ? raw.readback : {}, 'invalid_readback');
+      const changes = object('changes' in raw ? raw.changes : {}, 'invalid_changes');
+      const generatedBy = object('generatedBy' in raw ? raw.generatedBy : {}, 'invalid_generatedBy');
+      const safety = object('safety' in raw ? raw.safety : {}, 'invalid_safety_confirmation');
+      const checkedFiles = array(readback, 'checkedFiles', 100, 'string').map(function (path) { return relative(path, 'unsafe_readback_path'); });
+      const confirmedRules = strings(readback, 'confirmedRules', 50);
+      const confirmedEntrypoints = array(readback, 'confirmedEntrypoints', 50, 'string').map(function (path) { return relative(path, 'unsafe_entrypoint_path'); });
+      const commands = array(readback, 'commands', 50, 'object').map(function (item) {
+        return { kind: text(item, 'kind', 20), command: text(item, 'command', 500), source: item.source == null || item.source === '' ? null : relative(item.source, 'unsafe_command_source') };
+      });
+      const facts = strings(readback, 'facts', 50), assumptions = strings(readback, 'assumptions', 50);
+      const relativeFiles = array(changes, 'relativeFiles', 100, 'object').map(function (item) {
+        const path = relative(item.path, 'unsafe_result_path');
+        if (!ACTIONS.has(item.action)) fail('unsafe_result_path');
+        return { path: path, action: item.action, fromPath: item.fromPath == null || item.fromPath === '' ? null : relative(item.fromPath, 'unsafe_result_path') };
+      });
+      const tests = array(raw, 'tests', 50, 'object').map(function (item) {
+        if (!TEST_STATUS.has(item.status)) fail('invalid_test_status');
+        return { name: text(item, 'name', 200) || '검증', command: text(item, 'command', 500), status: item.status, summary: text(item, 'summary', 1000) };
+      });
+      let status = raw.status;
+      if (status === 'complete' && tests.some(function (item) { return item.status === 'failed'; })) {
+        status = 'incomplete'; warnings.push('실패한 테스트가 있어 상태를 incomplete로 바꿨습니다.');
+      }
+      const remaining = array(raw, 'remaining', 50, 'object').map(function (item) {
+        if ('severity' in item && !SEVERITIES.has(item.severity)) fail('invalid_remaining_severity');
+        const entry = { severity: item.severity || 'medium', summary: text(item, 'summary', 1000), nextAction: text(item, 'nextAction', 1000) };
+        if (!entry.summary && !entry.nextAction) fail('invalid_remaining_item');
+        return entry;
+      });
+      const artifactVersion = text(raw, 'artifactVersion', 160);
+      const evidence = array(raw, 'evidence', 50, 'object').map(function (item) {
+        if (!['automatic', 'manual', 'static'].includes(item.method)) fail('invalid_evidence_method');
+        if (!['passed', 'failed', 'skipped', 'not-applicable'].includes(item.outcome)) fail('invalid_evidence_outcome');
+        return { criterionId: text(item, 'criterionId', 80, true), artifactVersion: text(item, 'artifactVersion', 160, true), method: item.method,
+          outcome: item.outcome, summary: text(item, 'summary', 1000), source: 'agent-submitted' };
+      });
+      if ('scopeViolation' in raw && typeof raw.scopeViolation !== 'boolean') fail('invalid_scopeViolation');
+      if (safety.absolutePathsExcluded !== true || safety.secretsExcluded !== true || safety.rawCommandOutputExcluded !== true) fail('invalid_safety_confirmation');
+      const result = {
+        format: 'vas-ai-result', schemaVersion: 1, resultId: resultId, handoffId: handoffId, handoffPayloadSha256: raw.handoffPayloadSha256,
+        iteration: raw.iteration, sourceType: raw.sourceType, status: status, reportedStatus: raw.status,
+        generatedBy: { tool: text(generatedBy, 'tool', 80) || 'other' },
+        readback: { checkedFiles: checkedFiles, confirmedRules: confirmedRules, confirmedEntrypoints: confirmedEntrypoints, commands: commands, facts: facts, assumptions: assumptions },
+        changes: { summary: text(changes, 'summary', 8000), relativeFiles: relativeFiles }, tests: tests, remaining: remaining,
+        artifactVersion: artifactVersion, evidence: evidence, scopeViolation: raw.scopeViolation === true, nextRecommendedTask: text(raw, 'nextRecommendedTask', 4000),
         safety: { absolutePathsExcluded: true, secretsExcluded: true, rawCommandOutputExcluded: true }
       };
-    if (redactionState.count) warnings.push('민감 정보 또는 절대 경로 ' + redactionState.count + '건을 제거했습니다.');
-    return {
-      ok: errors.length === 0, errors: Array.from(new Set(errors)), warnings: warnings,
-      redactions: redactionState.count, result: normalizedResult
-    };
+      if (redactionState.count) warnings.push('민감 정보 또는 절대 경로 ' + redactionState.count + '건을 제거했습니다.');
+      return { ok: true, errors: [], errorCodes: [], warnings: warnings, redactions: redactionState.count, result: result };
+    } catch (error) {
+      return { ok: false, errors: ['결과 JSON을 확인하세요: ' + error.message], errorCodes: [error.message], warnings: warnings, redactions: redactionState.count, result: null };
+    }
   }
 
   function continuation(result, verdict, note) {
@@ -344,6 +367,6 @@
   global.VASAgentContract = Object.freeze({
     clean: clean, sanitize: sanitize, sensitiveKey: sensitiveKey, redactCredentials: redactCredentials, stable: stable, digest: digest, finalize: finalize,
     approvedRag: approvedRag, normalizeHandoff: normalizeHandoff, validateResult: validateResult,
-    continuation: continuation, safeRelative: safeRelative
+    continuation: continuation, safeRelative: safeRelative, repairLegacyNumbers: repairLegacyNumbers
   });
 })(window);

@@ -8,7 +8,7 @@ Read AGENTS.md and .agents/CONTEXT.md first.
 # implementer
 
 원본과 프로젝트 규칙을 먼저 읽는다. VAS 자체 개발은 `docs/INSTRUCTIONS.md`와 `.agents/CONTEXT.md`를 따른다.
-UI 변경에는 designer 스킬의 선택 프로필·확정 토큰을 읽고 구현한다. 다른 프로젝트에 VAS의 Vanilla 제약을 강제하지 않는다.
+UI 변경에는 허용 범위를 먼저 읽는다. 기존 디자인 유지에서는 기존 컴포넌트·규칙을 재사용하고, 부분 수정은 지정 범위만 변경한다. 활성 디자인 지침이 있을 때만 designer 스킬의 선택 프로필·확정 토큰을 읽고 구현한다. 다른 프로젝트에 VAS의 Vanilla 제약을 강제하지 않는다.
 허용된 소스·스크립트와 관련 테스트를 필요한 만큼 수정한다. 브라우저·문서 도구로 실제 동작과 최신 API를 확인할 수 있다.
 검증은 `python scripts/agent_checks.py tests`로 수행한다. 이 명령은 VAS 개발 저장소용이다. 다른 프로젝트에서는 실제 테스트 명령을 확인한다.
 경로 사전 확인은 `python scripts/agent_checks.py path --role implementer --path <상대경로>`를 쓴다. 이는 파일 쓰기 점검 도구이며 터미널 전체를 통제하는 샌드박스가 아니다.

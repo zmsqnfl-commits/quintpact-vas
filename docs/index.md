@@ -1,4 +1,4 @@
-# VAS 2.7.6 시스템 지도
+# VAS 2.8.0 시스템 지도
 
 ## 사용자 흐름
 
@@ -23,6 +23,8 @@ VAS 웹 화면은 프롬프트와 선택 JSON을 만들 때만 사용합니다. 
 | 디자인 | 프리셋·토큰·에이전트 디자인 지침 | `src/design-controller.html` |
 | 디자인 샘플 | 선택한 토큰으로 실제 샘플 사이트 확인 | `src/design-sample.html` |
 | 검증 앱 | VAS 인계로 만든 별도 Morrow 작업 보드 | `src/proof-app/index.html`, `docs/verification/README.md` |
+| 범위·완료조건 | 디자인 변경 권한과 조건별 확인 방법 | `src/task-policy.js`, `src/task-inputs.js`, `scripts/vas_task_policy.py` |
+| 완료 평가 | 자기보고와 별도 사용자 관찰에 따른 평가 | `src/result-assessment.js`, `scripts/vas_result_assessment.py` |
 | 인계 계약 | 인계 v3 생성과 호환용 결과 v1 검증 | `src/agent-contract.js`, `src/handoff-workflow.js`, `scripts/vas_ai_contract.py` |
 | 호환 모듈 | 결과 JSON 검증·RAG 검토(기본 UI 미노출) | `src/ai-result-import.js`, `src/handoff-context-review.js` |
 | 런타임 | 로컬 웹 실행과 호환 API | `scripts/Start-VAS.ps1` |
@@ -47,3 +49,5 @@ VAS 웹 화면은 프롬프트와 선택 JSON을 만들 때만 사용합니다. 
 - 호환용 반복 계약은 ID·해시·sourceType과 중복을 검사합니다. 로컬 영수증이 없을 때는 사용자 수동 확인이 필요하며, 확인된 불일치·중복은 수동 확인으로 우회할 수 없습니다.
 - 해시는 입력 일관성을 확인합니다. 실제 에이전트 실행·권한·테스트 성공의 증명은 코딩 호스트의 실행 결과에서 별도로 확인합니다.
 - 파일은 500줄 이하로 유지합니다.
+
+상세 범위·완료 판정·호환 정책: [작업 범위와 완료 확인](completion-policy.md).

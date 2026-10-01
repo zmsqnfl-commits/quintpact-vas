@@ -35,7 +35,8 @@
     });
   }
 
-  function context() {
+  function context(scope) {
+    if (scope && scope.mode === 'preserve') return { included: false };
     const state = VASThemeState.get();
     const preset = typeof PRESETS !== 'undefined' ? PRESETS[state.basePreset || state.preset] : null;
     const fallback = { prompt: '[Custom Token Direction]\n' + JSON.stringify(state.tokens, null, 2) };

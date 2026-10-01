@@ -3,6 +3,7 @@
   'use strict';
 
   let prepared = null;
+  VASTaskInputs.mount('completionConditions');
 
   function collectApplicationData(form, files) {
     const data = {};
@@ -22,11 +23,13 @@
     const form = document.getElementById('projectForm');
     const values = collectApplicationData(form, typeof uploadedFiles === 'undefined' ? [] : uploadedFiles);
     prepared = await VASAgentHandoffWeb.buildNew(values, VASSetupDesign.context(), {
-      rag: { included: false, items: [] }, ragReviewed: true,
+      completionCriteria: VASTaskInputs.read('completionConditions'),
+      rag: { included: false, items: [] }, ragReviewed: false,
       continuation: { included: false }
     });
     const preview = document.getElementById('handoffReview');
     if (preview) preview.textContent = prepared.pasteText;
+    VASTaskInputs.review(prepared.document, 'handoffInputReview');
     return prepared;
   }
 
@@ -39,6 +42,7 @@
   async function exportJson() {
     try {
       const result = await prepare();
+      VASTaskInputs.confirm(result.document, 'handoffInputReview');
       await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
       const draftFailed = global.VASClientDraft && VASClientDraft.clear() === false;
       let message = 'JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.';
@@ -53,11 +57,14 @@
   async function copyNewProjectPrompt() {
     try {
       const result = await prepare();
+      VASTaskInputs.confirm(result.document, 'handoffInputReview');
+      await VASAgentHandoffWeb.refreshIntegrity(result.document);
+      VASAgentHandoffWeb.assertReviewed(result.document);
       await VASAgentHandoffWeb.copy(VASAgentHandoffWeb.prompt(result.document, 'universal'));
       showStatus('프롬프트를 복사했습니다. 코딩 도구에 붙여넣은 뒤 VAS는 닫아도 됩니다.');
       try { await VASSetupDesign.confirm(); } catch (error) { showStatus('프롬프트를 복사했습니다. 작업 기억은 저장하지 못했습니다.'); }
     } catch (error) {
-      showStatus('자동 복사를 사용할 수 없습니다. JSON의 assistantGuide.pasteText를 복사해 주세요.');
+      showStatus(error && error.message ? error.message : '자동 복사를 사용할 수 없습니다.');
     }
   }
 

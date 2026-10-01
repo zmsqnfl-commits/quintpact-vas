@@ -38,6 +38,8 @@ test('existing handoff uses a self-contained prompt without guessing project str
 test('JSON remains optional and copied prompt completes the flow', async ({ page }) => {
   await page.addInitScript(() => { document.execCommand = () => true; });
   await prepareExisting(page, '<script>alert(1)</script>');
+  await expect(page.locator('#handoffInputReview')).toContainText('필수');
+  await page.locator('#handoffInputReview input').check();
   const download = page.waitForEvent('download');
   await page.locator('#downloadJson').click();
   const result = await download;
@@ -46,7 +48,8 @@ test('JSON remains optional and copied prompt completes the flow', async ({ page
   expect(document.schemaVersion).toBe(3);
   expect(document.workflow.handoffId).toMatch(/^h_[a-f0-9]{32}$/);
   expect(document.workflow.iteration).toBe(1);
-  expect(document.qualityGate.ragReviewed).toBe(true);
+  expect(document.qualityGate.ragReviewed).toBe(false);
+  expect(document.qualityGate.userConfirmation.status).toBe('confirmed');
   expect(document.mode).toBe('intent-only');
   expect(document).not.toHaveProperty('analysis');
   expect(document).not.toHaveProperty('inventory');

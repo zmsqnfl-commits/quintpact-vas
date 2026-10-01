@@ -36,17 +36,16 @@ async function create(page, title, note = '') {
   await expect(page.locator('#task-dialog')).not.toBeVisible();
 }
 
-test('real exported VAS handoff retains the exact request, full roles and verified payload hash', async () => {
+test('historical VAS proof retains its original request, complete role instructions and payload hash', async () => {
   const folder = path.join(root, 'docs/verification');
   const handoff = JSON.parse(fs.readFileSync(path.join(folder, 'creative-board-handoff.json'), 'utf8'));
   const request = JSON.parse(fs.readFileSync(path.join(folder, 'creative-board-request.json'), 'utf8'));
   expect(handoff.task.request).toBe(request.problem_desc);
   expect(handoff.context.design.preset).toBe('bento');
-  for (const role of ['designer', 'implementer', 'reviewer']) {
-    const body = fs.readFileSync(path.join(root, '.agents/skills', role, 'SKILL.md'), 'utf8')
-      .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim().replace(/\r\n/g, '\n');
-    expect(handoff.assistantGuide.pasteText).toContain(body);
-  }
+  // Historical proof exported at 840115e139dc5d2d2ebe5cbecfb74cefa62932c2; current roles have separate export tests.
+  expect(handoff.generatedBy.version).toBe('2.6.4');
+  expect(crypto.createHash('sha256').update(handoff.assistantGuide.pasteText).digest('hex'))
+    .toBe('77cef6c71afe206199b0af280a10bc1ede7efc06889152fb906faaf31da10c11');
   expect(fs.readFileSync(path.join(folder, 'creative-board-handoff.txt'), 'utf8').replace(/\r\n/g, '\n').trim()).toBe(handoff.assistantGuide.pasteText);
   const payload = structuredClone(handoff);
   delete payload.integrity;
