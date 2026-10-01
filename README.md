@@ -113,7 +113,7 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 ## Verification and development
 
-See [TASK.md](TASK.md) for the proposed validation, design-scope, and completion-evidence improvements. The plan is awaiting GPT review; these changes have not been implemented.
+See [TASK.md](TASK.md) for the proposed validation, design-scope, and completion-evidence improvements. The plan incorporates GPT review feedback and additional validator reproductions; policy details remain provisional and these changes have not been implemented.
 
 Version **2.7.6** extends the shared credential fixtures with HTTP authentication cases and verifies failure recovery through real browser transactions. The selected design instructions and ordinary public references remain covered by the full regression suite. See the [release notes](docs/releases/2.7.6.md); actual agent execution remains controlled by the coding host.
 
