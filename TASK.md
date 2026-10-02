@@ -4,9 +4,93 @@
 
 구현 버전: **2.8.0** · 진단 기준: **v2.7.6 / f9b17557fee0bbc6c9bf76dc597b8551b2913538**
 
-상태: **P0–P2 구현·검증·2.8.0 공개 배포·문서 반영 완료**
+상태: **2.8.0 P0–P2 완료 · 후속 보완 5건 검토 대기**
 
 목표는 **작업 범위를 명확히 전달하고, 확인하지 않은 결과를 완료로 오인하지 않게 하는 것**이다. VAS가 코딩 AI의 실행을 보증하는 시스템으로 확대되지는 않는다. 아래 체크리스트와 검증 기록은 2.8.0에서 완료한 범위를 정리한다. 실행 호스트·CI 직접 수집(P3)은 이번 범위에서 제외한다. 상세 동작은 [완료 판정 정책](docs/completion-policy.md), 사용자용 변경 설명은 [2.8.0 릴리스 노트](docs/releases/2.8.0.md)를 따른다.
+
+## 후속 보완 검토 요청 · 2026-10-02
+
+**상태: 검토 대기 · 제품 수정 전.** 검토 기준은 **VAS 2.8.0 / `49be4adee36441fc1658092ef5fad6a8fe36c452`**이다. 아래 5건은 기존 2.8.0 완료 범위와 별도로 발견한 기능·디자인·사용 흐름의 보완 후보다.
+
+**검토자에게:** 각 항목을 기준 소스에서 독립적으로 확인하고, 재현 여부·사용자 영향·수정 범위·회귀 위험을 검토해 주세요. 항목별로 **채택 / 수정 제안 / 보류**와 이유를 남겨 주세요. 확인하지 않은 후보를 구현 완료나 검사 통과로 표시하지 않습니다.
+
+| 순서 | 항목 | 우선순위 | 근거 범위 | 현재 상태 |
+|---|---|---|---|---|
+| 1 | 초안 복구 선택 전 덮어쓰기 방지 | P1 | 실제 소스 + 합성 DOM/Storage 재현 | 검토 대기 |
+| 2 | 기존 작업 미리보기 갱신 | P1 | 실제 소스 + 합성 DOM 재현 | 검토 대기 |
+| 3 | 선택한 디자인의 시각 참조 전달 | P1 | 인계 구성·실제 샘플 화면 확인 | 검토 대기 |
+| 4 | 완료조건 입력 단계 검증·오류 복구 | P1 | 소스의 입력→READY→검증 흐름 확인 | 검토 대기 |
+| 5 | 첫사용 안내의 버전·흐름 동기화 | P2 | 배포 원본 안내 문서 확인 | 검토 대기 |
+
+### PLAN-20261002-06 · 초안 보존 — P1
+
+**현상:** 저장된 초안의 복구 알림이 표시된 상태에서 복원·삭제를 선택하지 않고 페이지를 닫거나 다시 열면, `beforeunload`의 저장이 현재 빈 폼으로 이전 초안을 덮어쓴다. 합성 DOM/Storage에서 실제 소스를 실행해 초안 제목이 빈 값으로 바뀌는 것을 재현했다. 실제 사용자 데이터 손실을 확인한 것은 아니다.
+
+근거: [client-draft.js:19–23](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-draft.js#L19-L23), [39–48](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-draft.js#L39-L48), [138](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-draft.js#L138).
+
+- [ ] 복구 선택 전에는 기존 초안을 보존하고 자동 저장을 잠그는 방안을 검토한다.
+- [ ] 복원·삭제·새 작성의 선택과 저장 시점을 명확하게 정한다.
+- [ ] 합성 저장소로 저장→재열기→아무 선택 없이 닫기→재열기 시 기존 내용 유지, 복원 후 편집 저장, 명시적 삭제를 확인한다.
+
+완료 기준: 복구 선택을 미뤄도 기존 초안이 사라지지 않고, 사용자가 선택한 뒤에는 새 내용이 정상 저장된다.
+
+### PLAN-20261002-07 · LIVE PROMPT 갱신 — P1
+
+**현상:** 기존 작업을 준비한 뒤 이름·폴더·요청을 바꾸면 `preview = null`이 되고 `renderPreview()`는 바로 반환해 예전 프롬프트와 준비 상태가 화면에 남는다. 합성 DOM에서 실제 스크립트를 실행해 수정된 입력과 이전 표시 내용의 불일치를 재현했다. 완료조건 변경도 미리보기 갱신 경로가 없다. **복사·JSON 저장 버튼은 다시 생성하므로, 이 근거로 버튼 인계가 이전 내용이라고 주장하지 않는다.**
+
+근거: [project-import.js:111–118](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/project-import.js#L111-L118), [211–223](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/project-import.js#L211-L223).
+
+- [ ] 입력 변경 시 미리보기를 재생성하거나 지우고 '내용 변경됨·재확인 필요'로 표시한다.
+- [ ] 이름·폴더·요청·디자인 범위·완료조건 변경을 같은 갱신 정책으로 연결한다.
+- [ ] 수정 후 표시 상태·복사 프롬프트·JSON이 최신 입력을 반영하는지 합성 작업으로 대조한다.
+
+완료 기준: 이전 프롬프트가 최신 내용처럼 표시되지 않고, 준비 상태와 실제 인계 내용이 일치한다.
+
+### PLAN-20261002-08 · 디자인 시각 참조 인계 — P1
+
+**현상:** 실제 스타일 샘플은 열리지만 인계에는 글 지침·토큰만 담기고 선택한 샘플 URL·화면 참조·폰트/에셋 정보가 없다. VAS 원본이 없는 외부 작업 폴더에서 코딩 AI가 사용자가 본 구도를 직접 대조하기 어렵다. 실제 코딩 AI 구현 실패를 재현한 것은 아니다.
+
+근거: [setup-design.js:46–53](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/setup-design.js#L46-L53), [agent-handoff-web.js:166–182](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/agent-handoff-web.js#L166-L182). 화면 확인: [디자인 스튜디오](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html), [Bento 샘플](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-sample.html?preset=bento).
+
+- [ ] 선택한 샘플의 버전 고정 참조 URL과 PC/모바일 화면 참조를 전달하는 방식을 검토한다.
+- [ ] 폰트·에셋의 사용 가능한 경로·입수 방법·라이선스 목록을 연결한다. 외부 CDN·원격 폰트 금지 규칙은 유지한다.
+- [ ] 샘플의 문구·사진·사업 데이터와 실제 구현 요구사항을 구분하고, 기존 디자인 유지 모드에서는 새 스타일 적용 지시가 되지 않게 한다.
+- [ ] 인계 프롬프트와 JSON의 참조가 일치하며 VAS 원본이 없는 작업 폴더에서도 확인 가능한지 검증한다.
+
+완료 기준: 코딩 AI가 선택한 스타일의 구도·타이포그래피·자산을 확인할 수 있고 기존 디자인 변경 범위를 넘지 않는다.
+
+### PLAN-20261002-09 · 완료조건 입력 검증 — P1
+
+**현상:** 조건 행의 textarea에 required·maxlength 검증이 없어 빈 조건이나 500자 초과 조건이 입력 단계를 통과할 수 있다. 완료 화면을 먼저 활성화한 뒤 인계를 검증하고, 실패 사유를 일반 안내 문구로 바꾼다. **최종 인계 검증은 잘못된 조건을 거부한다.** 이번 근거는 소스 흐름이며 실제 전체 폼 제출 재현은 수행하지 않았다.
+
+근거: [task-inputs.js:25](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/task-inputs.js#L25), [client-form.js:103](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-form.js#L103), [132–140](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-form.js#L132-L140), [175–180](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/client-form.js#L175-L180), [task-policy.js:18–19](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/src/task-policy.js#L18-L19).
+
+- [ ] 새 작업·기존 작업에서 빈 조건·500자 초과를 입력 단계에 표시하고 잘못된 행으로 초점을 이동한다.
+- [ ] 선택사항인 조건 목록 0개와 추가했지만 비어 있는 조건 행을 구분한다.
+- [ ] 인계 준비 성공 뒤 READY를 표시하고, 실패하면 구체적 오류와 입력 복구 경로를 유지한다.
+- [ ] 조건 0개·빈 행·500자·501자·정상 여러 행을 합성 입력으로 확인한다.
+
+완료 기준: 오류가 있는 조건을 어느 행에서 고칠지 알 수 있고, 실패 상태가 준비 완료로 보이지 않는다.
+
+### PLAN-20261002-10 · 첫사용 안내 동기화 — P2
+
+**현상:** `00-처음-사용하기.txt` 제목은 아직 2.7.4다. 기존 디자인 유지 기본값·부분 수정·작업별 완료조건 등 2.8.0 흐름 안내가 빠져 있다.
+
+근거: [00-처음-사용하기.txt:1](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/00-%EC%B2%98%EC%9D%8C-%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0.txt#L1), [14](https://github.com/zmsqnfl-commits/quintpact-vas/blob/49be4adee36441fc1658092ef5fad6a8fe36c452/00-%EC%B2%98%EC%9D%8C-%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0.txt#L14).
+
+- [ ] 첫사용 안내를 실제 2.8.0 화면·실행 경로와 맞춘다.
+- [ ] 기존 프로그램에서 기능만 수정하고 디자인을 유지하는 예시를 하나 추가한다.
+- [ ] 안내 파일도 배포 버전 검사 대상으로 넣어 소스·ZIP의 버전과 순서가 일치하는지 확인한다.
+
+완료 기준: 처음 읽는 사용자도 디자인 변경 범위와 완료조건을 선택하고 최신 인계를 전달할 수 있다.
+
+### 이번 검토 범위와 요청 결과
+
+공개 데스크톱의 시작·작업 기억 선택·새 작업·기존 작업·디자인 스튜디오·실제 샘플 6개 화면을 확인했다. 초안·미리보기는 실제 소스를 합성 환경에서 재현했고, 나머지는 소스·문서·화면 대조 결과다. 전체 입력 제출·실제 코딩 AI 구현·모바일 전체·접근성 준수 전체는 이번 검토에서 확인하지 않았다. 제품 소스 수정·새 릴리스는 하지 않았다. 아래 기존 2.8.0 검증 수는 이번 후보의 통과 근거로 재사용하지 않는다.
+
+- [ ] 항목별 독립 검토 결과와 채택·수정 제안·보류 이유를 기록한다.
+- [ ] 채택 항목의 구현 범위·의존성·회귀 검사 계획을 확정한다.
+- [ ] 우선 순서는 **초안 보존 → 미리보기 갱신 → 디자인 시각 참조 → 완료조건 입력 검증 → 첫사용 안내**를 기준으로 검토한다.
 
 ## 2.8.0 완료 요약
 
