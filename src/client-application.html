@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.8.0 — 새 프로젝트</title>
+  <title>VAS 2.8.1 — 새 프로젝트</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
@@ -83,10 +83,12 @@
           <div class="q design-choice"><label for="projectDesignPreset">디자인 방향</label><select id="projectDesignPreset"></select><strong id="projectDesignSummary" aria-live="polite"></strong><a class="design-reference-link" href="design-controller.html?return=client-application.html" target="_blank" rel="noopener" data-vas-link data-design-reference><span data-design-reference-label>디자인 예시·설정 보기</span><span aria-hidden="true">↗</span></a><p>새 창에서 실제 화면 예시를 보고 바꾸면 이 화면에 자동 반영됩니다.</p></div>
         </section>
 
+        <p id="handoffPrepareError" role="alert" hidden></p>
         <div class="nav-btns no-print" id="navWrap"><button type="button" class="btn btn-prev" id="prevBtn" onclick="changeStep(-1)">이전</button><button type="button" class="btn btn-next" id="nextBtn" onclick="changeStep(1)">다음</button></div>
 
         <section class="done-screen" id="doneScreen">
           <h2 class="done-graphic" tabindex="-1">READY.</h2>
+          <p>인계 자료 준비 완료이며 개발 작업 완료를 의미하지 않습니다.</p>
           <p>아래 프롬프트를 복사해 코딩 도구에 붙여넣으세요. JSON 저장은 선택이며, 복사 후 VAS는 닫아도 됩니다.</p>
           <pre class="handoff-review" id="handoffReview" tabindex="0">최종 내용을 준비하고 있습니다.</pre>
           <div class="handoff-review-note" id="handoffInputReview"><p data-review-change></p><label><input type="checkbox"><span data-review-label>최종 내용을 확인했습니다. (선택)</span></label></div>
@@ -118,6 +120,7 @@
   <script src="agent-contract.js"></script>
   <script src="task-policy.js"></script>
   <script src="task-inputs.js"></script>
+  <script src="design-reference.js"></script>
   <script src="agent-handoff-web.js"></script>
   <script src="client-form.js"></script>
   <script src="client-draft.js"></script>

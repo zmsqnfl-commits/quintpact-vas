@@ -4,6 +4,9 @@
   let step = 1;
   let preview = null;
   let legacyScopeReview = false;
+  let inputRevision = 0;
+  let preparation = 0;
+  let previewSignature = '';
 
   function runtimeAvailable() {
     return Boolean(window.VASRuntime && VASRuntime.isAvailable());
@@ -48,6 +51,11 @@
     const box = document.getElementById('errorBox');
     box.textContent = error && error.message ? error.message : String(error);
     box.hidden = false;
+    if (error && error.criterionField) {
+      const panel = error.criterionField.closest('[data-step]');
+      if (panel && !panel.classList.contains('active')) go(Number(panel.dataset.step));
+      window.setTimeout(function () { error.criterionField.focus(); }, 0);
+    }
   }
   function clearError() {
     document.getElementById('errorBox').hidden = true;
@@ -80,28 +88,25 @@
 
   function folderLocation() { return document.getElementById('folderPath').value.trim(); }
 
-  function syncDesign() {
-    if (!preview) return;
-    const request = VASAgentContract.clean(document.getElementById('taskRequest').value, 4000);
-    preview.document.project.name = VASAgentContract.clean(document.getElementById('projectName').value, 80);
-    preview.document.project.summary = request;
-    preview.document.task.request = request;
-    preview.document.context.requirements = { included: Boolean(request), value: { request: request } };
-    preview.document.context.design = VASAgentContract.sanitize(VASSetupDesign.context(designScope()));
-    const changes = [];
-    VASTaskPolicy.text(document.getElementById('projectName').value, 80, '프로젝트 이름', changes);
-    VASTaskPolicy.text(document.getElementById('taskRequest').value, 4000, '요청', changes);
-    const rawDesign = VASSetupDesign.context(designScope());
-    if (VASAgentContract.stable(rawDesign) !== VASAgentContract.stable(VASAgentContract.sanitize(rawDesign))) changes.push('디자인');
-    if (legacyScopeReview) changes.push('이전 초안의 디자인 범위');
-    preview.document.task.constraints = [];
-    VASTaskPolicy.apply(preview.document, { designScope: designScope(), completionCriteria: VASTaskInputs.read('completionConditions') }, changes);
-    preview.document.context.rag = { included: false, items: [] };
-    preview.document.context.continuation = { included: false };
-    preview.document.context.preferences = { included: false, items: [] };
-    preview.document.qualityGate.ragReviewed = false;
-    preview.document.assistantGuide.target = document.getElementById('provider').value;
-    preview.document.assistantGuide.pasteText = VASAgentHandoffWeb.prompt(preview.document, preview.document.assistantGuide.target);
+  function currentSignature() {
+    return JSON.stringify(['folderPath', 'projectName', 'taskRequest', 'provider'].map(function (id) {
+      return document.getElementById(id).value;
+    }).concat([designScope(), VASTaskInputs.read('completionConditions'), VASSetupDesign.context(designScope())]));
+  }
+
+  function invalidate() {
+    inputRevision += 1; preview = null; previewSignature = '';
+    document.getElementById('previewContent').textContent = '내용 변경됨 · 다시 준비 필요';
+    document.getElementById('previewStatus').textContent = '내용 변경됨 · 다시 준비 필요';
+    document.getElementById('copyPrompt').textContent = providerLabel() + '용 프롬프트 복사 →';
+    document.getElementById('handoffInputReview').querySelector('input').checked = false;
+    document.getElementById('resultMessage').textContent = '내용이 변경되었습니다. 최신 입력으로 다시 준비해 주세요.';
+  }
+
+  function ensureCurrent(result) {
+    if (preview !== result || previewSignature !== currentSignature()) {
+      throw new Error('내용이 변경되었습니다. 최신 입력으로 다시 준비해 주세요.');
+    }
   }
 
   function currentPrompt() {
@@ -110,7 +115,6 @@
 
   function renderPreview() {
     if (!preview) return;
-    syncDesign();
     clearError();
     document.getElementById('previewContent').textContent = currentPrompt();
     VASTaskInputs.review(preview.document, 'handoffInputReview');
@@ -127,14 +131,15 @@
       input.focus();
       return;
     }
+    const revision = inputRevision;
     const result = await VASRuntime.request('/api/folder/select', { method: 'POST' });
     if (!result || result.cancelled || !result.selection) return;
+    if (revision !== inputRevision) { notice.textContent = '폴더 선택 중 내용이 변경되어 선택 결과를 적용하지 않았습니다. 다시 선택하세요.'; return; }
     input.value = result.selection.path || '';
     const name = document.getElementById('projectName');
     if (!name.value.trim()) name.value = result.selection.name || '';
     notice.textContent = '위치만 선택했습니다. 폴더 내부는 분석하지 않습니다.';
-    saveDraft();
-    renderPreview();
+    invalidate(); saveDraft();
   }
 
   async function prepare() {
@@ -146,11 +151,30 @@
     if (!/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) return invalid(folder, '드라이브부터 시작하는 전체 폴더 위치를 적어주세요.');
     if (!name.value.trim()) return invalid(name, '프로젝트 이름을 적어주세요.');
     if (!task.value.trim()) return invalid(task, 'AI에게 맡길 일을 한 줄 이상 적어주세요.');
-    preview = await VASAgentHandoffWeb.buildExisting(name.value, task.value, taskContext(), {
-      designScope: designScope(), completionCriteria: VASTaskInputs.read('completionConditions'),
-      rag: { included: false, items: [] }, ragReviewed: false,
-      continuation: { included: false }
-    });
+    const criteria = VASTaskInputs.validate('completionConditions');
+    const revision = inputRevision;
+    const request = ++preparation;
+    const signature = currentSignature();
+    const provider = document.getElementById('provider').value;
+    preview = null; previewSignature = '';
+    document.getElementById('previewContent').textContent = '최신 입력으로 인계 자료를 준비하고 있습니다.';
+    document.getElementById('previewStatus').textContent = '인계 준비 중';
+    try {
+      const result = await VASAgentHandoffWeb.buildExisting(name.value, task.value, taskContext(), {
+        designScope: designScope(), completionCriteria: criteria,
+        rag: { included: false, items: [] }, ragReviewed: false,
+        continuation: { included: false }
+      });
+      if (legacyScopeReview) { result.document.inputReview.fields.push('이전 초안의 디자인 범위'); result.document.inputReview.required = true; }
+      await VASAgentHandoffWeb.refreshIntegrity(result.document, provider);
+      if (revision !== inputRevision || request !== preparation || signature !== currentSignature()) return false;
+      preview = result; previewSignature = signature;
+    } catch (error) {
+      if (revision !== inputRevision || request !== preparation) return false;
+      document.getElementById('previewContent').textContent = error.message;
+      document.getElementById('previewStatus').textContent = '확인 필요 · 다시 준비';
+      throw error;
+    }
     renderPreview();
     return true;
   }
@@ -167,9 +191,11 @@
     clearError();
     try {
       if (!await prepare()) return;
-      VASTaskInputs.confirm(preview.document, 'handoffInputReview');
-      await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
-      await VASAgentHandoffWeb.save(preview.document, 'VAS-AI-HANDOFF.json');
+      const result = preview;
+      VASTaskInputs.confirm(result.document, 'handoffInputReview');
+      await VASAgentHandoffWeb.refreshIntegrity(result.document, document.getElementById('provider').value);
+      ensureCurrent(result);
+      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
       document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 폴더 위치가 포함된 프롬프트를 코딩 AI에 붙여넣으세요.';
       try { if (designScope().mode !== 'preserve') await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
     } catch (error) { showError(error); }
@@ -179,9 +205,11 @@
     clearError();
     try {
       if (!await prepare()) return;
-      VASTaskInputs.confirm(preview.document, 'handoffInputReview');
-      await VASAgentHandoffWeb.refreshIntegrity(preview.document, document.getElementById('provider').value);
-      VASAgentHandoffWeb.assertReviewed(preview.document);
+      const result = preview;
+      VASTaskInputs.confirm(result.document, 'handoffInputReview');
+      await VASAgentHandoffWeb.refreshIntegrity(result.document, document.getElementById('provider').value);
+      ensureCurrent(result);
+      VASAgentHandoffWeb.assertReviewed(result.document);
       await VASAgentHandoffWeb.copy(currentPrompt());
       document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. 프롬프트에 적힌 폴더 위치를 코딩 AI가 확인합니다.';
       try { if (designScope().mode !== 'preserve') await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
@@ -194,33 +222,40 @@
     : 'Windows 폴더 선택창을 사용하려면 Run-VAS-System.bat로 실행해 주세요.';
   document.getElementById('selectFolder').addEventListener('click', function () { selectFolderLocation().catch(showError); });
   document.getElementById('continueSettings').addEventListener('click', continueSettings);
+  document.getElementById('preparePreview').addEventListener('click', function () { prepare().catch(showError); });
   document.getElementById('downloadJson').addEventListener('click', saveJson);
   document.getElementById('downloadAgain').addEventListener('click', saveJson);
   document.getElementById('copyPrompt').addEventListener('click', function () { copyPrompt(true); });
   document.getElementById('copyPromptAgain').addEventListener('click', function () { copyPrompt(false); });
   document.getElementById('editWork').addEventListener('click', function () { go(1); });
   document.getElementById('editSettings').addEventListener('click', function () { go(2); });
-  document.getElementById('provider').addEventListener('change', renderPreview);
+  document.getElementById('provider').addEventListener('change', function () { invalidate(); });
+  const draftFeedback = document.createElement('p');
+  draftFeedback.setAttribute('role', 'status'); draftFeedback.id = 'importDraftFeedback'; draftFeedback.hidden = true;
+  document.getElementById('runtimeNotice').insertAdjacentElement('afterend', draftFeedback);
   function saveDraft() {
     if (!window.VASHandoffWorkflow) return;
-    VASHandoffWorkflow.writeImportDraft({
+    const saved = VASHandoffWorkflow.writeImportDraft({
       folderPath: folderLocation(), projectName: document.getElementById('projectName').value,
       taskRequest: document.getElementById('taskRequest').value, step: step, designScope: designScope(), completionCriteria: VASTaskInputs.read('completionConditions')
     });
+    draftFeedback.textContent = saved ? '' : '입력 내용을 임시 저장하지 못했습니다. 창을 닫기 전에 프롬프트를 복사하세요.';
+    draftFeedback.hidden = Boolean(saved);
   }
   ['folderPath', 'projectName', 'taskRequest'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', function () {
-      preview = null; saveDraft(); renderPreview();
-      clearError();
+      invalidate(); clearError(); saveDraft();
     });
   });
   document.getElementById('handoffDesignPreset').addEventListener('change', function () {
-    setTimeout(function () { try { renderPreview(); } catch (error) { showError(error); } }, 0);
+    invalidate();
   });
   ['designScopeMode', 'designScopeDetails'].forEach(function (id) {
-    document.getElementById(id).addEventListener('change', function () { scopeVisibility(); saveDraft(); try { renderPreview(); } catch (error) { showError(error); } });
+    function changed() { scopeVisibility(); invalidate(); clearError(); saveDraft(); }
+    document.getElementById(id).addEventListener('input', changed);
+    document.getElementById(id).addEventListener('change', changed);
   });
-  document.getElementById('completionConditions').addEventListener('input', function () { saveDraft(); });
+  document.getElementById('completionConditions').addEventListener('input', function () { invalidate(); clearError(); saveDraft(); });
   const draft = window.VASHandoffWorkflow && VASHandoffWorkflow.readImportDraft();
   if (draft) {
     document.getElementById('folderPath').value = draft.folderPath || '';
@@ -233,5 +268,12 @@
     const restoredStep = Number(draft.step) === 1 ? 1 : 2;
     if (restoredStep === 2) prepare().then(function (ready) { if (ready) go(2); }).catch(showError);
   }
-  window.addEventListener('focus', function () { try { renderPreview(); } catch (error) { showError(error); } });
+  let selectedDesign = JSON.stringify(VASSetupDesign.context(designScope()));
+  window.addEventListener('vas-theme-state', function () {
+    const current = JSON.stringify(VASSetupDesign.context(designScope()));
+    if (current !== selectedDesign) { selectedDesign = current; invalidate(); }
+  });
+  window.addEventListener('focus', function () {
+    if (preview && previewSignature !== currentSignature()) invalidate();
+  });
 })();

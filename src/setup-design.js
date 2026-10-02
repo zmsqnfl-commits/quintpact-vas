@@ -43,7 +43,7 @@
     const direction = global.composeAgentPrompt
       ? global.composeAgentPrompt(state.basePreset || state.preset, preset || fallback, state.tasteProfileMode === 'auto' ? null : state.tasteProfileMode, state.tokens)
       : (preset ? preset.prompt : fallback.prompt);
-    return {
+    const design = {
       included: true,
       preset: state.preset,
       basePreset: state.basePreset,
@@ -51,6 +51,8 @@
       tokens: state.tokens,
       direction: direction
     };
+    if (global.VASDesignReference) design.visualReference = VASDesignReference.reference(design, scope || { mode: 'new', scope: '' }, global.VASConfig && VASConfig.version);
+    return design;
   }
 
   function refreshMount(item) {

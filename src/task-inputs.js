@@ -12,6 +12,7 @@
     const state = { host: host, input: input, rows: rows, value: input.value, button: button };
     editors.set(id, state);
     function serialize() {
+      clearValidation(state);
       input.value = JSON.stringify(Array.from(rows.children).map(function (row) {
         return { description: row.querySelector('textarea').value, method: row.querySelector('select').value, required: row.querySelector('input').checked };
       }));
@@ -22,7 +23,7 @@
     state.add = function (value) {
       if (rows.children.length >= 20) return;
       const row = document.createElement('div'); row.className = 'criterion-row';
-      row.innerHTML = '<label>완료조건<textarea placeholder="예: CSV를 열면 한글이 깨지지 않고 합계가 일치한다"></textarea></label><div class="criterion-controls"><label>확인 방법 <select><option value="automatic">자동 검사</option><option value="manual">수동 확인</option><option value="static">정적 검토</option></select></label><label><input type="checkbox" checked> 필수조건</label><button type="button">조건 삭제</button></div>';
+      row.innerHTML = '<label>완료조건<textarea required placeholder="예: CSV를 열면 한글이 깨지지 않고 합계가 일치한다"></textarea></label><div class="criterion-controls"><label>확인 방법 <select><option value="automatic">자동 검사</option><option value="manual">수동 확인</option><option value="static">정적 검토</option></select></label><label><input type="checkbox" checked> 필수조건</label><button type="button">조건 삭제</button></div>';
       if (value) { row.querySelector('textarea').value = value.description || ''; row.querySelector('select').value = value.method || 'manual'; row.querySelector('input').checked = value.required !== false; }
       else row.querySelector('select').value = 'manual';
       row.addEventListener('input', serialize); row.addEventListener('change', serialize);
@@ -45,6 +46,41 @@
     const state = editors.get(id); if (!state) return [];
     if (state.input.value !== state.value) restore(id);
     try { return JSON.parse(state.input.value || '[]'); } catch (error) { throw new Error('완료조건을 읽지 못했습니다. 내용을 다시 입력하세요.'); }
+  }
+  function clearValidation(state) {
+    state.host.querySelectorAll('[data-criterion-error]').forEach(function (notice) { notice.remove(); });
+    state.host.querySelectorAll('[aria-invalid="true"]').forEach(function (field) {
+      field.removeAttribute('aria-invalid'); field.removeAttribute('aria-describedby');
+    });
+  }
+  function validate(id) {
+    const state = editors.get(id); if (!state) return [];
+    clearValidation(state);
+    let values;
+    try {
+      values = read(id);
+      // Reuse the final policy; do not trim, truncate or silently remove rows.
+      if (!Array.isArray(values) || values.length > 20) VASTaskPolicy.criteria(values, []);
+      for (let index = 0; index < values.length; index += 1) {
+        try { VASTaskPolicy.criteria([values[index]], []); }
+        catch (error) {
+          error.message = '완료조건 ' + (index + 1) + ': ' + error.message.replace(/^완료조건 1/, '내용');
+          error.criterionIndex = index;
+          throw error;
+        }
+      }
+      return values;
+    } catch (error) {
+      const row = state.rows.children[error.criterionIndex || 0];
+      const field = row ? row.querySelector('textarea') : state.button;
+      const notice = document.createElement('p');
+      notice.id = id + '-validation'; notice.dataset.criterionError = '';
+      notice.setAttribute('role', 'alert'); notice.textContent = error.message;
+      (row || state.host).append(notice);
+      field.setAttribute('aria-invalid', 'true'); field.setAttribute('aria-describedby', notice.id);
+      field.focus(); error.criterionField = field;
+      throw error;
+    }
   }
   function review(doc, id) {
     const host = document.getElementById(id); if (!host) return;
@@ -69,5 +105,5 @@
     doc.qualityGate.designConfirmed = checked;
     doc.qualityGate.userConfirmation = checked ? { status: 'confirmed', scope: ['requirements', 'completion-criteria', 'design-scope'], confirmedAt: new Date().toISOString() } : { status: 'not-performed', scope: [] };
   }
-  global.VASTaskInputs = Object.freeze({ mount: mount, read: read, restore: restore, review: review, confirm: confirm });
+  global.VASTaskInputs = Object.freeze({ mount: mount, read: read, validate: validate, restore: restore, review: review, confirm: confirm });
 })(window);

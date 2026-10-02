@@ -255,7 +255,7 @@ test('required fields expose an accessible error and focus the first problem', a
   await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('#nextBtn').click();
   await expect(page.locator('#projectName')).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.locator('[role="alert"]')).toBeVisible();
+  await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.locator('#projectName')).toBeFocused();
 
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });
@@ -370,6 +370,8 @@ test('existing flow asks for intent and leaves source discovery to the coding AI
   await page.locator('#handoffDesignPreset').selectOption('linear');
   await expect(page.locator('#handoffDesignSummary')).toContainText('ORBIT');
   await expect(page.locator('[data-design-reference]')).toContainText('Linear 디자인 예시·설정 보기');
+  await expect(page.locator('#previewStatus')).toContainText('다시 준비');
+  await page.locator('#preparePreview').click();
   await expect(page.locator('#previewContent')).toContainText('Z:\\work\\legacy-app');
   await expect(page.locator('#previewContent')).toContainText('실제 파일을 직접 읽어 판단하세요');
   await expect(page.locator('#advancedMigration, #createIndex, #configureButton')).toHaveCount(0);

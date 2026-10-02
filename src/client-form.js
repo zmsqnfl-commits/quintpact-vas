@@ -7,6 +7,7 @@
 var currentLang = 'ko';
 var cur = 1;
 const total = 5;
+let preparingHandoff = false;
 const i18n = {
     ko: { btnNext: '다음', btnSubmit: '내용 확인' },
     en: { btnNext: 'Next', btnSubmit: 'Review' }
@@ -100,6 +101,10 @@ function showFieldValidation(input) {
 
 function validateCurrentStep(stepEl) {
     clearStepValidation(stepEl);
+    if (stepEl.querySelector('#completionConditions') && window.VASTaskInputs) {
+        try { VASTaskInputs.validate('completionConditions'); }
+        catch (error) { return false; }
+    }
     const inputs = stepEl.querySelectorAll('input[required], textarea[required], select[required]');
     const checkedNames = new Set();
 
@@ -127,17 +132,19 @@ function validateCurrentStep(stepEl) {
 
 /* 스텝 이동 */
 function changeStep(dir) {
+    if (preparingHandoff) return;
     const steps = document.querySelectorAll('.step');
 
     if (dir === 1) {
         const currentStepEl = document.querySelector(`[data-step="${cur}"]`);
         if (!validateCurrentStep(currentStepEl)) return;
         if (cur === total && window.VASHandoffContextReview && !VASHandoffContextReview.ensureReviewed()) return;
+        if (cur === total) { showDone(); return; }
     }
 
     cur += dir;
     if (cur < 1) cur = 1;
-    if (cur > total) { showDone(); return; }
+    if (cur > total) cur = total;
 
     steps.forEach(s => {
         s.style.opacity = '0';
@@ -164,7 +171,41 @@ function changeStep(dir) {
 }
 
 /* 완료 화면 진입 */
-function showDone() {
+async function showDone() {
+    if (preparingHandoff) return;
+    preparingHandoff = true;
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const errorBox = document.getElementById('handoffPrepareError');
+    if (errorBox) { errorBox.hidden = true; errorBox.textContent = ''; }
+    nextBtn.disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.textContent = currentLang === 'ko' ? '인계 준비 중…' : 'Preparing handoff…';
+    try {
+        if (!window.VASNewHandoff) throw new Error('인계 준비 기능을 읽지 못했습니다. 다시 열어 주세요.');
+        await VASNewHandoff.prepare();
+    } catch (error) {
+        if (errorBox) { errorBox.textContent = error.message || '인계 자료를 준비하지 못했습니다. 다시 시도하세요.'; errorBox.hidden = false; }
+        if (error.criterionField) {
+            const targetStep = error.criterionField.closest('.step');
+            if (targetStep) {
+                cur = Number(targetStep.dataset.step);
+                document.querySelectorAll('.step').forEach(function (step) {
+                    const active = step === targetStep;
+                    step.classList.toggle('active', active);
+                    step.style.opacity = active ? '1' : '0';
+                    step.style.transform = active ? 'translateY(0)' : 'translateY(40px)';
+                });
+                error.criterionField.focus();
+            }
+        }
+        return;
+    } finally {
+        preparingHandoff = false;
+        nextBtn.disabled = false;
+        prevBtn.disabled = false;
+        updateUI();
+    }
     const activeStep = document.querySelector('.step.active');
     if (activeStep) {
         activeStep.style.opacity = '0';
@@ -176,9 +217,6 @@ function showDone() {
     ds.classList.add('active');
     const doneHeading = ds.querySelector('h2');
     if (doneHeading) window.setTimeout(() => doneHeading.focus(), 0);
-    if (window.VASNewHandoff) window.VASNewHandoff.prepare().catch(function () {
-        document.getElementById('handoffReview').textContent = '최종 내용을 준비하지 못했습니다. 입력 내용을 다시 확인해 주세요.';
-    });
 }
 
 /* 완료 화면 → 폼으로 복귀 */
@@ -203,7 +241,7 @@ function clearForm() {
         ? '작성 중인 내용을 모두 지우고 처음부터 다시 시작하시겠습니까?'
         : 'Clear all and start over?';
     if (confirm(msg)) {
-        if (window.VASClientDraft) window.VASClientDraft.clear();
+        if (window.VASClientDraft && window.VASClientDraft.clear() === false) return;
         if (window.VASHandoffWorkflow) window.VASHandoffWorkflow.clearCurrent();
         document.getElementById('projectForm').reset();
         location.reload();

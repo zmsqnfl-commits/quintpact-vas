@@ -3,6 +3,9 @@
   'use strict';
 
   let prepared = null;
+  let inputRevision = 0;
+  let preparation = 0;
+  let preparedSignature = '';
   VASTaskInputs.mount('completionConditions');
 
   function collectApplicationData(form, files) {
@@ -21,16 +24,44 @@
 
   async function prepare() {
     const form = document.getElementById('projectForm');
+    const criteria = VASTaskInputs.validate('completionConditions');
     const values = collectApplicationData(form, typeof uploadedFiles === 'undefined' ? [] : uploadedFiles);
-    prepared = await VASAgentHandoffWeb.buildNew(values, VASSetupDesign.context(), {
-      completionCriteria: VASTaskInputs.read('completionConditions'),
+    const design = VASSetupDesign.context();
+    const revision = inputRevision;
+    const request = ++preparation;
+    const signature = JSON.stringify([values, design]);
+    prepared = null;
+    const result = await VASAgentHandoffWeb.buildNew(values, design, {
+      completionCriteria: criteria,
       rag: { included: false, items: [] }, ragReviewed: false,
       continuation: { included: false }
     });
+    if (revision !== inputRevision || request !== preparation || signature !== currentSignature()) {
+      throw new Error('준비 중 내용이 변경되었습니다. 최신 입력으로 다시 준비해 주세요.');
+    }
+    prepared = result;
+    preparedSignature = signature;
     const preview = document.getElementById('handoffReview');
     if (preview) preview.textContent = prepared.pasteText;
     VASTaskInputs.review(prepared.document, 'handoffInputReview');
+    const heading = document.querySelector('#doneScreen h2');
+    if (heading) heading.textContent = 'READY.';
     return prepared;
+  }
+
+  function currentSignature() {
+    return JSON.stringify([collectApplicationData(document.getElementById('projectForm'), typeof uploadedFiles === 'undefined' ? [] : uploadedFiles), VASSetupDesign.context()]);
+  }
+  function invalidate() {
+    inputRevision += 1; prepared = null; preparedSignature = '';
+    document.getElementById('handoffReview').textContent = '내용 변경됨 · 다시 준비 필요';
+    const status = document.getElementById('handoffStatus');
+    status.textContent = '내용 변경됨 · 다시 준비 필요'; status.hidden = false;
+    const heading = document.querySelector('#doneScreen.active h2');
+    if (heading) heading.textContent = 'REVIEW.';
+  }
+  function ensureCurrent(result) {
+    if (prepared !== result || preparedSignature !== currentSignature()) throw new Error('내용이 변경되었습니다. 최신 입력으로 다시 준비해 주세요.');
   }
 
   function showStatus(message) {
@@ -43,6 +74,7 @@
     try {
       const result = await prepare();
       VASTaskInputs.confirm(result.document, 'handoffInputReview');
+      ensureCurrent(result);
       await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
       const draftFailed = global.VASClientDraft && VASClientDraft.clear() === false;
       let message = 'JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.';
@@ -59,6 +91,7 @@
       const result = await prepare();
       VASTaskInputs.confirm(result.document, 'handoffInputReview');
       await VASAgentHandoffWeb.refreshIntegrity(result.document);
+      ensureCurrent(result);
       VASAgentHandoffWeb.assertReviewed(result.document);
       await VASAgentHandoffWeb.copy(VASAgentHandoffWeb.prompt(result.document, 'universal'));
       showStatus('프롬프트를 복사했습니다. 코딩 도구에 붙여넣은 뒤 VAS는 닫아도 됩니다.');
@@ -69,8 +102,16 @@
   }
 
   VASSetupDesign.mount('projectDesignPreset', 'projectDesignSummary');
-  document.getElementById('projectDesignPreset').addEventListener('change', function () {
-    prepared = null;
+  function changedInput(event) {
+    if (event.target.closest('#handoffInputReview')) return;
+    invalidate();
+  }
+  document.getElementById('projectForm').addEventListener('input', changedInput);
+  document.getElementById('projectForm').addEventListener('change', changedInput);
+  let designSignature = JSON.stringify(VASSetupDesign.context());
+  global.addEventListener('vas-theme-state', function () {
+    const next = JSON.stringify(VASSetupDesign.context());
+    if (next !== designSignature) { designSignature = next; invalidate(); }
   });
   global.collectApplicationData = collectApplicationData;
   global.exportJson = exportJson;

@@ -30,8 +30,11 @@ test('existing handoff uses a self-contained prompt without guessing project str
   expect(prompt).not.toContain('sk-proj-1234567890abcdef');
 
   await page.locator('#provider').selectOption('claude');
+  await expect(page.locator('#previewStatus')).toContainText('다시 준비');
+  await page.locator('#preparePreview').click();
   await expect(page.locator('#previewContent')).toContainText('Claude에서 실제 작업할 원본 프로젝트 폴더를 여세요');
   await page.locator('#provider').selectOption('codex');
+  await page.locator('#preparePreview').click();
   await expect(page.locator('#previewContent')).toContainText('Codex에서 실제 작업할 원본 프로젝트 폴더를 여세요');
 });
 

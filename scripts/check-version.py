@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
 
 REQUIRED = {
+    "00-처음-사용하기.txt": f"VAS {VERSION} — 처음에는 이것만 하세요",
     "package-lock.json": f'"version": "{VERSION}"',
     "src/vas-config.js": f"version: '{VERSION}'",
     "scripts/Start-VAS.ps1": f'"{VERSION}-$rootHash"',

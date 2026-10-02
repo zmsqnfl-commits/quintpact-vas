@@ -37,6 +37,13 @@ def prompt_details(document: dict) -> str:
     design = context.get("design") or {}
     if design.get("included") and design.get("tokens"):
         sections.append("확정 디자인 토큰(JSON):\n" + clean(json.dumps(design["tokens"], ensure_ascii=False, indent=2), 4000))
+    try:
+        from .vas_design_reference import prompt as reference_prompt
+    except ImportError:
+        from vas_design_reference import prompt as reference_prompt
+    reference = reference_prompt(document)
+    if reference:
+        sections.append(reference.rstrip())
     resource = ROOT / ".agents/agent-resources.json"
     if resource.is_file():
         workflow = json.loads(resource.read_text(encoding="utf-8"))["workflow"]

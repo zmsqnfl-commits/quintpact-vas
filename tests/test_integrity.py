@@ -1,4 +1,4 @@
-"""VAS 2.8.0 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
+"""VAS 2.8.1 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
 from __future__ import annotations
 
 import ast
@@ -33,8 +33,8 @@ js_files = sorted(SRC.glob("*.js"))
 package = json.loads(text(ROOT / "package.json"))
 config = text(SRC / "vas-config.js")
 
-check("01 package version", package.get("version") == "2.8.0")
-check("02 runtime version", "version: '2.8.0'" in config or 'version: "2.8.0"' in config)
+check("01 package version", package.get("version") == "2.8.1")
+check("02 runtime version", "version: '2.8.1'" in config or 'version: "2.8.1"' in config)
 check("03 public entrypoints", all((ROOT / item).exists() for item in [
     "Run-VAS-System.bat", "src/vas-hub.html", "src/client-application.html",
 ]))
@@ -64,8 +64,20 @@ check("06 HTML stylesheet references", not missing_styles, ", ".join(missing_sty
 check("07 local navigation links", not broken_links, ", ".join(broken_links))
 
 source_text = "\n".join(text(path) for path in html_files + css_files + js_files)
-web_urls = [url for url in re.findall(r'https?://[^\s"\'<>]+', source_text) if "w3.org/2000/svg" not in url]
-check("08 no remote runtime URL", not web_urls, ", ".join(web_urls[:5]))
+reference_urls = {
+    'https://github.com/zmsqnfl-commits/quintpact-vas',
+    'https://zmsqnfl-commits.github.io/quintpact-vas/src/design-sample.html',
+}
+web_urls = [url for path in html_files + css_files + js_files
+            for url in re.findall(r'https?://[^\s"\'<>]+', text(path))
+            if "w3.org/2000/svg" not in url
+            and not (path.name == 'design-reference.js' and url in reference_urls)]
+reference_source = text(SRC / 'design-reference.js')
+reference_data_only = not re.search(
+    r'\b(?:fetch|XMLHttpRequest|WebSocket|Worker|importScripts)\s*\(|(?:\.src|\.href)\s*=',
+    reference_source,
+)
+check("08 no remote runtime URL", not web_urls and reference_data_only, ", ".join(web_urls[:5]))
 check("09 no remote font or import", not re.search(r"fonts\.googleapis|fonts\.gstatic|@import\s+url\(\s*['\"]?https?", source_text, re.I))
 
 storage = text(SRC / "storage-utils.js")

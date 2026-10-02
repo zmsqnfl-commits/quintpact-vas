@@ -55,6 +55,8 @@ test('existing UI downloads redact the entire payload after edits and provider c
   await page.locator('#taskRequest').fill(request);
   await page.locator('#continueSettings').click();
   await page.locator('#provider').selectOption('codex');
+  await expect(page.locator('#previewContent')).toContainText('내용 변경됨 · 다시 준비 필요');
+  await page.locator('#preparePreview').click();
   await expect(page.locator('#previewContent')).toContainText('Z:\\work\\real-project');
   for (const iteration of [1, 2]) {
     if (iteration === 2) {
@@ -62,6 +64,8 @@ test('existing UI downloads redact the entire payload after edits and provider c
       await page.locator('#taskRequest').fill(request + ' Preserve keyboard behavior.');
       await page.locator('#continueSettings').click();
       await page.locator('#provider').selectOption('claude');
+      await expect(page.locator('#previewContent')).toContainText('내용 변경됨 · 다시 준비 필요');
+      await page.locator('#preparePreview').click();
     }
     await expect(page.locator('#handoffInputReview')).toContainText('필수');
     await page.locator('#handoffInputReview input').check();

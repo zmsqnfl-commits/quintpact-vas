@@ -21,6 +21,8 @@
   let pending = VASStorage.readJson(key, null, function (value) {
     return value && value.v === 1 && value.fields && typeof value.fields === 'object';
   });
+  // Keep recovery decisions separate from temporary save suspension.
+  let recoveryPending = Boolean(pending);
 
   function collectFields() {
     const fields = {};
@@ -37,21 +39,24 @@
   }
 
   function save() {
-    if (suspended || !enabled) return;
-    pending = {
+    if (recoveryPending || suspended || !enabled) return;
+    const draft = {
       v: 1,
       savedAt: new Date().toISOString(),
       step: global.cur || 1,
       language: global.currentLang || 'ko',
       fields: collectFields()
     };
-    report('save', VASStorage.writeJson(key, pending) ? '' : '초안을 자동 저장하지 못했습니다. 브라우저 저장소 접근을 확인해 주세요.');
+    const saved = VASStorage.writeJson(key, draft);
+    if (saved) pending = draft;
+    report('save', saved ? '' : '초안을 자동 저장하지 못했습니다. 브라우저 저장소 접근을 확인해 주세요.');
   }
 
   function schedule() {
-    if (!enabled) return;
-    suspended = false;
     global.clearTimeout(timer);
+    timer = null;
+    if (recoveryPending || !enabled) return;
+    suspended = false;
     timer = global.setTimeout(save, 200);
   }
 
@@ -69,7 +74,9 @@
   }
 
   function restore() {
-    if (!pending) return;
+    if (!pending) return false;
+    global.clearTimeout(timer);
+    timer = null;
     applyFields(pending.fields);
     if (global.VASTaskInputs) VASTaskInputs.restore('completionConditions');
     global.cur = Math.min(5, Math.max(1, Number(pending.step) || 1));
@@ -81,17 +88,24 @@
     });
     global.setLang(global.currentLang);
     document.getElementById('draftNotice').hidden = true;
+    recoveryPending = false;
+    suspended = false;
+    report('delete', '');
+    return true;
   }
 
   function clear() {
     suspended = true;
     global.clearTimeout(timer);
+    timer = null;
     if (!VASStorage.remove(key)) {
+      recoveryPending = true;
       report('delete', '초안을 삭제하지 못했습니다. 브라우저 저장소 접근을 확인한 뒤 다시 삭제해 주세요.');
       showNotice();
       return false;
     }
     pending = null;
+    recoveryPending = false;
     document.getElementById('draftNotice').hidden = true;
     report('delete', '');
     report('save', '');

@@ -35,7 +35,7 @@
     if (context && JSON.stringify(sanitize(context, 0)) !== JSON.stringify(context)) changed.push('추가 요구사항·디자인');
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.8.0' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.8.1' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),
@@ -73,7 +73,8 @@
     document.context.rag = global.VASAgentContract ? VASAgentContract.approvedRag(suppliedRag) : { included: false, items: [] };
     document.context.preferences = { included: false, items: [] };
     document.context.continuation = sanitize(continuation, 0);
-    return VASTaskPolicy.apply(document, settings, changed);
+    VASTaskPolicy.apply(document, settings, changed);
+    return global.VASDesignReference ? VASDesignReference.attach(document) : document;
   }
 
   async function complete(document, provider) {
@@ -180,6 +181,7 @@
       (details.attachments && details.attachments.count ? '참고 파일: 필요한 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 이름과 내용을 전송하지 않았습니다. AI는 파일을 받기 전에는 내용을 추정하지 마세요.\n\n' : '') +
       '디자인 방향:\n' + designDirection + '\n\n' +
       (design.included && design.tokens ? '확정 디자인 토큰(JSON):\n' + JSON.stringify(design.tokens, null, 2) + '\n\n' : '') +
+      (global.VASDesignReference ? VASDesignReference.prompt(document) : '') +
       '에이전트 작업 방식:\n' + workflow + '\n\n' +
       '작업 규칙:\n' +
       '1. RBG(Read Before Generate): ' + sourceRule + '\n' +

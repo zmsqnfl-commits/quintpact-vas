@@ -14,6 +14,7 @@ from typing import Any
 
 from vas_ai_contract import approved_rag, build_prompt as _prompt, finalize_handoff, clean, redact_credentials
 from vas_task_policy import apply_task, quality, safe_text
+from vas_design_reference import attach as attach_design_reference
 
 from vas_project_import import (
     ENTRYPOINT_NAMES,
@@ -26,7 +27,7 @@ from vas_project_import import (
 
 FORMAT = "vas-ai-handoff"
 SCHEMA_VERSION = 3
-VAS_VERSION = "2.8.0"
+VAS_VERSION = "2.8.1"
 MAX_INVENTORY = 5_000
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_DEPENDENCIES = 500
@@ -319,6 +320,7 @@ def build_preview(request: dict[str, Any]) -> dict[str, Any]:
     if _sanitize(raw_context) != raw_context:
         changes.append("추가 요구사항·디자인")
     apply_task(document, request.get("task", {}), changes)
+    attach_design_reference(document)
     finalize_handoff(document, _prompt)
     encoded = json.dumps(document, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
     if len(encoded) > MAX_JSON_BYTES:

@@ -139,6 +139,9 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertIn(reference.replace("\\", "/"), payload, f"실행 BAT 누락 대상: {reference}")
         recipient_readme = payload["README.md"].decode("utf-8")
         quick_start = payload["00-처음-사용하기.txt"].decode("utf-8")
+        self.assertIn(f"VAS {VERSION} — 처음에는 이것만 하세요", quick_start)
+        for marker in ("기존 디자인 유지", "부분 디자인 수정", "완료조건", "인계 자료 준비 완료", "전달 내용 다시 준비"):
+            self.assertIn(marker, quick_start)
         self.assertIn("Run-VAS-System.bat", quick_start)
         self.assertIn("기존 프로그램 AI로 연결", quick_start)
         self.assertIn("VAS-AI-HANDOFF.json", quick_start)
@@ -158,6 +161,8 @@ class ReleasePackageTests(unittest.TestCase):
         html = payload["index.html"].decode("utf-8")
         self.assertIn('<body data-mode="standalone">', html)
         self.assertIn("agent-resources.js", payload)
+        self.assertIn("design-reference.js", payload)
+        self.assertIn('src="design-reference.js"', html)
         self.assertLess(html.index('src="agent-resources.js"'), html.index('src="design-taste-pack.js"'))
         self.assertNotIn('id="hubBackLink"', html)
         self.assertNotIn("personalization-store.js", html)

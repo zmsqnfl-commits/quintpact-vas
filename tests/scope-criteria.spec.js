@@ -110,6 +110,8 @@ test('scope and condition controls fit desktop and mobile screens', async ({ pag
     await page.setViewportSize({ width, height: 1000 });
     await start(page);
     await condition(page, '키보드로 내보내기 버튼을 실행한다.');
+    // Commit the focused textarea before full-page capture changes the scroll position.
+    await page.locator('.criterion-row textarea').last().blur();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: path.join(process.env.TEMP || '.', 'vas-existing-criteria-' + width + '.png'), fullPage: true });
     await page.locator('#continueSettings').click();
