@@ -62,9 +62,34 @@ class KnowledgeIndexTests(unittest.TestCase):
             (root / ".agents" / "workflows" / "flow.md").write_text("# 흐름\n승인 후 실행", encoding="utf-8")
             reference = root / ".agents" / "skills" / "demo" / "references" / "external.md"
             reference.write_text("# 외부\n절대 색인 금지", encoding="utf-8")
+            # Keep the expected boundary independent of the builder's filename list.
+            internal_names = (
+                "task.md", "codex_report.md", "current_context.md", "decisions.md",
+                "questions_for_chatgpt.md", "handoff_full_context.md",
+            )
+            excluded_markers = []
+            for number, name in enumerate(internal_names):
+                relatives = (
+                    Path("docs") / name,
+                    Path("docs/nested") / (name[:-3].upper() + ".md"),
+                    Path(".agents/workflows") / (name[:-3].title() + ".md"),
+                )
+                for variant, relative in enumerate(relatives):
+                    marker = f"internal-status-marker-{number}-{variant}"
+                    excluded_markers.append(marker)
+                    path = root / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(f"# Internal status\n{marker}\n", encoding="utf-8")
+                    self.assertFalse(builder.is_allowed(path, root), str(relative))
+                self.assertFalse(builder.is_allowed(root / "docs" / name.upper(), root))
             index = builder.build_index(root)
+            rendered = builder.render_index(index)
         sources = {entry["source"] for entry in index["entries"]}
         text = json.dumps(index, ensure_ascii=False)
+        self.assertEqual(sources, {"docs/guide.md", ".agents/CONTEXT.md", ".agents/workflows/flow.md"})
+        for marker in excluded_markers:
+            self.assertNotIn(marker, text)
+            self.assertNotIn(marker, rendered)
         self.assertNotIn("references", " ".join(sources))
         self.assertNotIn("actual-secret", text)
         self.assertIn("[redacted]", text)

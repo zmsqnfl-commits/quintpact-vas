@@ -30,6 +30,10 @@ BLOCKED_NAMES = {
     ".env", ".env.local", ".env.production", "credentials.json",
     "secrets.json", "service-account.json",
 }
+INTERNAL_DOCUMENT_NAMES = {
+    "task.md", "codex_report.md", "current_context.md", "decisions.md",
+    "questions_for_chatgpt.md", "handoff_full_context.md",
+}
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 
 spec = importlib.util.spec_from_file_location("vas_build_release", ROOT / "scripts" / "build_release.py")
@@ -54,6 +58,7 @@ def assert_safe_relative(test: unittest.TestCase, value: str) -> None:
     lowered = {part.casefold() for part in path.parts}
     test.assertFalse(lowered & BLOCKED_PARTS, f"금지 경로 포함: {value}")
     name = path.name.casefold()
+    test.assertNotIn(name, INTERNAL_DOCUMENT_NAMES, f"내부 상태 문서 포함: {value}")
     test.assertNotIn(name, BLOCKED_NAMES, f"시크릿 파일 포함: {value}")
     test.assertFalse(name.startswith(".env."), f"환경 파일 포함: {value}")
     test.assertNotIn(path.suffix.casefold(), SECRET_SUFFIXES, f"시크릿 키 포함: {value}")
@@ -113,6 +118,11 @@ class ReleasePackageTests(unittest.TestCase):
 
     def test_version_and_expected_release_files(self) -> None:
         self.assertEqual(VERSION, CONFIG_VERSION)
+        self.assertFalse({name.casefold() for name in BUILD.ROOT_FILES} & INTERNAL_DOCUMENT_NAMES)
+        self.assertFalse(
+            {path.name.casefold() for path in ROOT.iterdir() if path.is_file()} & INTERNAL_DOCUMENT_NAMES,
+            "내부 작업 문서는 별도 VAS-handoff 저장소에서 관리합니다.",
+        )
         expected_zips = {WINDOWS_ZIP.name, CLIENT_ZIP.name}
         self.assertEqual({path.name for path in DIST.glob("*.zip")}, expected_zips)
         for path in (WINDOWS_ZIP, CLIENT_ZIP, DIST / "release-manifest.json",
@@ -126,6 +136,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn("src/vas-hub.html", payload)
         for resource in ("src/agent-resources.js", ".agents/agent-resources.json", ".agents/HANDOFF-WORKFLOW.md"):
             self.assertIn(resource, payload)
+        self.assertIn(f"docs/releases/{VERSION}.md", payload)
         for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
             for role in ("implementer", "designer", "reviewer"):
                 self.assertIn(f"{host}/agents/vas_{role}{suffix}", payload)
@@ -201,6 +212,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertIn("index.html", relatives)
         self.assertIn(".nojekyll", relatives)
         self.assertIn("src/vas-hub.html", relatives)
+        self.assertIn(f"docs/releases/{VERSION}.md", relatives)
         for path in pages.rglob("*"):
             self.assertFalse(path.is_symlink(), f"Pages 링크 금지: {path}")
             assert_safe_relative(self, path.relative_to(pages).as_posix())
@@ -214,6 +226,39 @@ class ReleasePackageTests(unittest.TestCase):
                 target = (html_path.parent / unquote(parsed.path)).resolve()
                 self.assertTrue(target.is_relative_to(pages.resolve()), f"Pages 경로 이탈: {reference}")
                 self.assertTrue(target.exists(), f"Pages 누락 링크: {html_path}: {reference}")
+
+        # Exercise copy filtering and fail-closed ZIP checks with actual injected files.
+        # Expected names are independent of the builder's denylist.
+        with tempfile.TemporaryDirectory(prefix="vas-internal-document-test-") as temporary:
+            source = Path(temporary) / "source"
+            target = Path(temporary) / "filtered"
+            preserved = {
+                f"docs/releases/{VERSION}.md",
+                ".agents/HANDOFF-WORKFLOW.md", ".agents/skills/reviewer/SKILL.md",
+                ".codex/agents/vas_reviewer.toml",
+            }
+            blocked = {
+                f"docs/{name}" for name in INTERNAL_DOCUMENT_NAMES
+            } | {
+                f"docs/nested/{name.upper()}" for name in INTERNAL_DOCUMENT_NAMES
+            }
+            for relative in preserved | blocked:
+                path = source / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture\n", encoding="utf-8")
+            BUILD.copy_tree(source, target)
+            self.assertEqual(set(tree_fingerprints(target)), preserved)
+            for relative in sorted(blocked):
+                with self.subTest(internal_document=relative):
+                    self.assertFalse(BUILD.allowed(Path(relative)))
+                    archive_path = Path(temporary) / "injected.zip"
+                    with zipfile.ZipFile(archive_path, "w") as archive:
+                        archive.writestr(f"VAS-fixture/{relative}", "fixture\n")
+                    with self.assertRaisesRegex(RuntimeError, "내부 상태 문서 포함"):
+                        BUILD.verify_zip(archive_path)
+            for relative in sorted(preserved):
+                with self.subTest(runtime_or_release_document=relative):
+                    self.assertTrue(BUILD.allowed(Path(relative)))
 
     def test_build_is_reproducible(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vas-release-test-") as temporary:

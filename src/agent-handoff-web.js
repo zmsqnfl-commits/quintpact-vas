@@ -35,7 +35,7 @@
     if (context && JSON.stringify(sanitize(context, 0)) !== JSON.stringify(context)) changed.push('추가 요구사항·디자인');
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.8.1' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.8.2' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),

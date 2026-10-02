@@ -14,7 +14,13 @@ EXCLUDED_PARTS = {
     ".git", ".temp data", "node_modules", "backups", "secrets",
     "credentials", "private", "__pycache__",
 }
-EXCLUDED_NAMES = {"log.md"}
+INTERNAL_DOCUMENT_NAMES = {
+    name.casefold() for name in (
+        "TASK.md", "CODEX_REPORT.md", "CURRENT_CONTEXT.md", "DECISIONS.md",
+        "QUESTIONS_FOR_CHATGPT.md", "HANDOFF_FULL_CONTEXT.md",
+    )
+}
+EXCLUDED_NAMES = {"log.md"} | INTERNAL_DOCUMENT_NAMES
 SENSITIVE_NAME = re.compile(r"(?:secret|credential|password|private[-_ ]?key|api[-_ ]?key)", re.I)
 SENSITIVE_ASSIGNMENT = re.compile(
     r"(?i)\b(password|passwd|secret|api[_ -]?key|access[_ -]?token|authorization)"
@@ -32,10 +38,11 @@ MAX_SECTION_CHARS = 1400
 
 def is_allowed(path: Path, root: Path) -> bool:
     relative = path.relative_to(root)
-    lowered = {part.lower() for part in relative.parts}
-    if path.name.lower().startswith('log-archive-') or relative.as_posix().startswith(('docs/releases/', 'docs/verification/')):
+    lowered = {part.casefold() for part in relative.parts}
+    name = path.name.casefold()
+    if name.startswith('log-archive-') or relative.as_posix().startswith(('docs/releases/', 'docs/verification/')):
         return False
-    if lowered & EXCLUDED_PARTS or path.name.lower() in EXCLUDED_NAMES or SENSITIVE_NAME.search(path.name):
+    if lowered & EXCLUDED_PARTS or name in EXCLUDED_NAMES or SENSITIVE_NAME.search(path.name):
         return False
     if path.suffix.lower() != ".md":
         return False

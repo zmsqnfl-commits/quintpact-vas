@@ -62,3 +62,11 @@ playwright-report/
 
 # 외부 도구 / 설치 파일 (대용량 바이너리)
 tools/
+
+# VAS development coordination is maintained in VAS-handoff.
+[Tt][Aa][Ss][Kk].[Mm][Dd]
+[Cc][Oo][Dd][Ee][Xx]_[Rr][Ee][Pp][Oo][Rr][Tt].[Mm][Dd]
+[Cc][Uu][Rr][Rr][Ee][Nn][Tt]_[Cc][Oo][Nn][Tt][Ee][Xx][Tt].[Mm][Dd]
+[Dd][Ee][Cc][Ii][Ss][Ii][Oo][Nn][Ss].[Mm][Dd]
+[Qq][Uu][Ee][Ss][Tt][Ii][Oo][Nn][Ss]_[Ff][Oo][Rr]_[Cc][Hh][Aa][Tt][Gg][Pp][Tt].[Mm][Dd]
+[Hh][Aa][Nn][Dd][Oo][Ff][Ff]_[Ff][Uu][Ll][Ll]_[Cc][Oo][Nn][Tt][Ee][Xx][Tt].[Mm][Dd]

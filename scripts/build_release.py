@@ -1,4 +1,4 @@
-"""VAS 2.8.1 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.8.2 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -19,15 +19,26 @@ DIST = ROOT / "dist"
 CONFIG = ROOT / "src" / "vas-config.js"
 ROOT_FILES = [
     "Run-VAS-System.bat", "README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
-    "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md", "TASK.md",
+    "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
 ]
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
     ".temp data", "workspace", "dist", "test-results", "playwright-report",
 }
-BLOCKED_NAMES = {".env", ".env.local", ".env.production"}
-BLOCKED_NAMES.update({"credentials.json", "secrets.json", "service-account.json"})
+INTERNAL_DOCUMENT_NAMES = {
+    name.casefold() for name in (
+        "TASK.md", "CODEX_REPORT.md", "CURRENT_CONTEXT.md", "DECISIONS.md",
+        "QUESTIONS_FOR_CHATGPT.md", "HANDOFF_FULL_CONTEXT.md",
+    )
+}
+# Copying and ZIP verification use the same case-insensitive filename boundary.
+BLOCKED_NAMES = {
+    name.casefold() for name in (
+        ".env", ".env.local", ".env.production",
+        "credentials.json", "secrets.json", "service-account.json",
+    )
+} | INTERNAL_DOCUMENT_NAMES
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 CLIENT_ASSETS = [
     "client-application.html", "client-style.css", "client-components.css",
@@ -149,7 +160,7 @@ def build_windows(stage: Path) -> Path:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
     (root / "README.md").write_text(
-        """# VAS 2.8.1 Windows 실행본
+        f"""# VAS {version()} Windows 실행본
 
 ## 시작
 
@@ -230,6 +241,8 @@ def verify_zip(path: Path) -> None:
             filename = Path(name).name.casefold()
             if ".." in parts or lowered & {part.casefold() for part in BLOCKED_PARTS}:
                 raise RuntimeError(f"금지 경로 포함: {name}")
+            if filename in INTERNAL_DOCUMENT_NAMES:
+                raise RuntimeError(f"내부 상태 문서 포함: {name}")
             if filename in BLOCKED_NAMES or filename.startswith(".env.") or Path(filename).suffix in SECRET_SUFFIXES:
                 raise RuntimeError(f"비밀 파일 포함: {name}")
 
