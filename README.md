@@ -1,22 +1,41 @@
 # VAS 2.8.2
 
-![VAS 2.7.0 design collection cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
-
 **From design direction to working apps.**
 
 VAS (Vibecoding Agent System) is a local tool for preparing a project brief, choosing a visual direction, and handing complete instructions to a coding AI. Describe the work, compare real design previews, refine the details, and copy a prompt into your coding tool with the actual project folder open.
 
 **[Download VAS 2.8.2](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.8.2)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.8.2)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.8.2)** · **[Read the release notes](docs/releases/2.8.2.md)**
 
-## Distribution cleanup in 2.8.2
+## What's new in VAS 2.8.2
 
-This patch excludes internal task boards and development-status files from downloadable packages and the public site. It retains the recovery, validation and visual-reference improvements from 2.8.1.
+The current release includes the five core workflow improvements introduced in **2.8.0**, the recovery and handoff refinements from **2.8.1**, and the distribution cleanup in **2.8.2**.
 
-## Reliable recovery and current handoffs in 2.8.1
+### Five core improvements from 2.8.0
 
-Existing drafts stay protected until the recovery choice. Task-condition errors are shown before READY, and changing an existing-project request clears its outdated preview until the handoff is prepared again. Active designs carry a versioned base-style reference alongside the confirmed tokens and permitted scope; a custom sample remains a base reference, not a rendering of every user override.
+| Improvement | What changes for your work |
+| --- | --- |
+| **Consistent browser and Python validation** | Both validators enforce the same numeric contract versions, iteration values, array shapes, item limits and error codes. Malformed entries and a 51st failed test or blocker are rejected explicitly instead of being silently discarded. Older coercible values use an explicit conversion review. |
+| **Preserve existing designs by default** | Existing-project requests reuse the current layout, colors, fonts and components. Necessary controls and accessibility adjustments follow the existing style. Choose partial changes with named screens, elements and properties, or explicitly permit a redesign. Saved presets remain available but do not become active styling instructions in preserve mode. |
+| **Task-specific completion conditions** | Add up to 20 conditions, choose required or optional status, and select automated testing, manual observation or static review. For example: a CSV must preserve Korean text, totals must match, and the existing screen must remain recognizable. The copied prompt and JSON carry the same conditions. |
+| **Separate reported completion from checked results** | In the compatibility result-import flow, agent-reported status, VAS assessment and user acceptance are recorded separately. Missing conditions or evidence remain **needs verification**; blockers, failed checks and reported scope violations remain **incomplete**. Completion requires direct confirmation of the original required conditions for the stated artifact version. Imported trust flags cannot create user confirmation. |
+| **Clear confirmation and privacy meanings** | Automatic redaction, user confirmation and independent security verification are distinct facts. Entering a request is not user approval, and a matching handoff hash confirms content linkage rather than execution. Historical privacy flags do not become independent security certificates. |
 
-READY means **handoff materials prepared**, not development completed. Existing design preservation, explicit change scopes and evidence-based completion rules from 2.8.0 remain in place. See the [release notes](docs/releases/2.8.1.md) and [completion policy](docs/completion-policy.md).
+Documents and visual work can use direct manual or static review of the actual artifact. A coding agent's report or attachment alone does not establish completion. Result import remains a compatibility feature outside the default setup flow; you can continue working in your coding tool after copying the prompt.
+
+### Recovery and current handoffs from 2.8.1
+
+- **Protect recoverable drafts.** Background and page-exit saves wait until you choose how to handle an existing draft. A failed deletion preserves the recovery choice.
+- **Validate conditions before READY.** Empty, whitespace-only or overlength condition rows identify the field to correct and preserve your input for a retry. A condition list with no rows remains optional.
+- **Clear outdated previews.** Changing the request, folder, design, coding tool or completion conditions clears the prepared preview. Preparing the handoff again produces instructions for the current input.
+- **Carry a usable visual reference.** Active designs include a release-labelled base-style source reference, confirmed tokens and permitted scope. The latest live sample is identified separately; custom overrides follow the confirmed tokens, and preserve mode excludes active style references. References start unverified; supplying a link does not confirm that the coding agent opened it.
+
+**READY means the handoff materials are prepared.** Development completion is assessed later against the task conditions and available evidence.
+
+### Distribution cleanup in 2.8.2
+
+The latest patch excludes internal task boards, development reports and current-context files from downloadable packages and the public site. Package checks reject internal records, and the knowledge index excludes their content, including nested copies. User guides, agent instructions, asset notices and sample sites remain included.
+
+Release details: [2.8.0 — scope and completion](docs/releases/2.8.0.md) · [2.8.1 — recovery and handoff quality](docs/releases/2.8.1.md) · [2.8.2 — distribution cleanup](docs/releases/2.8.2.md) · [completion policy](docs/completion-policy.md).
 
 ## What VAS helps you do
 
@@ -26,6 +45,8 @@ READY means **handoff materials prepared**, not development completed. Existing 
 - **Keep implementation accountable.** The workflow asks the coding agent to inspect, plan, build, review, correct problems, and report the checks it actually ran.
 
 VAS prepares the handoff. Implementation runs in your coding host, such as Codex, Claude, or Antigravity, using that host's available tools and permissions.
+
+![VAS 2.7.0 design collection cover: Morrow and ORBIT interface mockups with Aurora artwork; 10 design collections, 4 interactive samples, and 1 working proof app.](docs/assets/vas-2.7.0-cover.png)
 
 ## Design directions with real previews
 
@@ -63,8 +84,8 @@ These are demonstrations: inquiry previews do not send messages, and subscriptio
 
 | Step | What happens |
 | --- | --- |
-| **1. Describe** | Choose a new or existing project and enter the work you want done. |
-| **2. Design** | Compare styles, open sample sites, and confirm colors, typography, spacing, and other settings. |
+| **1. Describe** | Choose a new or existing project, describe the work, and add completion conditions with their verification methods. |
+| **2. Design** | For an existing project, preserve its design or explicitly choose a change scope. For an active design, compare styles and confirm the tokens and references. |
 | **3. Review and copy** | Review the final brief and copy the generated prompt. Saving `VAS-AI-HANDOFF.json` is optional. |
 | **4. Inspect and build** | Open the actual project in your coding host and paste the prompt. The agent reads the source, plans the work, and implements it. |
 | **5. Verify and improve** | The agent checks the result, corrects identified issues, and reports evidence and remaining limits. |
@@ -100,9 +121,10 @@ The [verification record](docs/verification/README.md) includes the request, ori
 1. Open the [v2.8.2 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.8.2) and download `VAS-2.8.2-windows.zip`.
 2. Extract the entire archive into a new folder.
 3. Double-click `Run-VAS-System.bat`.
-4. Choose a new project or an existing project, enter the request, and select a design.
-5. Choose whether VAS may remember confirmed design choices, then review and copy the prompt.
-6. Open the actual project folder in your coding tool and paste the prompt.
+4. Choose a new project or an existing project, enter the request, and add any task-specific completion conditions.
+5. For existing work, keep the default design preservation or choose an explicit change scope. For a new design, compare samples and confirm the settings.
+6. Choose whether VAS may remember confirmed design choices, then review and copy the prompt.
+7. Open the actual project folder in your coding tool and paste the prompt.
 
 The separate `VAS-Client-Form-2.8.2.zip` contains a standalone project request form for sharing. Published downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
 
@@ -121,9 +143,9 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 See the [release notes](docs/releases/2.8.2.md) and [automated checks](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for published verification results. The [completion policy](docs/completion-policy.md) explains scope, evidence provenance, compatibility and the limits of local user confirmation.
 
-Version **2.8.1** adds regressions for pending draft recovery, input validation, ready-state failures, outdated previews and versioned design references. Shared contract, scope and completion-assessment coverage from 2.8.0 remains in the required suite. The credential and recovery regressions from 2.7.6 remain part of the required suite. Actual agent execution remains controlled by the coding host.
+Version **2.8.2** adds package and knowledge-index regressions for internal development records, including nested and differently cased filenames. The required suite retains the 2.8.1 recovery, input/readiness, preview and visual-reference checks; the 2.8.0 contract, scope and completion-assessment checks; and the credential and recovery regressions from 2.7.6.
 
-See the [release notes](docs/releases/2.8.1.md) for the validation details and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) for current CI results.
+The release workflow verifies Windows runtime and extracted-package execution before Linux validation and publication. Published runs and artifact checks are separate from an external coding AI's execution; see the [release notes](docs/releases/2.8.2.md) and [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions).
 
 For source development, install the Node and Python test dependencies and Chromium, then run the checks from the repository directory:
 
