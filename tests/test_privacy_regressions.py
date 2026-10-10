@@ -121,6 +121,7 @@ def test_explicit_deletion_removes_all_application_history_copies(runtime, mode)
     client, state, _ = runtime
     client.request("/api/memory/events", "DELETE")
     client.request("/api/memory/pause", "POST", {"paused": False})
+    client.request("/api/memory/consent", "POST", {"consent": True})
     _, created, _ = client.request("/api/memory/events", "POST", {"type":"synthetic.test","payload":{"note":"DeletedHistoryCanary"}})
     _, survivor, _ = client.request("/api/memory/events", "POST", {"type":"synthetic.test","payload":{"note":"SurvivingHistoryControl"}})
     client.request("/api/memory/pause", "POST", {"paused": True})
@@ -173,6 +174,7 @@ def test_failed_history_cleanup_does_not_report_success_or_replace_live_store(ru
     client, state, _ = runtime
     client.request("/api/memory/events", "DELETE")
     client.request("/api/memory/pause", "POST", {"paused": False})
+    client.request("/api/memory/consent", "POST", {"consent": True})
     client.request("/api/memory/events", "POST", {"type":"synthetic.test","payload":{"note":"CleanupFailureControl"}})
     before = (state / "memory.json").read_bytes()
     backup = state / "memory.previous.json"
@@ -199,6 +201,7 @@ def test_windows_memory_filters_shared_credentials_on_write_and_legacy_export(ru
     client, state, _ = runtime
     client.request('/api/memory/events', 'DELETE')
     client.request('/api/memory/pause', 'POST', {'paused': False})
+    client.request('/api/memory/consent', 'POST', {'consent': True})
     for case in CASES:
         _, result, _ = client.request('/api/memory/events', 'POST', {
             'type': 'theme_selected', 'payload': {'preset': 'bento', 'note': case['input']}})
@@ -224,6 +227,7 @@ def test_windows_memory_private_keys_and_portable_id_merge(runtime):
     client, state, _ = runtime
     client.request('/api/memory/events', 'DELETE')
     client.request('/api/memory/pause', 'POST', {'paused': False})
+    client.request('/api/memory/consent', 'POST', {'consent': True})
     keys = json.loads((ROOT / 'tests/fixtures/private-memory-keys.json').read_text())
     payload = {'preset': 'bento', 'nested': [{key: 'value' for key in keys}]}
     payload.update({key: 'value' for key in keys})

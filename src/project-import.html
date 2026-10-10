@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.9.0 — 기존 프로그램 AI 연결</title>
+  <title>VAS 2.9.1 — 기존 프로그램 AI 연결</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23171715%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffd200%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
@@ -29,7 +29,7 @@
     </aside>
 
     <section class="workspace">
-      <header class="hero"><p class="eyebrow">VAS 2.9.0 / EXISTING PROJECT</p><h1>기존 프로그램의<br><em>작업 지시</em>를 만듭니다.</h1><p>VAS는 해야 할 일과 디자인만 정리합니다. 실제 프로젝트 구조와 기술 스택은 Codex가 원본 폴더에서 직접 확인합니다.</p></header>
+      <header class="hero"><p class="eyebrow">VAS 2.9.1 / EXISTING PROJECT</p><h1>기존 프로그램의<br><em>작업 지시</em>를 만듭니다.</h1><p>VAS는 해야 할 일과 디자인만 정리합니다. 실제 프로젝트 구조와 기술 스택은 Codex가 원본 폴더에서 직접 확인합니다.</p></header>
 
       <section class="panel active" data-step="1">
         <div class="section-title"><span>01</span><h2>AI에게 맡길 작업을 적어주세요.</h2></div>
@@ -67,6 +67,8 @@
       <section class="panel" data-step="3">
         <div class="section-title"><span>03</span><h2>코딩 AI에 붙여넣으면 됩니다.</h2></div>
         <div class="finish-box"><b>이제 이렇게 하세요</b><ol><li>Codex·Claude·Antigravity에서 실제 원본 프로젝트 폴더를 엽니다.</li><li>복사한 프롬프트를 채팅에 붙여넣습니다.</li><li>필요하면 <code>VAS-AI-HANDOFF.json</code>도 프로젝트 최상위 폴더에 저장합니다.</li></ol></div>
+        <p class="web-note">수정할 내용이나 확인 결과는 같은 채팅에서 이어서 알려주세요. AI가 원본과 변경 내용을 확인하고 구현·검증을 진행합니다.</p>
+        <p class="web-note">VAS와 연결된 대화에서 설정했다면 그 채팅에서 “이 설정으로 만들어줘”라고 말하세요. AI가 연결된 설정과 작업 대상을 확인해 이어갑니다. 이 화면의 복사·저장만으로 대화 설정이 연결되지는 않습니다.</p>
         <div class="result"><p id="resultMessage">프롬프트를 복사했습니다. VAS는 닫아도 됩니다.</p></div>
         <div class="actions finish-actions"><button type="button" class="primary" id="copyPromptAgain">프롬프트 다시 복사</button><button type="button" id="downloadAgain">JSON 저장 (선택)</button><button type="button" id="editSettings">← 내용 수정</button><a href="vas-hub.html" data-vas-link>새 작업 시작</a><button type="button" data-setup-settings>작업 기억 설정</button></div>
       </section>

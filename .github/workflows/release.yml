@@ -26,21 +26,24 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Install test dependencies
-        run: |
-          python -m pip install -r tests/requirements-dev.txt
-          npm ci
-          npx playwright install chromium
-      - name: Verify privacy and connected Windows workflows
-        run: |
-          python -m pytest -q tests/test_privacy_regressions.py tests/test_session_http.py tests/test_session_web.py tests/test_session_design_contract.py tests/test_session_execution.py tests/test_server_response_recovery.py
-          python tests/test_windows_runtime.py
-          npx playwright test -c tests/playwright.config.js tests/integrated-runtime.spec.js --workers=1
-          npm run test:session-design
+      - name: Install Python test dependencies
+        run: python -m pip install -r tests/requirements-dev.txt
+      - name: Install Node dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Verify privacy and connected Windows contracts
+        run: python -m pytest -q tests/test_privacy_regressions.py tests/test_session_http.py tests/test_session_web.py tests/test_session_design_contract.py tests/test_session_execution.py tests/test_server_response_recovery.py tests/test_memory_policy.py
+      - name: Verify PowerShell runtime integration
+        run: python tests/test_windows_runtime.py
+      - name: Verify connected Windows browser workflows
+        run: npx playwright test -c tests/playwright.config.js tests/integrated-runtime.spec.js --workers=1
+      - name: Verify connected session design
+        run: npm run test:session-design
+      - name: Build the Windows release
+        run: python scripts/build_release.py
       - name: Verify the extracted Windows package
-        run: |
-          python scripts/build_release.py
-          python tests/test_release_runtime_flow.py
+        run: python tests/test_release_runtime_flow.py
   release:
     needs: windows
     name: Verify and publish release

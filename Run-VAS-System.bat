@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul 2>&1
-title VAS 2.9.0
+title VAS 2.9.1
 cd /d "%~dp0"
 
 if not exist "src\vas-hub.html" goto :missing
@@ -11,7 +11,8 @@ if not errorlevel 1 exit /b 0
 
 :fallback
 echo [안내] 로컬 기능을 시작하지 못해 제한 모드로 엽니다.
-echo 프로젝트 가져오기와 Windows 로컬 메모리는 사용할 수 없습니다.
+echo Windows 폴더 선택창, 대화 설정 동기화, Windows 작업 기억은 사용할 수 없습니다.
+echo 디자인 설정과 브라우저 저장, 프롬프트 복사, JSON 저장은 계속 사용할 수 있습니다.
 start "" "%~dp0src\vas-hub.html"
 if not errorlevel 1 exit /b 0
 echo [오류] 브라우저를 열 수 없습니다.

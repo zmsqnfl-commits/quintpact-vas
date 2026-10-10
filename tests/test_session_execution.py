@@ -172,12 +172,43 @@ def test_preserve_removes_active_profile_tokens_and_rules(setup):
 
 
 @pytest.mark.parametrize("field,value", [("handoffId", "h_" + "f" * 32),
-    ("handoffPayloadSha256", "f" * 64), ("iteration", 2), ("sourceType", "existing")])
+    ("handoffPayloadSha256", "f" * 64), ("iteration", 2),
+    ("sourceType", "existing"), ("sourceType", "registered")])
 def test_mismatched_result_is_rejected(setup, field, value):
     payload = result(prepare(setup))
     payload[field] = value
     with pytest.raises(SessionError, match="execution_result_mismatch|execution_result_invalid"):
         assess(setup, payload)
+
+
+def existing_session(setup):
+    manager, session, target = setup
+    settings = deepcopy(session["settings"])
+    settings["project"]["sourceType"] = "existing"
+    settings["task"]["designScope"] = {"mode": "preserve", "scope": ""}
+    current = manager.save(session["sessionId"], 1, settings)["session"]
+    return manager, current, target
+
+
+@pytest.mark.parametrize("source_type", ["existing", "registered"])
+def test_existing_result_alias_preserves_current_handoff_binding(setup, source_type):
+    existing = existing_session(setup)
+    payload = result(prepare(existing))
+    payload["sourceType"] = source_type
+    answer = assess(existing, payload)
+    assert answer["status"] == "assessed"
+    assert answer["assessment"]["status"] == "needs-verification"
+
+
+@pytest.mark.parametrize("field,value", [("handoffId", "h_" + "f" * 32),
+    ("handoffPayloadSha256", "f" * 64), ("iteration", 2), ("sourceType", "new")])
+def test_registered_alias_cannot_bypass_result_binding(setup, field, value):
+    existing = existing_session(setup)
+    payload = result(prepare(existing))
+    payload["sourceType"] = "registered"
+    payload[field] = value
+    with pytest.raises(SessionError, match="execution_result_mismatch|execution_result_invalid"):
+        assess(existing, payload)
 
 
 def test_forged_observations_and_flags_cannot_promote_agent_report_to_completion(setup):
@@ -232,6 +263,17 @@ def test_cli_prepare_and_assess_work_in_separate_processes(setup):
     assert started.returncode == 0, started.stderr + started.stdout
     prepared = json.loads(started.stdout)
     checked = cli(setup, "assess", json.dumps(result(prepared), ensure_ascii=False))
+    assert checked.returncode == 0, checked.stderr + checked.stdout
+    assert json.loads(checked.stdout)["assessment"]["status"] == "needs-verification"
+
+
+def test_cli_accepts_registered_result_for_current_existing_handoff(setup):
+    existing = existing_session(setup)
+    started = cli(existing, "prepare", revision="2")
+    assert started.returncode == 0, started.stderr + started.stdout
+    payload = result(json.loads(started.stdout))
+    payload["sourceType"] = "registered"
+    checked = cli(existing, "assess", json.dumps(payload), revision="2")
     assert checked.returncode == 0, checked.stderr + checked.stdout
     assert json.loads(checked.stdout)["assessment"]["status"] == "needs-verification"
 
@@ -316,7 +358,7 @@ def test_distributed_cli_without_package_json_prepares_and_assesses(setup, tmp_p
                               capture_output=True, timeout=30, env={**os.environ, "PYTHONUTF8": "1"})
     assert prepared.returncode == 0, prepared.stderr + prepared.stdout
     payload = json.loads(prepared.stdout)
-    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.9.0"
+    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.9.1"
     checked = subprocess.run(command + ["assess"] + arguments, text=True, encoding="utf-8",
                              input=json.dumps(result(payload)), capture_output=True, timeout=30,
                              env={**os.environ, "PYTHONUTF8": "1"})

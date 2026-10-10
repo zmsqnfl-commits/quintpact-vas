@@ -57,16 +57,17 @@
       },
       clear: function () { return runtime.request('/api/memory/events', { method: 'DELETE' }); },
       getMeta: async function (key) {
-        if (key === 'paused') {
+        if (key === 'paused' || key === 'consent') {
           statusCache = await runtime.request('/api/memory/status');
-          return Boolean(statusCache.paused);
+          return key === 'consent' ? statusCache.consent === true : Boolean(statusCache.paused);
         }
         return metaCall('getMeta', key);
       },
       setMeta: async function (key, value) {
-        if (key === 'paused') {
-          const response = await runtime.request('/api/memory/pause', { method: 'POST', body: { paused: Boolean(value) } });
-          if (statusCache) statusCache.paused = Boolean(response.paused);
+        if (key === 'paused' || key === 'consent') {
+          const endpoint = key === 'consent' ? 'consent' : 'pause';
+          const response = await runtime.request('/api/memory/' + endpoint, { method: 'POST', body: { [key]: value === true } });
+          if (statusCache) statusCache[key] = response[key] === true;
           return;
         }
         return metaCall('setMeta', key, value);
@@ -345,6 +346,8 @@
       count: count,
       paused: pauseState,
       consent: consentState,
+      recoveryRequired: runtimeStatus ? runtimeStatus.recoveryRequired === true : false,
+      limits: runtimeStatus ? runtimeStatus.limits : null,
       storageWarning: count >= WARNING_EVENTS,
       bytes: runtimeStatus ? Number(runtimeStatus.bytes) || 0 : null,
       retention: runtimeStatus ? runtimeStatus.retention : 'until-explicit-delete'

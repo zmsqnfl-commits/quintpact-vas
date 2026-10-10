@@ -161,10 +161,13 @@ def assess(manager, session_id, expected_revision, raw_result):
         result = validate_result(raw_result, handoff["project"]["sourceType"])
     except ValueError:
         raise SessionError("execution_result_invalid") from None
+    # Legacy registered results describe an existing app. Keep all handoff
+    # bindings strict; the alias does not convert results from another pipeline.
+    result_source_type = "existing" if result["sourceType"] == "registered" else result["sourceType"]
     require(result["handoffId"] == handoff["workflow"]["handoffId"] and
             result["handoffPayloadSha256"] == handoff["integrity"]["payloadSha256"] and
             result["iteration"] == handoff["workflow"]["iteration"] and
-            result["sourceType"] == handoff["project"]["sourceType"], "execution_result_mismatch")
+            result_source_type == handoff["project"]["sourceType"], "execution_result_mismatch")
     criteria = handoff["task"]["completionCriteria"]
     assessment = evaluate_result(result, {"criteria": criteria, "linkStatus": "verified", "observations": []})
     expected = {item["id"]: item["method"] for item in criteria}

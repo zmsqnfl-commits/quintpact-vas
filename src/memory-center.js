@@ -21,7 +21,13 @@
   document.querySelector('main').prepend(feedback);
   async function run(action) {
     feedback.textContent = '';
-    try { await action(); } catch (error) { feedback.textContent = '작업 기억 처리 결과를 확인하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.'; }
+    try { await action(); } catch (error) {
+      feedback.textContent = error.code === 'memory_limit_exceeded'
+        ? '작업 기억 저장 한도를 초과했습니다. 기존 기록은 보존됩니다. 필요한 기록을 보관한 뒤 삭제하거나 전체 초기화해 주세요.'
+        : error.code === 'memory_consent_required'
+          ? '작업 기억 저장이 꺼져 있습니다. 저장하려면 기록 저장을 켜 주세요.'
+          : '작업 기억 처리 결과를 확인하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.';
+    }
   }
 
   function download(name, content) {
@@ -93,5 +99,9 @@
       } finally { input.value = ''; input.disabled = false; }
     });
   });
+  function refreshVisibleMemory() { if (!document.hidden) run(refresh); }
+  window.addEventListener('vas-memory-change', refreshVisibleMemory);
+  window.addEventListener('focus', refreshVisibleMemory);
+  document.addEventListener('visibilitychange', refreshVisibleMemory);
   run(refresh);
 })();

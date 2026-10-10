@@ -3,6 +3,7 @@ $memoryModule = Join-Path $PSScriptRoot 'VAS.Memory.psm1'; if (-not (Get-Command
 $projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'; if (-not (Get-Command Get-VASProjectRecords -ErrorAction SilentlyContinue)) { Import-Module $projectsModule -Force }
 . (Join-Path $PSScriptRoot 'VAS.Server.Handoff.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Server.Session.ps1')
+. (Join-Path $PSScriptRoot 'VAS.Server.Memory.ps1')
 function Set-VASSecurityHeaders {
     param([Net.HttpListenerResponse]$Response, [bool]$Api = $false)
     $Response.Headers['X-Content-Type-Options'] = 'nosniff'
@@ -251,6 +252,7 @@ function Invoke-VASApiRequest {
         $status = if ($accessError -eq 'invalid-token') { 401 } else { 403 }
         Write-VASError $Context $status 'API 접근이 거부되었습니다.'; return
     }
+    $State.LastActivity = [DateTime]::UtcNow
     $path = $request.Url.AbsolutePath.TrimEnd('/').ToLowerInvariant()
     $method = $request.HttpMethod.ToUpperInvariant()
     if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
@@ -269,46 +271,9 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.9.0'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.9.1'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
-    if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
-        Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
-    }
-    if ($path -eq '/api/memory/events' -and $method -eq 'GET') {
-        $events = @(Get-VASMemoryEvents $State.MemoryRoot $request.QueryString['projectId'] $request.QueryString['type'])
-        Write-VASResponse $Context 200 ([ordered]@{ events = $events }); return
-    }
-    if ($path -eq '/api/memory/events' -and $method -eq 'POST') {
-        Write-VASResponse $Context 201 (Add-VASMemoryEvent $body $State.MemoryRoot); return
-    }
-    if ($path -eq '/api/memory/events' -and $method -eq 'DELETE') {
-        Write-VASResponse $Context 200 (Clear-VASMemory $State.MemoryRoot); return
-    }
-    if ($path -match '^/api/memory/events/([a-f0-9]{32})$') {
-        $id = $Matches[1]
-        if ($method -eq 'PUT') {
-            $event = Set-VASMemoryEvent $id $body $State.MemoryRoot
-            if ($null -eq $event) { Write-VASError $Context 404 '기록을 찾을 수 없습니다.' } else { Write-VASResponse $Context 200 ([ordered]@{ event = $event }) }
-            return
-        }
-        if ($method -eq 'DELETE') {
-            if (Remove-VASMemoryEvent $id $State.MemoryRoot) { Write-VASResponse $Context 200 ([ordered]@{ removed = $true }) } else { Write-VASError $Context 404 '기록을 찾을 수 없습니다.' }
-            return
-        }
-    }
-    if ($path -eq '/api/memory/export' -and $method -eq 'GET') {
-        Write-VASResponse $Context 200 (Export-VASMemory $State.MemoryRoot); return
-    }
-    if ($path -eq '/api/memory/import' -and $method -eq 'POST') {
-        $mode = [string](Get-VASBodyProperty $body 'mode' 'merge')
-        $data = Get-VASBodyProperty $body 'data' $body
-        Write-VASResponse $Context 200 (Import-VASMemory $data $mode $State.MemoryRoot); return
-    }
-    if ($path -eq '/api/memory/pause' -and $method -eq 'POST') {
-        $paused = Get-VASBodyProperty $body 'paused' $null
-        if ($paused -isnot [bool]) { Write-VASError $Context 400 'paused는 boolean이어야 합니다.'; return }
-        Write-VASResponse $Context 200 (Set-VASMemoryPaused $paused $State.MemoryRoot); return
-    }
+    if ($path.StartsWith('/api/memory/')) { Invoke-VASMemoryHttpRoute $path $method $body $Context $State; return }
     if ($path -eq '/api/files/read' -and $method -eq 'GET') {
         $file = Resolve-VASAllowedFile $State.RootPath $request.QueryString['scope'] $request.QueryString['path'] $true
         if ($null -eq $file) { Write-VASError $Context 404 '허용된 파일을 찾을 수 없습니다.'; return }
@@ -370,7 +335,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.9.0-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.9.1-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -443,7 +408,7 @@ function New-VASServerState {
         $listener.Prefixes.Add("http://127.0.0.1:$port/")
         try {
             $listener.Start()
-            Initialize-VASMemoryStore $MemoryRoot | Out-Null
+            Get-VASMemoryStatus $MemoryRoot | Out-Null
             return [ordered]@{
                 Listener = $listener; Port = $port; BaseUrl = "http://127.0.0.1:$port"
                 Token = New-VASSessionToken; RootPath = [IO.Path]::GetFullPath($RootPath)
@@ -461,6 +426,7 @@ function Start-VASRequestLoop {
     $listener = $State.Listener
     try {
         while (-not $State.Shutdown -and $listener.IsListening) {
+            if (([DateTime]::UtcNow - $State.LastActivity).TotalSeconds -ge $IdleTimeoutSeconds) { break }
             $context = $null
             $pending = $listener.BeginGetContext($null, $null)
             while (-not $pending.AsyncWaitHandle.WaitOne(500)) {
@@ -473,9 +439,11 @@ function Start-VASRequestLoop {
             if ($State.Shutdown -or -not $listener.IsListening) { break }
             try {
                 $context = $listener.EndGetContext($pending)
-                $State.LastActivity = [DateTime]::UtcNow
+                if (([DateTime]::UtcNow - $State.LastActivity).TotalSeconds -ge $IdleTimeoutSeconds) {
+                    $context.Response.Abort(); break
+                }
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.9.0'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.9.1'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

@@ -208,14 +208,15 @@ require({config}); require({rag}); require({store});
         rag = json.dumps(str(SRC / "rag-lite.js"))
         store = json.dumps(str(SRC / "personalization-store.js"))
         script = f"""
-const events = []; const calls = []; let paused = false;
+const events = []; const calls = []; let paused = false, consent = false;
 globalThis.VASRuntime = {{
   isAvailable: function () {{ return true; }},
   request: async function (path, init) {{
     calls.push([path, init && init.method || 'GET']);
-    if (path === '/api/memory/status') return {{ paused, count: events.length, bytes: 120, retention: 'until-explicit-delete' }};
+    if (path === '/api/memory/status') return {{ paused, consent, count: events.length, bytes: 120, retention: 'until-explicit-delete' }};
     if (path === '/api/memory/events' && (!init || !init.method)) return {{ events }};
     if (path === '/api/memory/events' && init.method === 'POST') {{ events.push(init.body); return {{ accepted: true, event: init.body }}; }}
+    if (path === '/api/memory/consent') {{ consent = init.body.consent; return {{ consent }}; }}
     if (path === '/api/memory/pause') {{ paused = init.body.paused; return {{ paused }}; }}
     if (path.startsWith('/api/memory/events/') && init.method === 'DELETE') return {{ removed: true }};
     if (path === '/api/memory/events' && init.method === 'DELETE') {{ events.length = 0; return {{ removed: 1 }}; }}

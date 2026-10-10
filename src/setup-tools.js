@@ -125,14 +125,18 @@
     }
   }
 
-  async function openStartChoice(link) {
-    startDestination = link.href;
+  async function refreshStartChoice() {
     let status;
     try { status = await memoryStatus(); } catch (error) { status = { available: false, consent: false }; }
     const state = document.getElementById('vasStartMemoryState');
     state.textContent = status.consent !== true ? '사용 안 함' : status.paused ? '잠시 중지됨' : '사용 중';
     document.getElementById('vasStartWithMemory').disabled = !status.available;
     if (!status.available) state.textContent = '저장소 연결 실패 · 다시 시도해 주세요';
+  }
+
+  async function openStartChoice(link) {
+    startDestination = link.href;
+    await refreshStartChoice();
     open(startDialog);
   }
 
@@ -153,10 +157,22 @@
     global.location.assign(destination);
   }
 
+  function refreshVisibleMemory() {
+    if (document.hidden) return;
+    if (settingsDialog && settingsDialog.open) {
+      feedback('');
+      refresh().catch(function () { document.getElementById('vasSetupMemoryState').textContent = '저장소 연결 실패'; });
+    }
+    if (startDialog && startDialog.open) refreshStartChoice().catch(function () {});
+  }
+
   function init() {
     if (initialized) return;
     initialized = true;
     dialogs();
+    global.addEventListener('vas-memory-change', refreshVisibleMemory);
+    global.addEventListener('focus', refreshVisibleMemory);
+    document.addEventListener('visibilitychange', refreshVisibleMemory);
     document.querySelectorAll('[data-setup-help]').forEach(function (button) { button.addEventListener('click', function () { open(helpDialog); }); });
     document.querySelectorAll('[data-setup-settings]').forEach(function (button) { button.addEventListener('click', function () { openSettings().catch(function () {}); }); });
     document.querySelectorAll('[data-memory-start]').forEach(function (link) {

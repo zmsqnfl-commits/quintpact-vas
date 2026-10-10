@@ -2,6 +2,7 @@
 
 $script:SchemaVersion = 1
 . (Join-Path $PSScriptRoot 'VAS.Memory.Privacy.ps1')
+. (Join-Path $PSScriptRoot 'VAS.Memory.Policy.ps1')
 
 function Get-VASMemoryRoot {
     param([string]$Root)
@@ -58,6 +59,7 @@ function Save-VASMemoryStore {
     $backup = Join-Path $memoryRoot 'memory.previous.json'
     $Store.updatedAt = [DateTime]::UtcNow.ToString('o')
     $json = $Store | ConvertTo-Json -Depth 20
+    Assert-VASMemoryCapacity $Store $json
     $utf8 = New-Object Text.UTF8Encoding($false)
     try {
         [IO.File]::WriteAllText($temp, $json, $utf8)
@@ -107,13 +109,13 @@ function Read-VASMemoryStoreUnlocked {
         return (Save-VASMemoryStore (New-VASEmptyMemoryStore) $Root)
     }
 
+    if ((Get-Item -LiteralPath $path).Length -gt $script:MaxMemoryBytes) { throw 'VAS_MEMORY_LIMIT_EXCEEDED' }
     try {
         $raw = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)
         $store = $raw | ConvertFrom-Json
         if ($null -eq $store -or $store.version -ne $script:SchemaVersion -or $null -eq $store.events) {
             throw '지원하지 않는 메모리 형식입니다.'
         }
-        return $store
     } catch {
         $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
         $corruptName = "memory.corrupt-$stamp.json"
@@ -121,6 +123,9 @@ function Read-VASMemoryStoreUnlocked {
         Move-Item -LiteralPath $path -Destination $corruptPath -Force
         return (Save-VASMemoryStore (New-VASEmptyMemoryStore $corruptName) $Root)
     }
+    # A valid but oversized legacy store is not corrupt and must never be replaced.
+    Assert-VASMemoryCapacity $store $raw
+    return $store
 }
 
 function Initialize-VASMemoryStore {
@@ -170,17 +175,27 @@ function ConvertTo-VASMemoryEvent {
 function Get-VASMemoryStatus {
     param([string]$Root)
 
-    $store = Initialize-VASMemoryStore $Root
-    $path = Get-VASMemoryPath $Root
-    return [ordered]@{
-        version = $store.version
-        paused = [bool]$store.paused
-        count = @($store.events).Count
-        bytes = (Get-Item -LiteralPath $path).Length
-        updatedAt = $store.updatedAt
-        retention = 'until-explicit-delete'
-        recoveredFrom = (Get-VASProperty $store 'recoveredFrom' $null)
-    }
+    $guard = Enter-VASMemoryLock $Root
+    try {
+        try { $store = Read-VASMemoryStoreUnlocked $Root }
+        catch {
+            if ($_.Exception.Message -eq 'VAS_MEMORY_LIMIT_EXCEEDED') { return (Get-VASMemoryRecoveryStatus $Root) }
+            throw
+        }
+        $path = Get-VASMemoryPath $Root
+        return [ordered]@{
+            version = $store.version
+            consent = Test-VASMemoryConsent $Root
+            paused = [bool]$store.paused
+            count = @($store.events).Count
+            bytes = (Get-Item -LiteralPath $path).Length
+            updatedAt = $store.updatedAt
+            retention = 'until-explicit-delete'
+            recoveredFrom = (Get-VASProperty $store 'recoveredFrom' $null)
+            recoveryRequired = $false
+            limits = Get-VASMemoryLimits
+        }
+    } finally { Exit-VASMemoryLock $guard }
 }
 
 function Get-VASMemoryEvents {
@@ -198,6 +213,7 @@ function Add-VASMemoryEvent {
 
     $guard = Enter-VASMemoryLock $Root
     try {
+        Assert-VASMemoryConsent $Root
         $store = Read-VASMemoryStoreUnlocked $Root
         if ([bool]$store.paused) { return [ordered]@{ accepted = $false; paused = $true } }
         $event = ConvertTo-VASMemoryEvent $InputObject
@@ -212,6 +228,7 @@ function Set-VASMemoryEvent {
 
     $guard = Enter-VASMemoryLock $Root
     try {
+        Assert-VASMemoryConsent $Root
         $store = Read-VASMemoryStoreUnlocked $Root
         $events = @($store.events)
         $index = -1
@@ -243,8 +260,16 @@ function Clear-VASMemory {
 
     $guard = Enter-VASMemoryLock $Root
     try {
-        $store = Read-VASMemoryStoreUnlocked $Root
-        $count = @($store.events).Count
+        try {
+            $store = Read-VASMemoryStoreUnlocked $Root
+            $count = @($store.events).Count
+        } catch {
+            if ($_.Exception.Message -ne 'VAS_MEMORY_LIMIT_EXCEEDED') { throw }
+            # Only the explicit delete-all operation may discard an oversized store.
+            Save-VASMemoryConsentUnlocked $false $Root
+            $store = New-VASEmptyMemoryStore
+            $count = $null
+        }
         $store.events = @()
         Save-VASMemoryStore $store $Root -PurgeHistory | Out-Null
         return [ordered]@{ removed = $count }
@@ -281,9 +306,10 @@ function Import-VASMemory {
     param([Parameter(Mandatory = $true)]$InputObject, [ValidateSet('merge', 'replace')][string]$Mode = 'merge', [string]$Root)
 
     $incoming = @(Get-VASProperty $InputObject 'events' @())
-    if ($incoming.Count -gt 10000) { throw '한 번에 최대 10,000개 이벤트만 가져올 수 있습니다.' }
+    if ($incoming.Count -gt $script:MaxMemoryEvents) { throw 'VAS_MEMORY_LIMIT_EXCEEDED' }
     $guard = Enter-VASMemoryLock $Root
     try {
+        Assert-VASMemoryConsent $Root
         $store = Read-VASMemoryStoreUnlocked $Root
         $byId = [ordered]@{}
         if ($Mode -eq 'merge') { foreach ($event in @($store.events)) { $byId[[string]$event.id] = $event } }
@@ -421,4 +447,4 @@ function New-VASLocalProject {
     }
 }
 
-Export-ModuleMember -Function Get-VASMemoryRoot, Initialize-VASMemoryStore, Get-VASMemoryStatus, Get-VASMemoryEvents, Add-VASMemoryEvent, Set-VASMemoryEvent, Remove-VASMemoryEvent, Clear-VASMemory, Set-VASMemoryPaused, Export-VASMemory, Import-VASMemory, New-VASLocalProject
+Export-ModuleMember -Function Get-VASMemoryRoot, Initialize-VASMemoryStore, Get-VASMemoryStatus, Get-VASMemoryEvents, Add-VASMemoryEvent, Set-VASMemoryEvent, Remove-VASMemoryEvent, Clear-VASMemory, Set-VASMemoryPaused, Set-VASMemoryConsent, Export-VASMemory, Import-VASMemory, New-VASLocalProject
