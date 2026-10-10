@@ -66,7 +66,7 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Run privacy and font regressions on Windows
-        run: python -m pytest -q tests/test_privacy_regressions.py
+        run: python -m pytest -q tests/test_privacy_regressions.py tests/test_session_http.py tests/test_session_web.py tests/test_session_design_contract.py tests/test_session_execution.py tests/test_server_response_recovery.py
       - name: Run PowerShell 5.1 runtime integration
         run: python tests/test_windows_runtime.py
       - name: Test connected Windows browser workflows
@@ -74,6 +74,7 @@ jobs:
           npm ci
           npx playwright install chromium
           npx playwright test -c tests/playwright.config.js tests/integrated-runtime.spec.js --workers=1
+          npm run test:session-design
       - name: Build and smoke-test the extracted Windows release
         run: |
           python scripts/build_release.py

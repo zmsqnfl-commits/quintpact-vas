@@ -19,11 +19,11 @@ from typing import Any, Iterable
 SCHEMA_VERSION = 1
 EXCLUDED_DIRS = {
     ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".staging",
-    ".tox", ".vas_backups", ".venv", ".vs", ".vscode", "__pycache__",
+    ".tox", ".vas_backups", ".vas-session", ".venv", ".vs", ".vscode", "__pycache__",
     "bower_components", "build", "coverage", "dist", "env", "node_modules",
     "out", "target", "test-results", "venv",
 }
-EXCLUDED_FILES = {".coverage", ".ds_store", "desktop.ini", "thumbs.db"}
+EXCLUDED_FILES = {".coverage", ".ds_store", "desktop.ini", "thumbs.db", "vas-session-store.json"}
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 ENTRYPOINT_NAMES = {
     "app.py", "application.py", "index.html", "main.go", "main.py", "main.rs",

@@ -80,7 +80,12 @@
     const text = await response.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch (error) { data = { message: text }; }
-    if (!response.ok) throw new Error((data && (data.error || data.message)) || '요청 실패: ' + response.status);
+    if (!response.ok) {
+      const error = new Error((data && (data.error || data.message)) || '요청 실패: ' + response.status);
+      error.status = response.status;
+      error.code = data && data.code;
+      throw error;
+    }
     return data;
   }
 

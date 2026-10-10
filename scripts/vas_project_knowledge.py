@@ -23,14 +23,14 @@ ALLOWED_SUFFIXES = {
 }
 EXCLUDED_DIRS = {
     ".cache", ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    ".ssh", ".tox", ".venv", "__pycache__", "build", "cache", "caches",
+    ".ssh", ".tox", ".vas-session", ".venv", "__pycache__", "build", "cache", "caches",
     "coverage", "credentials", "dist", "keys", "node_modules", "out",
     "private", "secrets", "target", "vendor", "venv",
 }
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
 SECRET_BASENAMES = {
     ".env", "brief.json", "credentials.json", "id_ed25519", "id_rsa", "secrets.json",
-    "service-account.json",
+    "service-account.json", "vas-session-store.json",
 }
 SENSITIVE_NAME = re.compile(
     r"(?:^|[-_.])(?:api[-_.]?keys?|credentials?|passwords?|private[-_.]?keys?|secrets?|tokens?)(?:$|[-_.])",

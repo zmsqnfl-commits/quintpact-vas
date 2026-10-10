@@ -10,6 +10,8 @@ scripts/.vas_backups/
 workspace/
 final/
 output/
+.vas-session/
+vas-session-store.json
 
 # Python
 __pycache__/

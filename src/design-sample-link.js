@@ -6,6 +6,7 @@
     if (!link) return;
     const state = VASThemeState.get();
     link.href = 'design-sample.html?preset=' + encodeURIComponent(state.basePreset) +
+      (VASStorage.isSessionScoped ? '&session=' + encodeURIComponent(new URLSearchParams(location.search).get('session')) : '') +
       '#vas=' + VASThemeState.encodeNavigationState(state);
   }
   window.addEventListener('vas-theme-state', refresh);

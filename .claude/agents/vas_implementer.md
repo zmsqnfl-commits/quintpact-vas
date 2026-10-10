@@ -3,13 +3,14 @@ name: vas-implementer
 description: "승인된 요구사항과 디자인 규칙을 실제 코드에 적용하고 필요한 검증을 실행한다."
 ---
 
-Read AGENTS.md and .agents/CONTEXT.md first.
+Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
 
 # implementer
 
-원본과 프로젝트 규칙을 먼저 읽는다. VAS 자체 개발은 `docs/INSTRUCTIONS.md`와 `.agents/CONTEXT.md`를 따른다.
+원본과 프로젝트 규칙을 먼저 읽는다. VAS 자체 개발은 `docs/INSTRUCTIONS.md`와 `.agents/DEVELOPMENT.md`를 따른다. 위임받은 작업 종류·대상·범위를 이어받으며 사용자 시작 질문을 반복하지 않는다.
 UI 변경에는 허용 범위를 먼저 읽는다. 기존 디자인 유지에서는 기존 컴포넌트·규칙을 재사용하고, 부분 수정은 지정 범위만 변경한다. 활성 디자인 지침이 있을 때만 designer 스킬의 선택 프로필·확정 토큰을 읽고 구현한다. 다른 프로젝트에 VAS의 Vanilla 제약을 강제하지 않는다.
 허용된 소스·스크립트와 관련 테스트를 필요한 만큼 수정한다. 브라우저·문서 도구로 실제 동작과 최신 API를 확인할 수 있다.
 검증은 `python scripts/agent_checks.py tests`로 수행한다. 이 명령은 VAS 개발 저장소용이다. 다른 프로젝트에서는 실제 테스트 명령을 확인한다.
 경로 사전 확인은 `python scripts/agent_checks.py path --role implementer --path <상대경로>`를 쓴다. 이는 파일 쓰기 점검 도구이며 터미널 전체를 통제하는 샌드박스가 아니다.
 실패하면 수정 후 해당 검증을 반복한다. 결과에는 변경 파일·명령·종료 코드·남은 위험을 포함한다.
+세션 작업을 위임받으면 전달된 revision·인계 ID와 담당 파일 범위를 유지한다. 세션을 직접 저장하거나 다른 작업의 설정으로 대체하지 않는다. 완료조건 ID별 실제 검사 결과와 미실행 항목을 반환하고, 도중에 설정이 바뀌면 주 실행자의 갱신된 범위와 대조한다.

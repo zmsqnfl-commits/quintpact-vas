@@ -56,7 +56,9 @@ def source_files(root: Path) -> list[Path]:
     if docs.exists():
         files.extend(docs.rglob("*.md"))
     if agents.exists():
-        files.extend(path for path in [agents / "CONTEXT.md", agents / "access-control.md", agents / "HANDOFF-WORKFLOW.md"] if path.exists())
+        files.extend(path for path in [agents / name for name in (
+            "CONTEXT.md", "BOOTSTRAP.md", "DEVELOPMENT.md", "access-control.md", "HANDOFF-WORKFLOW.md",
+        )] if path.exists())
         files.extend((agents / "workflows").glob("*.md"))
         files.extend((agents / "skills").glob("*/SKILL.md"))
         files.extend((agents / "skills").glob("*/TASTE-RULES.md"))

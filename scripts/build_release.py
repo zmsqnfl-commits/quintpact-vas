@@ -1,4 +1,4 @@
-"""VAS 2.8.2 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.9.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -20,11 +20,12 @@ CONFIG = ROOT / "src" / "vas-config.js"
 ROOT_FILES = [
     "Run-VAS-System.bat", "README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
     "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
+    ".cursorrules", ".windsurfrules",
 ]
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
-    ".temp data", "workspace", "dist", "test-results", "playwright-report",
+    ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session",
 }
 INTERNAL_DOCUMENT_NAMES = {
     name.casefold() for name in (
@@ -36,7 +37,7 @@ INTERNAL_DOCUMENT_NAMES = {
 BLOCKED_NAMES = {
     name.casefold() for name in (
         ".env", ".env.local", ".env.production",
-        "credentials.json", "secrets.json", "service-account.json",
+        "credentials.json", "secrets.json", "service-account.json", "vas-session-store.json",
     )
 } | INTERNAL_DOCUMENT_NAMES
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}
@@ -164,7 +165,26 @@ def build_windows(stage: Path) -> Path:
 
 ## 시작
 
-먼저 `00-처음-사용하기.txt`를 읽어주세요.
+ZIP을 새 폴더에 **전체 압축 해제**한 뒤 두 방식 중 하나로 시작합니다.
+
+### AI와 대화로 시작
+
+프로젝트 지침을 자동으로 읽는 AI 도구에서 이 폴더를 열고 첫 요청을 보내세요. 예: "예약 관리 앱 만들어줘".
+AI는 대화형 시작 지침에 따라 새 앱 제작·기존 앱 수정·VAS 자체 개발을 구분하고 요청과 실제 작업 폴더를 정리합니다.
+VAS 2.9.0 대화형 작업 흐름을 제공합니다. Python 3.10 이상이 있는 코딩 호스트에서 CLI로 공통 설정 저장과 다음 대화 이어가기를 제공합니다.
+작업 경로는 PC 전용 연결 정보로만 저장하며 공유 JSON에는 넣지 않습니다.
+로컬 디자인 화면에서 작업을 연결하고 '대화 설정에 저장'을 누르면 같은 설정에 반영됩니다.
+채팅의 변경은 편집 중이 아닌 화면에 자동 반영됩니다. 편집 중 충돌은 덮어쓰지 않습니다.
+AI는 다음 대화나 구현 전에 최신 설정을 다시 읽습니다. 화면 저장만으로 AI 실행이 시작되지는 않습니다.
+자세한 지원 범위와 진행 방식은 [대화로 시작하기](docs/CHAT-START.md)를 확인하세요.
+[설정 저장과 이어가기](docs/CHAT-STATE.md)에서 저장 위치와 삭제 방법을 확인할 수 있습니다.
+[대화와 디자인 연결](docs/CHAT-DESIGN.md)에서 작업 선택과 충돌 해결 방법을 확인하세요.
+[저장 설정으로 구현·검증](docs/CHAT-EXECUTION.md)은 실행 지시 준비, 실제 역할 위임, 완료조건별 검사와 결과 대조를 설명합니다.
+VAS의 prepare·assess 명령은 앱을 실행하지 않습니다. 실제 구현과 검사는 코딩 호스트가 수행하며, 보고만으로 완료를 인증하지 않습니다.
+
+### 화면에서 직접 설정
+
+`00-처음-사용하기.txt`를 참고하세요.
 
 1. ZIP을 새 폴더에 **전체 압축 해제**합니다.
 2. `Run-VAS-System.bat`를 더블클릭합니다.

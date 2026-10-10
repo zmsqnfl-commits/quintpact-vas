@@ -72,6 +72,8 @@ function syncActivePreset(name) {
 }
 function setControlsFromTokens(value) {
   const v = VASStorage.normalizeTheme(value);
+  const font = document.getElementById('fontFamily');
+  if (![...font.options].some(option => option.value === v.fontFamily)) font.add(new Option('저장된 글꼴', v.fontFamily));
   document.getElementById('colorBg').value = v.colors.background;
   document.getElementById('colorSurface').value = v.colors.surface;
   document.getElementById('colorText').value = v.colors.text;
@@ -149,7 +151,7 @@ function getValues() {
     }
   };
 }
-function update(skipHistory = false, presetOverride) {
+function update(skipHistory = false, presetOverride, hydrate = false) {
   if (presetOverride) currentPreset = presetOverride;
   else if (!isHydrating) currentPreset = 'custom';
   const v = VASStorage.normalizeTheme(getValues());
@@ -164,7 +166,7 @@ function update(skipHistory = false, presetOverride) {
   VASDesignPreview.applyTokens(f, v);
   document.querySelector('.preview').style.background = v.colors.background;
   document.querySelector('.preview').style.color = v.colors.text;
-  const state = VASThemeState.commit({
+  const state = (hydrate ? VASThemeState.hydrate : VASThemeState.commit)({
     preset: currentPreset,
     basePreset: currentBasePreset,
     tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
@@ -177,9 +179,6 @@ function update(skipHistory = false, presetOverride) {
     renderOutput();
   }
 }
-// ========================
-// Undo History Logic (#9)
-// ========================
 function normalizeHistoryEntry(value) {
   if (VASStorage.isTheme(value)) return { v: 1, preset: 'custom', tokens: VASStorage.normalizeTheme(value) };
   if (value && typeof value === 'object' && VASStorage.isTheme(value.tokens)) {
@@ -300,14 +299,14 @@ function importJSON(file) {
 }
 // 드래그 앤 드롭 이벤트 리스너 바인딩
 window.addEventListener('DOMContentLoaded', () => {
-  VASProjectContext.init();
+  if (!VASStorage.isSessionScoped) VASProjectContext.init();
   const state = VASThemeState.init();
   currentPreset = PRESETS[state.preset] ? state.preset : 'custom';
   currentBasePreset = state.basePreset || state.preset;
   renderPresets();
   setControlsFromTokens(state.tokens);
   isHydrating = true;
-  update(false, currentPreset);
+  update(false, currentPreset, VASStorage.isSessionScoped);
   isHydrating = false;
   const dz = document.getElementById('dragZone');
   if (dz) {
@@ -337,11 +336,11 @@ window.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
-  const context = VASProjectContext.get();
+  const context = VASStorage.isSessionScoped ? null : VASProjectContext.get();
   const applyButton = document.getElementById('applyProjectTheme');
   const ragLine = document.getElementById('includeRagContext').closest('.check-line');
   if (!context) {
-    applyButton.firstChild.textContent = '설정 저장하고 돌아가기 ';
+    if (!VASStorage.isSessionScoped) applyButton.firstChild.textContent = '설정 저장하고 돌아가기 ';
     if (ragLine) ragLine.hidden = true;
     const ragStatus = document.getElementById('ragPromptStatus');
     if (ragStatus) ragStatus.hidden = true;
@@ -358,7 +357,7 @@ async function copyAgentPrompt() {
   const basePrompt = document.getElementById('aiPrompt').value;
   let prompt = basePrompt;
   const status = document.getElementById('ragPromptStatus');
-  const includeContext = document.getElementById('includeRagContext').checked;
+  const includeContext = !VASStorage.isSessionScoped && document.getElementById('includeRagContext').checked;
   if (window.VASPersonalization && includeContext) {
     try {
       const taste = VASStorage.readText('vasTasteProfileMode', 'auto');
@@ -414,6 +413,7 @@ function returnDestination() {
   } catch (error) { return 'vas-hub.html'; }
 }
 async function applyProjectTheme() {
+  if (VASStorage.isSessionScoped) return;
   const button = document.getElementById('applyProjectTheme');
   const status = document.getElementById('applyProjectStatus');
   const context = VASProjectContext.get();
@@ -465,3 +465,31 @@ async function applyProjectTheme() {
   }
 }
 document.getElementById('applyProjectTheme').addEventListener('click', applyProjectTheme);
+window.VASDesignSessionAdapter = Object.freeze({
+  hydrate: function (design) {
+    if (!VASStorage.isSessionScoped) return;
+    const value = design || {};
+    currentPreset = value.preset || (PRESETS[value.profileId] ? value.profileId : (Object.keys(value.tokens || {}).length ? 'custom' : 'awwwards'));
+    if (!PRESETS[currentPreset]) currentPreset = 'custom';
+    currentBasePreset = PRESETS[value.basePreset] ? value.basePreset : currentPreset;
+    const p = PRESETS[currentBasePreset];
+    const tokens = Object.keys(value.tokens || {}).length ? value.tokens : (p ? {
+      fontFamily: p.font, letterSpacing: p.ls, padding: p.pad, radius: p.rad, borderWidth: p.bw, shadow: p.shadow, speed: p.speed,
+      colors: { primary: p.primary, background: p.bg, surface: p.surface, text: p.text, border: p.border }
+    } : {});
+    const candidate = value.tasteProfileMode || value.profileId;
+    const mode = Object.hasOwn(VAS_TASTE_PROFILES, candidate) ? candidate : 'auto';
+    VASStorage.writeText('vasTasteProfileMode', mode);
+    document.getElementById('tasteProfileMode').value = mode;
+    setControlsFromTokens(tokens);
+    renderPresets();
+    update(true, currentPreset, true);
+    tokenHistory = [normalizeHistoryEntry(VASThemeState.get())];
+    VASStorage.writeJson('vasThemeHistory', tokenHistory);
+  },
+  read: function () {
+    return { profileId: getTasteProfileKey(currentBasePreset, PRESETS[currentBasePreset], getManualTasteProfileKey()),
+      preset: currentPreset, basePreset: currentBasePreset, tasteProfileMode: VASStorage.readText('vasTasteProfileMode', 'auto'),
+      tokens: VASStorage.normalizeTheme(getValues()) };
+  }
+});

@@ -56,6 +56,7 @@
   }
 
   async function init() {
+    if (global.VASStorage && VASStorage.isSessionScoped) return null;
     if (!global.VASProjectContext) return null;
     const context = VASProjectContext.init();
     if (!context) return null;

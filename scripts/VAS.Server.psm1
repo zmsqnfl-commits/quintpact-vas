@@ -2,12 +2,7 @@
 $memoryModule = Join-Path $PSScriptRoot 'VAS.Memory.psm1'; if (-not (Get-Command Get-VASMemoryStatus -ErrorAction SilentlyContinue)) { Import-Module $memoryModule -Force }
 $projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'; if (-not (Get-Command Get-VASProjectRecords -ErrorAction SilentlyContinue)) { Import-Module $projectsModule -Force }
 . (Join-Path $PSScriptRoot 'VAS.Server.Handoff.ps1')
-function New-VASSessionToken {
-    $bytes = New-Object byte[] 32
-    $rng = New-Object Security.Cryptography.RNGCryptoServiceProvider
-    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
-    return ([Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_'))
-}
+. (Join-Path $PSScriptRoot 'VAS.Server.Session.ps1')
 function Set-VASSecurityHeaders {
     param([Net.HttpListenerResponse]$Response, [bool]$Api = $false)
     $Response.Headers['X-Content-Type-Options'] = 'nosniff'
@@ -258,6 +253,7 @@ function Invoke-VASApiRequest {
     }
     $path = $request.Url.AbsolutePath.TrimEnd('/').ToLowerInvariant()
     $method = $request.HttpMethod.ToUpperInvariant()
+    if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
     $body = $null
     if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) { $body = Read-VASJsonBody $request }
     if ($path -eq '/api/heartbeat' -and $method -eq 'POST') {
@@ -273,7 +269,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.8.2'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.9.0'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path -eq '/api/memory/status' -and $method -eq 'GET') {
         Write-VASResponse $Context 200 (Get-VASMemoryStatus $State.MemoryRoot); return
@@ -374,7 +370,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.8.2-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.9.0-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -479,15 +475,19 @@ function Start-VASRequestLoop {
                 $context = $listener.EndGetContext($pending)
                 $State.LastActivity = [DateTime]::UtcNow
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.8.2'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.9.0'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {
                     Invoke-VASStaticRequest $context $State
                 }
             } catch {
-                if ($null -ne $context -and $context.Response.OutputStream.CanWrite) {
-                    Write-VASError $context 500 '요청을 처리하지 못했습니다.'
+                try {
+                    if ($null -ne $context -and $context.Response.OutputStream.CanWrite) {
+                        Write-VASError $context 500 '요청을 처리하지 못했습니다.'
+                    }
+                } catch {
+                    if ($null -ne $context) { try { $context.Response.Abort() } catch {} }
                 }
             }
         }

@@ -12,12 +12,12 @@ BACKUPS = ROOT / ".vas_backups"
 EXCLUDED = {
     ".git", ".vas_backups", ".temp data", "workspace", "dist", "final",
     "node_modules", "__pycache__", ".pytest_cache", "test-results",
-    "playwright-report", ".vscode", ".idea",
+    "playwright-report", ".vscode", ".idea", ".vas-session", "vas-session-store.json",
 }
 
 
 def ignore(_path: str, names: list[str]) -> set[str]:
-    return {name for name in names if name in EXCLUDED}
+    return {name for name in names if name.casefold() in EXCLUDED}
 
 
 def prune(limit: int = 10) -> None:

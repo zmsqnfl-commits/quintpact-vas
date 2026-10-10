@@ -11,6 +11,13 @@
     } catch (error) { return null; }
   }
   const snapshot = readSnapshot();
+  const session = new URLSearchParams(location.search).get('session');
+  const sessionSuffix = /^[a-f0-9]{32}$/.test(session || '') ? '&session=' + session : '';
+  if (sessionSuffix) {
+    const back = document.getElementById('sampleBack');
+    back.href = 'design-controller.html?session=' + session;
+    if (window.VASRuntime) VASRuntime.preserveTokenInLinks(back);
+  }
   const requested = new URLSearchParams(location.search).get('preset');
   const key = Object.hasOwn(PRESETS, requested) || (requested === 'custom' && snapshot?.basePreset === 'custom') ? requested : 'awwwards';
   const preset = PRESETS[key] || { label: 'Custom' };
@@ -35,5 +42,10 @@
   const keys = VAS_PRESET_KEYS.includes(key) ? VAS_PRESET_KEYS : VAS_PRESET_KEYS.concat(key);
   keys.forEach(name => select.add(new Option(PRESETS[name]?.label || name.charAt(0).toUpperCase() + name.slice(1), name)));
   select.value = key;
-  select.addEventListener('change', () => { location.href = 'design-sample.html?preset=' + encodeURIComponent(select.value); });
+  select.addEventListener('change', () => {
+    const link = document.createElement('a');
+    link.href = 'design-sample.html?preset=' + encodeURIComponent(select.value) + sessionSuffix;
+    if (window.VASRuntime) VASRuntime.preserveTokenInLinks(link);
+    location.href = link.href;
+  });
 })();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAS 2.8.2 — 디자인 스튜디오</title>
+  <title>VAS 2.9.0 — 디자인 스튜디오</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111111%22/><text x=%2250%22 y=%2272%22 font-size=%2275%22 font-family=%22monospace%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22%23ffffff%22>V</text></svg>">
   <link rel="stylesheet" href="editorial-shell.css">
   <link rel="stylesheet" href="setup-tools.css">
@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="design-preview.css">
   <link rel="stylesheet" href="design-collection.css">
   <link rel="stylesheet" href="design-samples.css">
+  <link rel="stylesheet" href="chat-design-sync.css">
 </head>
 <body>
   <header class="studio-topbar">
@@ -27,10 +28,34 @@
   <main class="app" data-mobile-view="settings">
     <aside class="controls" id="controlsPanel" aria-label="디자인 설정">
       <div class="controls-intro">
-        <p class="eyebrow">PROJECT DESIGN / 2.8.2</p>
+        <p class="eyebrow">PROJECT DESIGN / 2.9.0</p>
         <h1>VAS 디자인<br>스튜디오</h1>
         <p>원하는 분위기를 고르고, 화면 구성부터 세부 스타일까지 확인하세요.</p>
       </div>
+
+      <section class="group chat-design" id="chatDesignPanel" aria-labelledby="chatDesignTitle">
+        <div class="chat-design-heading"><h2 id="chatDesignTitle">채팅 작업 연결</h2><span id="chatDesignBadge">연결 확인</span></div>
+        <div id="chatDesignPicker" hidden>
+          <label for="chatDesignSession">디자인을 정할 작업</label>
+          <select id="chatDesignSession"><option value="">작업 선택</option></select>
+          <button type="button" class="btn btn-secondary" id="chatDesignConnect">작업 연결</button>
+        </div>
+        <div id="chatDesignDetails" hidden>
+          <p class="chat-design-project" id="chatDesignName"></p>
+          <details><summary>채팅에서 정한 작업</summary><p id="chatDesignRequest"></p><ul id="chatDesignCriteria"></ul></details>
+          <label for="chatDesignScope">디자인 변경 범위</label>
+          <select id="chatDesignScope"><option value="preserve">기존 디자인 유지</option><option value="partial">일부 화면만 수정</option><option value="redesign">전체 리디자인</option><option value="new">새 앱 디자인</option></select>
+          <label id="chatDesignScopeLabel" for="chatDesignScopeText">변경할 화면·요소</label>
+          <textarea id="chatDesignScopeText" rows="2" maxlength="1000"></textarea>
+          <label for="chatDesignDirection">원하는 디자인 방향</label>
+          <textarea id="chatDesignDirection" rows="2" maxlength="12000" placeholder="예: 차분한 색상과 읽기 쉬운 정보 배치"></textarea>
+          <p id="chatDesignPreserve" hidden>기존 디자인을 유지합니다. 스타일을 적용하려면 위에서 변경 범위를 선택하세요.</p>
+          <p id="chatDesignPreviewNote" hidden>미리보기에 표현되지 않는 사용자 설정이 있습니다. 설명만 수정하면 원본을 보존합니다. 스타일을 직접 바꾸면 화면의 디자인 설정으로 교체합니다.</p>
+        </div>
+        <p id="chatDesignStatus" role="status" aria-live="polite">연결을 확인하고 있습니다.</p>
+        <button type="button" class="btn btn-secondary" id="chatDesignReload" hidden>내 변경 버리고 최신 설정 불러오기</button>
+        <button type="button" class="btn btn-secondary" id="chatDesignRetry" hidden>연결 다시 확인</button>
+      </section>
 
       <section class="group" id="preset-container" aria-labelledby="presetTitle">
         <h2 id="presetTitle">프리셋</h2>
@@ -119,5 +144,6 @@
   <script src="design-preview.js"></script>
   <script src="design-controller.js"></script>
   <script src="design-sample-link.js"></script>
+  <script src="chat-design-sync.js"></script>
 </body>
 </html>

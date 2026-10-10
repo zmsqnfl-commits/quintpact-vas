@@ -7,6 +7,7 @@
   const STATE_VERSION = 1;
   const DEFAULT_PRESET = 'awwwards';
   const CHANNEL_NAME = 'vas-theme-state';
+  const scoped = VASStorage.isSessionScoped;
   let currentState = null;
   let channel = null;
 
@@ -71,6 +72,7 @@
   }
 
   function readHashState() {
+    if (scoped) return null;
     const match = global.location.hash.match(/(?:^#|&)vas=([^&]+)/);
     return match ? decodeNavigationState(match[1]) : null;
   }
@@ -104,7 +106,7 @@
 
   function persist(state, updateNavigation) {
     try {
-      if (updateNavigation || readHashState()) {
+      if (!scoped && (updateNavigation || readHashState())) {
         const fragments = new URLSearchParams(global.location.hash.slice(1));
         fragments.set(HASH_KEY, encodeNavigationState(state));
         global.history.replaceState(global.history.state, '', global.location.pathname + global.location.search + '#' + fragments);
@@ -113,7 +115,7 @@
     VASStorage.writeJson('vasThemeTokens', state.tokens);
     VASStorage.writeText('vasCurrentPreset', state.preset);
     VASStorage.writeText('vasTasteProfileMode', state.tasteProfileMode);
-    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.8.2');
+    VASStorage.writeText('vasThemeTokensVersion', global.VASConfig ? global.VASConfig.version : '2.9.0');
     VASStorage.writeJson('vasThemeStateMeta', {
       v: STATE_VERSION, preset: state.preset, basePreset: state.basePreset, revision: state.revision, updatedAt: state.updatedAt
     });
@@ -128,6 +130,7 @@
   }
 
   function decorateLinks(root) {
+    if (scoped) return;
     const encoded = encodeNavigationState(get());
     linksIn(root).forEach(function (link) {
       const raw = link.getAttribute('href');
@@ -160,7 +163,7 @@
   }
 
   function ensureChannel() {
-    if (channel || typeof global.BroadcastChannel !== 'function') return;
+    if (scoped || channel || typeof global.BroadcastChannel !== 'function') return;
     try {
       channel = new global.BroadcastChannel(CHANNEL_NAME);
       channel.addEventListener('message', function (event) {
@@ -187,6 +190,7 @@
 
   function sync() {
     if (!currentState) return init();
+    if (scoped) return get();
     const next = newest(currentState, readHashState(), readStoredState());
     return next && JSON.stringify(next) !== JSON.stringify(currentState) ? accept(next, true) : get();
   }
@@ -205,11 +209,13 @@
     persist(currentState, true);
     decorateLinks(document);
     announce();
+    if (scoped) global.dispatchEvent(new CustomEvent('vas-design-edit', { detail: get() }));
     return get();
   }
 
   global.VASThemeState = Object.freeze({
     init: init, get: get, sync: sync, commit: commit, decorateLinks: decorateLinks,
+    hydrate: function (state) { return accept(state, true); },
     reset: function () { return commit({ preset: DEFAULT_PRESET, basePreset: DEFAULT_PRESET, tasteProfileMode: 'auto', tokens: VASStorage.getDefaultTheme() }); },
     encodeNavigationState: encodeNavigationState, decodeNavigationState: decodeNavigationState
   });

@@ -7,8 +7,17 @@
 
   const SYSTEM_SANS = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";
   const SYSTEM_MONO = "ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
+  const isSessionScoped = new URLSearchParams(global.location.search).has('session');
+  const themeKeys = new Set(['vasThemeTokens', 'vasCurrentPreset', 'vasTasteProfileMode', 'vasThemeStateMeta', 'vasThemeHistory', 'vasThemeTokensVersion']);
+  const themeMemory = new Map();
+  const isolatedStorage = {
+    getItem: function (key) { return themeMemory.has(key) ? themeMemory.get(key) : null; },
+    setItem: function (key, value) { themeMemory.set(key, String(value)); },
+    removeItem: function (key) { themeMemory.delete(key); }
+  };
 
-  function getStorage(kind) {
+  function getStorage(kind, key) {
+    if (isSessionScoped && themeKeys.has(key)) return isolatedStorage;
     try {
       return kind === 'session' ? global.sessionStorage : global.localStorage;
     } catch (error) {
@@ -17,7 +26,7 @@
   }
 
   function writeJson(key, value, kind) {
-    const storage = getStorage(kind);
+    const storage = getStorage(kind, key);
     if (!storage) return false;
     try {
       storage.setItem(key, JSON.stringify(value));
@@ -28,7 +37,7 @@
   }
 
   function readJson(key, fallback, validator, kind) {
-    const storage = getStorage(kind);
+    const storage = getStorage(kind, key);
     if (!storage) return fallback;
     try {
       const raw = storage.getItem(key);
@@ -43,7 +52,7 @@
   }
 
   function writeText(key, value, kind) {
-    const storage = getStorage(kind);
+    const storage = getStorage(kind, key);
     if (!storage) return false;
     try {
       storage.setItem(key, String(value));
@@ -54,7 +63,7 @@
   }
 
   function readText(key, fallback, kind) {
-    const storage = getStorage(kind);
+    const storage = getStorage(kind, key);
     if (!storage) return fallback;
     try {
       const value = storage.getItem(key);
@@ -71,7 +80,7 @@
   }
 
   function remove(key, kind) {
-    const storage = getStorage(kind);
+    const storage = getStorage(kind, key);
     if (!storage) return false;
     try {
       storage.removeItem(key);
@@ -156,6 +165,7 @@
   }
 
   global.VASStorage = Object.freeze({
+    isSessionScoped,
     SYSTEM_SANS,
     SYSTEM_MONO,
     isTheme,

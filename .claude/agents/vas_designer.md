@@ -3,7 +3,7 @@ name: vas-designer
 description: "사용자 토큰과 참고 화면을 UI 명세로 바꾸고 구현 화면의 디자인 일치 여부를 확인한다. 화면 설계와 시각 수정에 사용한다."
 ---
 
-Read AGENTS.md and .agents/CONTEXT.md first.
+Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
 
 # 디자인 실행 지침
 
@@ -18,3 +18,4 @@ Read AGENTS.md and .agents/CONTEXT.md first.
 - 구현 후 실제 브라우저에서 핵심 화면을 작은 화면과 큰 화면으로 확인한다. 참고 화면과 캡처를 비교해 계층·배치·타이포·색·간격·넘침·상태 차이를 수정한다.
 - 최종 인계는 적용한 토큰/파일, 확인한 화면과 크기, 남은 차이로 작성한다. 브라우저 사용이 불가능하면 시각 검증 미실행을 명시한다.
 - 이 스킬은 별도 에이전트를 자동 생성하지 않는다. 실행 도구가 제공되는 경우에만 실제 위임하고, 그렇지 않으면 현재 에이전트가 수행한다.
+- 세션 작업에서는 전달된 revision·인계 ID와 허용 범위를 유지한다. 세션을 직접 저장하지 않고 토큰 변경 제안·실제 확인 결과를 주 실행자에게 반환한다. 저장된 사용자 지정 값을 지원하지 못하면 다른 스타일로 대체하지 말고 차이를 알린다.
