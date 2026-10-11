@@ -358,7 +358,7 @@ def test_distributed_cli_without_package_json_prepares_and_assesses(setup, tmp_p
                               capture_output=True, timeout=30, env={**os.environ, "PYTHONUTF8": "1"})
     assert prepared.returncode == 0, prepared.stderr + prepared.stdout
     payload = json.loads(prepared.stdout)
-    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.9.1"
+    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.9.2"
     checked = subprocess.run(command + ["assess"] + arguments, text=True, encoding="utf-8",
                              input=json.dumps(result(payload)), capture_output=True, timeout=30,
                              env={**os.environ, "PYTHONUTF8": "1"})

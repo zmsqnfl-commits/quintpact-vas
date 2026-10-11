@@ -37,13 +37,13 @@ $canonicalRoot = $RootPath.TrimEnd('\').ToUpperInvariant()
 $sha256 = [Security.Cryptography.SHA256]::Create()
 try { $rootHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($canonicalRoot)) } finally { $sha256.Dispose() }
 $rootHash = (-join ($rootHashBytes | ForEach-Object { $_.ToString('x2') })).Substring(0, 16)
-$runtimeId = "2.9.1-$rootHash"
+$runtimeId = "2.9.2-$rootHash"
 $runtimePath = Join-Path $StateRoot ("runtime-$runtimeId.json")
 
 function Write-VASRuntimeFile {
     param($State)
     $runtime = [ordered]@{
-        service = 'VAS'; version = '2.9.1'; pid = $PID; port = $State.Port
+        service = 'VAS'; version = '2.9.2'; pid = $PID; port = $State.Port
         token = $State.Token; baseUrl = $State.BaseUrl
         rootPath = $RootPath; runtimeId = $runtimeId
         startedAt = [DateTime]::UtcNow.ToString('o')
@@ -69,11 +69,11 @@ function Get-VASLiveRuntime {
     if ($null -eq $text) { return $null }
     try {
         $runtime = $text | ConvertFrom-Json
-        if ($runtime.service -ne 'VAS' -or $runtime.version -ne '2.9.1' -or $runtime.runtimeId -ne $runtimeId -or -not $runtime.token -or [int]$runtime.port -lt 1 -or [int]$runtime.port -gt 65535) { throw 'invalid runtime' }
+        if ($runtime.service -ne 'VAS' -or $runtime.version -ne '2.9.2' -or $runtime.runtimeId -ne $runtimeId -or -not $runtime.token -or [int]$runtime.port -lt 1 -or [int]$runtime.port -gt 65535) { throw 'invalid runtime' }
         if ([IO.Path]::GetFullPath([string]$runtime.rootPath) -ne $RootPath) { throw 'wrong VAS root' }
         $response = Invoke-WebRequest -Uri ("http://127.0.0.1:{0}/health" -f $runtime.port) -UseBasicParsing -TimeoutSec 2
         $health = $response.Content | ConvertFrom-Json
-        if ($response.StatusCode -eq 200 -and $health.service -eq 'VAS' -and $health.version -eq '2.9.1' -and $health.runtimeId -eq $runtimeId -and [int]$health.port -eq [int]$runtime.port) {
+        if ($response.StatusCode -eq 200 -and $health.service -eq 'VAS' -and $health.version -eq '2.9.2' -and $health.runtimeId -eq $runtimeId -and [int]$health.port -eq [int]$runtime.port) {
             return $runtime
         }
     } catch { }

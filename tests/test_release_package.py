@@ -207,7 +207,7 @@ class ReleasePackageTests(unittest.TestCase):
                 assert_safe_relative(self, target)
                 self.assertIn(target, payload, f"배포 문서의 누락 링크: {relative}: {reference}")
         recipient_readme = payload["README.md"].decode("utf-8")
-        for marker in ("첫 요청", "실제 작업 폴더", "VAS 2.9.1 대화형 작업 흐름", "Python 3.10", "공통 설정 저장", "다음 대화 이어가기",
+        for marker in ("첫 요청", "실제 작업 폴더", "VAS 2.9.2 대화형 작업 흐름", "Python 3.10", "공통 설정 저장", "다음 대화 이어가기",
                        "PC 전용 연결 정보", "공유 JSON에는 넣지 않습니다", "대화 설정에 저장", "편집 중 충돌은 덮어쓰지 않습니다",
                        "[대화로 시작하기](docs/CHAT-START.md)", "[설정 저장과 이어가기](docs/CHAT-STATE.md)",
                        "[대화와 디자인 연결](docs/CHAT-DESIGN.md)", "[저장 설정으로 구현·검증](docs/CHAT-EXECUTION.md)",

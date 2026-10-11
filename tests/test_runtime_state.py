@@ -244,7 +244,7 @@ def test_launcher_rejects_junctions_without_touching_external_state(tmp_path, lo
     before = marker.read_bytes()
     if location == "runtime-file":
         canonical = str(root.resolve()).rstrip("\\").upper().encode("utf-8")
-        runtime_id = "2.9.1-" + hashlib.sha256(canonical).hexdigest()[:16]
+        runtime_id = "2.9.2-" + hashlib.sha256(canonical).hexdigest()[:16]
         junction = state / f"runtime-{runtime_id}.json"
     else:
         junction = tmp_path / "linked-ancestor"

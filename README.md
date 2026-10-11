@@ -1,10 +1,10 @@
-# VAS 2.9.1
+# VAS 2.9.2
 
 **Describe the work. Choose the design. Continue with your coding AI.**
 
 VAS (Vibecoding Agent System) connects a project brief, visual design choices and coding-agent instructions. Open the VAS folder in a coding AI, describe what you want, save the task locally, and compare designs in the connected Design Studio. The agent resumes the same settings, reads the real application, implements the requested work and reports the checks it actually performed.
 
-**[Download VAS 2.9.1](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.1)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.1)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.9.1)** · **[Read the release notes](docs/releases/2.9.1.md)**
+**[Download VAS 2.9.2](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.2)** · **[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.2)** · **[Try Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.9.2)** · **[Read the release notes](docs/releases/2.9.2.md)**
 
 ## Start in the conversation
 
@@ -33,22 +33,22 @@ Saving a design does not wake the AI or change its active conversation context. 
 
 You can also use the established screen-based workflow: run `Run-VAS-System.bat`, fill in the brief, choose a design, and copy the prompt into your coding tool with the actual project folder open. Exporting `VAS-AI-HANDOFF.json` remains optional. See [chat start](docs/CHAT-START.md), [saved settings](docs/CHAT-STATE.md), [connected design](docs/CHAT-DESIGN.md) and [implementation and verification](docs/CHAT-EXECUTION.md).
 
-## What's new in VAS 2.9.1
+## What's new in VAS 2.9.2
 
-This patch strengthens work-memory controls in the Windows runtime and makes the transition from setup to coding clearer. It keeps the conversational workflow introduced in 2.9.0 and the existing handoff v3 / result v1 formats.
+This patch strengthens local storage, credential handling and the transition from an older saved task to the current workflow. It keeps the conversational setup, visual design tools and handoff v3 / result v1 formats.
 
-- **The server checks work-memory consent.** Adding, editing or importing records requires an explicit server-side opt-in. A separate `memory-consent.json` stores that choice; consent fields in old records, imported data or browser storage cannot enable Windows recording. Existing records are preserved when upgrading, and installations without the new consent setting start with recording off.
-- **Memory has a cumulative limit.** Windows work memory is limited to **10,000 events and 8 MiB of serialized UTF-8 data**. A write that exceeds either limit is rejected before replacing the stored records. Turning recording off and choosing **Start without memory** still work when the store is full or an older store exceeds the limit. Oversized old data is preserved for recovery, not silently trimmed or deleted.
-- **Connected screens show current consent.** Open memory controls refresh when another same-origin tab changes the setting or the screen regains focus. Previous success messages are cleared during the refresh so they do not contradict the current state.
-- **The local server expires on the intended activity.** Authenticated API requests, including a connected tab's heartbeat, keep it running. Public health checks, static-file requests and rejected authentication no longer extend its idle lifetime. With no authenticated requests, it stops after the default 30-minute interval.
-- **Existing-app reports use consistent names.** The chat CLI accepts the legacy result type `registered` as an alias for `existing`. Handoff ID, payload hash and iteration must still match; a new-app result cannot pass as an existing-app result.
-- **Setup explains the next step and limited mode.** The screen tells you how to continue in your coding conversation, while the launcher distinguishes browser-only capabilities from features that need the Windows runtime.
+- **Older saved tasks remain usable after privacy-filter upgrades.** A valid task whose text now needs redaction opens as a sanitized view, with the affected fields marked for review. Reading it does not rewrite the original, and other valid tasks remain available. The main agent reviews the requirements and saves the full settings before preparing implementation; a design-only save cannot bypass that review.
+- **Memory recovery files have explicit retention limits.** In addition to the current **10,000-event / 8 MiB** store, VAS bounds the previous backup, corrupt originals and recognized temporary files. The supported retained total is **40 MiB**, or **48 MiB during a record write**; this is not a quota on the whole directory. Corrupt originals and already oversized data are preserved, while only old, recognized temporary files are cleaned automatically. Capacity and cleanup failures are reported without pretending recovery succeeded.
+- **Local runtime credentials receive file-level protection.** Runtime files and their temporary files use restricted Windows permissions. Memory and runtime state reject linked or non-local paths, while the VAS product itself can remain on a NAS. The launcher no longer prints its token to the console and does not alter parent-folder permissions. Initial browser connection URLs still carry authentication, so those URLs should remain private.
+- **Redaction recognizes more encoded and split credentials.** Shared handoffs, browser and Windows memory, and the bundled reference index now check bounded encoded forms and static string joins. Detection does not execute code; ordinary URLs, JSON and design tokens retain their original text. Known-pattern redaction is still not a complete detector of all secrets.
+- **Optional RAG references have a clearer data boundary.** Compatibility modules serialize selected references as quoted records with provenance and normalize obscured role or boundary markers. This does not enable RAG in the default workflow or guarantee how an external AI interprets the text.
+- **Recovery and request failures are easier to understand.** Invalid import modes and JSON return clear client errors; oversized request bodies and memory history return explicit size errors. The tested flow covers saved settings, design changes, preparation, result assessment and restart.
 
-After upgrading, turn work memory on only if you want new confirmed design selections recorded. Turning it off preserves existing records; deletion is a separate action. These controls concern optional work memory, not the saved chat-task settings. See the [upgrade and recovery guidance](docs/releases/2.9.1.md#upgrade-and-recovery) and [operations guide](docs/OPERATIONS.md).
+The consent and idle policies introduced in [2.9.1](docs/releases/2.9.1.md) remain: recording requires server-side opt-in, turning it off preserves existing records, and authenticated users can manage supported-size records without re-enabling recording. Work memory and saved chat tasks remain separate. See the [2.9.2 upgrade guidance](docs/releases/2.9.2.md#upgrade-and-recovery) and [operations guide](docs/OPERATIONS.md).
 
 ## Introduced in VAS 2.9.0
 
-The capabilities below remain available in 2.9.1. See the [2.9.0 release notes](docs/releases/2.9.0.md) for the original feature release.
+The capabilities below remain available in 2.9.2. See the [2.9.0 release notes](docs/releases/2.9.0.md) for the original feature release.
 
 ### Saved tasks and a connected design screen
 
@@ -105,7 +105,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four sample websites you can actually explore
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.1). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.2). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -140,7 +140,7 @@ See the [handoff guide](docs/HANDOFF.md) and [agent workflow](.agents/HANDOFF-WO
 
 ## Morrow: built through the VAS workflow
 
-[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.9.1) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
+[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.9.2) is a working creative task board built with the Bento Studio direction. Its development used a real five-step VAS project form, an exported handoff, a generated design concept, separate implementation, and independent review.
 
 You can create and edit tasks, set categories and due dates, combine search and status filters, mark work complete, archive and restore tasks, undo the latest deletion, and export records as JSON. Data persists in the browser, with empty states, input validation, and storage-error guidance.
 
@@ -154,13 +154,13 @@ The [verification record](docs/verification/README.md) includes the request, ori
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
-1. Open the [v2.9.1 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.1) and download `VAS-2.9.1-windows.zip`.
+1. Open the [v2.9.2 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.2) and download `VAS-2.9.2-windows.zip`.
 2. Extract the entire archive into a stable folder.
 3. Open that VAS folder in a coding AI that reads its project instructions, then describe the work. Open a fresh conversation after upgrading the instructions.
 4. Ask to open the task's design screen when you want a visual comparison. Save the design to the connected task and continue in the conversation.
 5. Review the agent's actual changes, checks and remaining conditions. A saved setting or prepared handoff is not a completed app.
 
-For the screen-based alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.9.1.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+For the screen-based alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.9.2.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
 
 When upgrading, keep a backup of the previous installation and user data. Sessions are associated with the VAS installation path: a new extraction at a different path does not automatically discover the old installation's tasks. Do not assume that copying the VAS folder moves its private settings store. The [settings guide](docs/CHAT-STATE.md) explains these boundaries. Existing handoff formats and standalone design selections remain compatible.
 
@@ -175,7 +175,7 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 ## Verification and development
 
-The [2.9.1 release notes](docs/releases/2.9.1.md) describe the release scope and verification boundaries. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
+The [2.9.2 release notes](docs/releases/2.9.2.md) describe the release scope and verification boundaries. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
 
 The required gates cover Python contracts and local storage, browser workflows, session/design integration, Windows HTTP behavior and extracted-package contents. Actual-host checks exercise instruction discovery, saved-task resume and result linkage separately. A successful implementation/reviewer delegation exercise does not mean every app run uses subagents; tools and execution records determine that for each run. An application's remaining manual checks stay visible even when its automated checks pass.
 
