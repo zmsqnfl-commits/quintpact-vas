@@ -90,6 +90,8 @@ for (const width of [1440, 390]) test('new-project copy and JSON agree with all 
   await page.addInitScript(() => { window.copiedPrompt = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async t => { window.copiedPrompt = t; } } }); });
   await open(page, 'vas-hub.html');
   await page.locator('.start-card:not(.import)').click(); await page.locator('#vasStartWithMemory').click();
+  // Consent persists asynchronously before navigation; visible form controls can precede its scripts.
+  await page.waitForURL(url => url.pathname.endsWith('/src/client-application.html'), { waitUntil: 'load' });
   await page.locator('#projectName').fill('Integrated brief');
   await page.locator('#problemDescription').fill('Build a task board. DATABASE_URL=postgresql://demo:FullFlowSecretCanary@localhost/app');
   await page.locator('#fileInput').setInputFiles({ name: 'Confidential-Acquisition.pdf', mimeType: 'application/pdf', buffer: Buffer.from('synthetic attachment') });
