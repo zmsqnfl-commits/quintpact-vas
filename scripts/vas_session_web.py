@@ -39,4 +39,5 @@ def dispatch(manager, operation, payload):
     settings["task"]["designScope"] = deepcopy(payload["designScope"])
     settings["design"] = deepcopy(payload["design"])
     # save rechecks the revision while holding the store lock, including CLI races.
-    return public_view(manager.save(payload["sessionId"], payload["expectedRevision"], settings))
+    return public_view(manager.save(payload["sessionId"], payload["expectedRevision"], settings,
+                                    allow_privacy_refresh=False))

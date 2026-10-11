@@ -11,7 +11,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
-from vas_ai_contract import sanitize
+from vas_ai_contract import redact_credentials, sanitize, sensitive_key
 from vas_task_policy import apply_task, safe_text
 from vas_session_store import Store
 
@@ -137,6 +137,40 @@ def identity(path):
     return [info.st_dev, info.st_ino]
 
 
+def _privacy_settings(settings):
+    """Only refresh redaction; do not repair schema, defaults, IDs or whitespace."""
+    candidate = deepcopy(settings)
+
+    def text(value):
+        require(value == value.strip() and not re.search(r"[\x00-\x09\x0b-\x1f\x7f]", value))
+        return LOCAL_POSIX.sub("[absolute-path]", redact_credentials(value))
+
+    def tokens(value):
+        if isinstance(value, dict):
+            return {text(key): tokens(child) for key, child in value.items() if not sensitive_key(key)}
+        return text(value) if isinstance(value, str) else value
+
+    for parent, keys in [(candidate["project"], ("name",)),
+                         (candidate["task"], ("request",)),
+                         (candidate.get("design", {}), ("profileId", "direction")),
+                         (candidate, ("nextStep",))]:
+        for key in keys:
+            if key in parent:
+                parent[key] = text(parent[key])
+    task = candidate["task"]
+    if "constraints" in task:
+        task["constraints"] = [text(value) for value in task["constraints"]]
+    if "scope" in task.get("designScope", {}):
+        task["designScope"]["scope"] = text(task["designScope"]["scope"])
+    for item in task.get("completionCriteria", []):
+        item["description"] = text(item["description"])
+    if "tokens" in candidate.get("design", {}):
+        candidate["design"]["tokens"] = tokens(candidate["design"]["tokens"])
+    if "questions" in candidate:
+        candidate["questions"] = [text(value) for value in candidate["questions"]]
+    return candidate
+
+
 def valid_document(document):
     fields(document, {"format", "schemaVersion", "sessionId", "revision", "updatedAt", "settings"},
            {"format", "schemaVersion", "sessionId", "revision", "updatedAt", "settings"})
@@ -147,7 +181,15 @@ def valid_document(document):
     require(isinstance(document["updatedAt"], str) and len(document["updatedAt"]) < 40)
     require(datetime.fromisoformat(document["updatedAt"]).tzinfo is not None)
     normalized, changes = normalize_settings(document["settings"])
-    require(normalized == document["settings"] and not changes)
+    if normalized != document["settings"] or changes:
+        # First normalize_settings validates original types/blocked token keys.
+        # The separate candidate permits privacy-only differences, never repair.
+        require(_privacy_settings(document["settings"]) == normalized)
+        canonical, remaining = normalize_settings(normalized)
+        require(canonical == normalized and not remaining)
+    safe = deepcopy(document)
+    safe["settings"] = normalized
+    return safe, changes
 
 
 class SessionManager:
@@ -192,16 +234,22 @@ class SessionManager:
                 status = "unverified"
         except (OSError, SessionError) as error:
             status = "missing" if getattr(error, "code", "") == "target_missing" else "unsafe"
-        return {"status": "resumed" if status == "available" else "target_unavailable",
-                "session": deepcopy(record["document"]),
-                "target": {"path": binding["path"], "status": status}}
+        document, changes = valid_document(record["document"])
+        view = {"status": "resumed" if status == "available" else "target_unavailable",
+                "session": document, "target": {"path": binding["path"], "status": status}}
+        if changes:
+            view["reviewFields"] = changes
+        return view
 
     @staticmethod
     def _summary(record):
-        doc = record["document"]
-        return {"sessionId": doc["sessionId"], "revision": doc["revision"],
-                "name": doc["settings"]["project"]["name"],
-                "sourceType": doc["settings"]["project"]["sourceType"]}
+        doc, changes = valid_document(record["document"])
+        summary = {"sessionId": doc["sessionId"], "revision": doc["revision"],
+                   "name": doc["settings"]["project"]["name"],
+                   "sourceType": doc["settings"]["project"]["sourceType"]}
+        if changes:
+            summary["reviewFields"] = changes
+        return summary
 
     @staticmethod
     def _revision(record, expected_revision):
@@ -248,11 +296,13 @@ class SessionManager:
             return {"status": "selection_required", "sessions": [self._summary(r) for r in records.values()]}
         return self._view(next(iter(records.values())))
 
-    def save(self, session_id, expected_revision, raw_settings):
+    def save(self, session_id, expected_revision, raw_settings, *, allow_privacy_refresh=True):
         settings, changes = normalize_settings(raw_settings)
         def update(data):
             record = self._record(self._records(data), session_id)
             self._revision(record, expected_revision)
+            require(allow_privacy_refresh or not valid_document(record["document"])[1],
+                    "session_review_required")
             require(self._view(record)["status"] == "resumed", "target_unavailable")
             record["document"]["settings"] = settings
             record["document"]["revision"] += 1
@@ -284,4 +334,4 @@ class SessionManager:
 
     def export(self, session_id):
         record = self._record(self._records(self.store.read()), session_id)
-        return deepcopy(record["document"])
+        return valid_document(record["document"])[0]

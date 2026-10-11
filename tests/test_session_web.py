@@ -83,9 +83,9 @@ def test_concurrent_cli_save_between_web_read_and_write_uses_store_cas(layout, s
     changed = deepcopy(created["settings"])
     changed["nextStep"] = "CLI가 기록한 다음 단계"
 
-    def racing_save(identifier, revision, raw):
+    def racing_save(identifier, revision, raw, **kwargs):
         manager(layout).save(identifier, revision, changed)
-        return real_save(identifier, revision, raw)
+        return real_save(identifier, revision, raw, **kwargs)
 
     monkeypatch.setattr(service, "save", racing_save)
     with pytest.raises(SessionError, match="revision_conflict"):

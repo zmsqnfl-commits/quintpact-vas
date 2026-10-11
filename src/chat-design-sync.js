@@ -7,7 +7,7 @@
   const validId = /^[a-f0-9]{32}$/;
   let documentState = null, baseline = '', dirty = false, conflict = false;
   let busy = false, fetching = false, healthy = false, targetAvailable = false, suspended = false;
-  let reloadRequested = false;
+  let reloadRequested = false, reviewRequired = false;
   let visualChanged = false, previewDiffers = false;
   const el = id => document.getElementById(id);
   const adapter = () => global.VASDesignSessionAdapter;
@@ -16,8 +16,12 @@
   function message(text, state) {
     el('chatDesignStatus').textContent = text;
     el('chatDesignPanel').dataset.state = state || 'idle';
-    const badges = { saved: '저장됨', draft: '수정 중', conflict: '변경 확인', error: '연결 확인', loading: '확인 중' };
+    const badges = { saved: '저장됨', draft: '수정 중', conflict: '변경 확인', review: '설정 확인', error: '연결 확인', loading: '확인 중' };
     el('chatDesignBadge').textContent = badges[state] || (connected ? '채팅 연결' : '선택 가능');
+  }
+
+  function reviewMessage() {
+    message('이전 설정의 민감한 값을 정리했습니다. 채팅에서 정리된 작업 내용을 확인하고 저장하면 디자인을 이어서 바꿀 수 있습니다.', 'review');
   }
 
   function draft() {
@@ -32,7 +36,7 @@
   }
 
   function toggleEditing() {
-    const available = Boolean(documentState && healthy && targetAvailable && !busy);
+    const available = Boolean(documentState && healthy && targetAvailable && !busy && !reviewRequired);
     const preserve = el('chatDesignScope').value === 'preserve';
     document.querySelectorAll('#controlsPanel .group:not(#chatDesignPanel) input, #controlsPanel .group:not(#chatDesignPanel) select, #controlsPanel .group:not(#chatDesignPanel) button').forEach(node => {
       node.disabled = !available || preserve;
@@ -53,7 +57,7 @@
   }
 
   function edited() {
-    if (!documentState || suspended || busy) return;
+    if (!documentState || suspended || busy || reviewRequired) return;
     dirty = JSON.stringify(draft()) !== baseline;
     if (!conflict && healthy) message(dirty ? '화면의 변경은 아직 저장하지 않았습니다.' : '채팅과 같은 설정입니다.', dirty ? 'draft' : 'saved');
     toggleEditing();
@@ -66,10 +70,11 @@
     return saved === shown;
   }
 
-  function adopt(response) {
+  function adopt(response, reviewed) {
     suspended = true;
     documentState = response.session;
     targetAvailable = response.target && response.target.status === 'available';
+    reviewRequired = !reviewed && Boolean(response.reviewFields && response.reviewFields.length);
     const settings = documentState.settings;
     el('chatDesignDetails').hidden = false;
     el('chatDesignName').textContent = settings.project.name;
@@ -93,6 +98,7 @@
     baseline = JSON.stringify(draft()); dirty = false; conflict = false;
     healthy = true; suspended = false;
     message(targetAvailable ? '채팅과 같은 설정입니다. 저장하면 다음 대화에서 이어집니다.' : '작업 폴더를 확인해야 합니다. 채팅에서 대상을 다시 연결하세요.', targetAvailable ? 'saved' : 'error');
+    if (reviewRequired && targetAvailable) reviewMessage();
     el('chatDesignPanel').dataset.revision = String(documentState.revision);
     toggleEditing();
   }
@@ -109,6 +115,7 @@
       if (documentState && incoming.revision < documentState.revision) return;
       healthy = true;
       targetAvailable = response.target && response.target.status === 'available';
+      reviewRequired = Boolean(response.reviewFields && response.reviewFields.length);
       if (!documentState || discard || (!dirty && incoming.revision !== documentState.revision)) {
         adopt(response);
       } else if (incoming.revision !== documentState.revision) {
@@ -116,6 +123,8 @@
         message('채팅이나 다른 화면에서 설정이 바뀌었습니다. 내 변경을 버리고 최신 설정을 불러온 뒤 다시 선택하세요.', 'conflict');
       } else if (!targetAvailable) {
         message('작업 폴더를 확인해야 합니다. 채팅에서 대상을 다시 연결하세요.', 'error');
+      } else if (reviewRequired) {
+        reviewMessage();
       } else if (!conflict) {
         message(dirty ? '화면의 변경은 아직 저장하지 않았습니다.' : '채팅과 같은 설정입니다.', dirty ? 'draft' : 'saved');
       }
@@ -129,17 +138,19 @@
   }
 
   async function save() {
-    if (!documentState || !dirty || busy || conflict || !healthy || !targetAvailable) return;
+    if (!documentState || !dirty || busy || conflict || !healthy || !targetAvailable || reviewRequired) return;
     const payload = Object.assign({ sessionId: selected, expectedRevision: documentState.revision }, draft());
     busy = true; toggleEditing(); message('대화 설정에 저장하고 있습니다.', 'loading');
     try {
       const response = await VASRuntime.request('/api/chat/session/design', { method: 'POST', body: payload });
-      adopt(response);
+      adopt(response, true);
       if (response.reviewFields && response.reviewFields.length) {
         message('저장했습니다. 민감한 값이나 적용할 수 없는 디자인 항목은 정리했습니다.', 'saved');
       } else message('저장했습니다. 다음 대화에서 이 디자인을 이어갑니다.', 'saved');
     } catch (error) {
-      if (error.status === 409) {
+      if (error.code === 'session_review_required') {
+        reviewRequired = true; reviewMessage();
+      } else if (error.status === 409) {
         conflict = true;
         message('다른 곳에서 설정이 바뀌어 저장하지 않았습니다. 내 변경을 버리고 최신 설정을 불러오세요.', 'conflict');
       } else {
@@ -181,7 +192,7 @@
     global.addEventListener('DOMContentLoaded', toggleEditing, { once: true });
     ['chatDesignScope', 'chatDesignScopeText', 'chatDesignDirection'].forEach(id => el(id).addEventListener('input', edited));
     global.addEventListener('vas-design-edit', () => {
-      if (!documentState || suspended || busy) return;
+      if (!documentState || suspended || busy || reviewRequired) return;
       visualChanged = true; edited();
     });
     el('chatDesignReload').addEventListener('click', () => refresh(true));

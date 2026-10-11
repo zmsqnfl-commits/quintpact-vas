@@ -82,6 +82,7 @@ function Get-VASSessionError {
     $status = 400
     $message = '저장된 작업 설정과 입력값을 확인하세요.'
     if ($Code -eq 'revision_conflict') { $status = 409; $message = '채팅이나 다른 화면에서 설정이 변경됐습니다. 최신 설정을 읽은 뒤 다시 적용하세요.' }
+    elseif ($Code -eq 'session_review_required') { $status = 409; $message = '이전 설정의 민감한 값을 정리했습니다. 채팅에서 작업 내용을 확인하고 저장한 뒤 다시 적용하세요.' }
     elseif ($Code -eq 'target_unavailable') { $status = 409; $message = '연결된 작업 폴더를 확인할 수 없습니다. 채팅에서 작업 폴더를 확인하세요.' }
     elseif ($Code -eq 'session_not_found') { $status = 404; $message = '저장된 작업이 없습니다. 채팅에서 연결할 작업을 확인하세요.' }
     elseif ($Code -eq 'session_input_too_large') { $status = 413; $message = '디자인 설정이 너무 큽니다.' }

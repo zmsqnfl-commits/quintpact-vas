@@ -145,6 +145,38 @@ async function main() {
     sessionStorage.setItem('vasProjectContext', JSON.stringify(staleContext));
   }, { globalTheme, staleContext, origin: runtime.baseUrl });
   const page = await open(context, id);
+  await check('legacy privacy refresh requires chat review and recovers without changing other sessions', async () => {
+    const prior = create('이전 저장 작업', '#123456');
+    const location = spawnSync(python, ['-c', 'import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]); from vas_session_store import Store; print(Store(Path(sys.argv[2])).path)', path.join(root, 'scripts'), runtimeRoot],
+      { env, windowsHide: true, encoding: 'utf8', timeout: 10000 });
+    assert.equal(location.status, 0);
+    const file = location.stdout.trim();
+    const priorId = prior.document.sessionId, canary = 'LegacyUpgradeCanary012345';
+    // Python preserves 64-bit directory IDs; a JS JSON round trip can corrupt bindings.
+    const seed = spawnSync(python, ['-c', 'import json, sys; from pathlib import Path; p=Path(sys.argv[1]); data=json.loads(p.read_text(encoding="utf-8")); data["sessions"][sys.argv[2]]["document"]["settings"]["task"]["request"]=sys.argv[3]; p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")', file, priorId, 'password%3a' + canary],
+      { env, windowsHide: true, encoding: 'utf8', timeout: 10000 });
+    assert.equal(seed.status, 0);
+    const before = fs.readFileSync(file, 'utf8');
+    const oldPage = await open(context, priorId); await state(oldPage, 'review');
+    assert.ok((await oldPage.locator('#chatDesignStatus').textContent()).includes('채팅에서'));
+    assert.equal(await oldPage.locator('#applyProjectTheme').isDisabled(), true);
+    assert.equal(await oldPage.locator('#chatDesignDirection').isDisabled(), true);
+    assert.ok(!(await oldPage.locator('body').textContent()).includes(canary));
+    const refreshed = cli(['resume', '--session', priorId]);
+    assert.deepEqual(refreshed.reviewFields, ['요청']);
+    assert.equal((await api('/api/chat/sessions')).status, 200);
+    const refused = await api('/api/chat/session/design', 'POST', { sessionId: priorId,
+      expectedRevision: refreshed.session.revision, designScope: refreshed.session.settings.task.designScope, design: refreshed.session.settings.design });
+    assert.equal(refused.status, 409); assert.equal(refused.data.code, 'session_review_required');
+    assert.equal(fs.readFileSync(file, 'utf8'), before, 'reads and rejected design save must preserve the original store');
+    save(priorId, data => { data.task.request = '검토 후 확정한 예약 내보내기'; });
+    await focus(oldPage); await revision(oldPage, 2); await state(oldPage, 'saved');
+    assert.equal(await oldPage.locator('#chatDesignDirection').isDisabled(), false);
+    assert.ok(!fs.readFileSync(file, 'utf8').includes(canary));
+    assert.deepEqual(resume(id), first.document);
+    await oldPage.screenshot({ path: path.join(task, 'upgrade-restored.png') });
+    await oldPage.close();
+  });
   await check('CLI design is displayed in the real design studio', async () => {
     await revision(page, first.document.revision); await state(page, 'saved');
     assert.equal(await page.locator('#colorPrimary').inputValue(), '#125678');

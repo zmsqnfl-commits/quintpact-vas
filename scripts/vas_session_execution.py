@@ -101,7 +101,7 @@ def prepare(manager, session_id, expected_revision):
     version_match = re.search(r"\bversion\s*:\s*['\"](\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?)['\"]", config)
     require(version_match is not None, "execution_resources_invalid")
     version = version_match.group(1)
-    missing = []
+    missing = ["settings.review"] if view.get("reviewFields") else []
     if not settings["task"]["request"]:
         missing.append("task.request")
     if not any(item["required"] for item in settings["task"]["completionCriteria"]):

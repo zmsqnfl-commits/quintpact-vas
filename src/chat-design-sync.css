@@ -11,7 +11,7 @@
 .chat-design ul { padding-left: 18px; }
 .chat-design .btn { width: 100%; margin-top: 10px; min-height: 40px; }
 #chatDesignStatus, #chatDesignPreserve, #chatDesignPreviewNote { font-size: 12px; line-height: 1.6; margin: 12px 0 0; overflow-wrap: anywhere; }
-.chat-design[data-state="error"] #chatDesignStatus, .chat-design[data-state="conflict"] #chatDesignStatus { color: #913600; }
+.chat-design[data-state="error"] #chatDesignStatus, .chat-design[data-state="conflict"] #chatDesignStatus, .chat-design[data-state="review"] #chatDesignStatus { color: #913600; }
 .chat-design[data-state="saved"] #chatDesignBadge { background: #dcebd6; color: #234825; }
 .chat-design [hidden] { display: none !important; }
 .chat-design :focus-visible { outline: 2px solid #1c56ac; outline-offset: 2px; }
