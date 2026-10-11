@@ -10,13 +10,18 @@ function Get-VASMemoryLimits {
 function Test-VASMemoryConsent {
     param([string]$Root)
     $path = Join-Path (Get-VASMemoryRoot $Root) 'memory-consent.json'
+    Assert-VASMemoryPath $path
     try {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or
             (Get-Item -LiteralPath $path).Length -gt 1024) { return $false }
+        Assert-VASMemoryPath $path
         $settings = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) | ConvertFrom-Json
         $value = Get-VASProperty $settings 'consent' $false
         return ((Get-VASProperty $settings 'version' 0) -eq 1 -and $value -is [bool] -and $value)
-    } catch { return $false }
+    } catch {
+        if ($_.Exception.Message -eq 'VAS_MEMORY_PATH_INVALID') { throw }
+        return $false
+    }
 }
 
 function Assert-VASMemoryConsent {
@@ -35,17 +40,22 @@ function Assert-VASMemoryCapacity {
 function Save-VASMemoryConsentUnlocked {
     param([bool]$Consent, [string]$Root)
     $directory = Get-VASMemoryRoot $Root
+    Assert-VASMemoryPaths $Root
     [IO.Directory]::CreateDirectory($directory) | Out-Null
     Remove-VASExpiredMemoryTemps $Root
     $path = Join-Path $directory 'memory-consent.json'
     $temp = Join-Path $directory ('.consent-' + [Guid]::NewGuid().ToString('N') + '.tmp')
     $json = @{ version = 1; consent = $Consent } | ConvertTo-Json -Compress
     try {
+        Assert-VASMemoryPath $temp
         [IO.File]::WriteAllText($temp, $json, (New-Object Text.UTF8Encoding($false)))
+        Assert-VASMemoryPath $temp
+        Assert-VASMemoryPath $path
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             [IO.File]::Replace($temp, $path, [NullString]::Value, $true)
         } else { [IO.File]::Move($temp, $path) }
     } finally {
+        Assert-VASMemoryPath $temp
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
     }
 }

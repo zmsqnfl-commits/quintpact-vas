@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import socket
+import subprocess
 import urllib.parse
 
 import pytest
@@ -152,12 +153,23 @@ def test_disconnected_client_does_not_stop_the_request_loop(runtime):
 
 def test_internal_storage_error_remains_500_and_server_recovers(tmp_path):
     with launched(tmp_path / "internal-error") as (client, state):
-        # A synthetic directory at the consent file path forces a filesystem error.
+        # An ordinary valid file locked by another process remains an I/O failure.
         control = state / "memory-consent.json"
-        control.mkdir()
-        before = memory_files(state)
-        status, result = raw_request(client, "/api/memory/consent", b'{"consent":true}')
-        assert (status, result["code"]) == (500, "request_failed")
-        assert_unchanged_and_alive(client, state, before)
-        control.rmdir()
+        control.write_text('{"version":1,"consent":false}', encoding="utf-8")
+        locker = tmp_path / "lock-control.ps1"
+        locker.write_text(r"""param([string]$Path)
+$stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+try { [Console]::WriteLine('LOCKED'); [Console]::ReadLine() | Out-Null } finally { $stream.Dispose() }
+""", encoding="utf-8-sig")
+        process = subprocess.Popen([
+            shutil.which("powershell.exe"), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(locker), "-Path", str(control),
+        ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            assert process.stdout.readline().strip() == b"LOCKED"
+            before = memory_files(state)
+            status, result = raw_request(client, "/api/memory/consent", b'{"consent":true}')
+            assert (status, result["code"]) == (500, "request_failed")
+            assert_unchanged_and_alive(client, state, before)
+        finally:
+            process.communicate(b"\n", timeout=10)
         assert client.request("/api/memory/consent", "POST", {"consent": True})[0] == 200

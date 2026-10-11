@@ -1,6 +1,7 @@
 ﻿Set-StrictMode -Version 2.0
 
 $script:SchemaVersion = 1
+. (Join-Path $PSScriptRoot 'VAS.LocalState.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.Privacy.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.Policy.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.History.ps1')
@@ -8,11 +9,16 @@ $script:SchemaVersion = 1
 function Get-VASMemoryRoot {
     param([string]$Root)
 
-    if ($Root) { return [IO.Path]::GetFullPath($Root) }
+    if ($Root) {
+        Assert-VASMemoryPath $Root 'Directory'
+        return [IO.Path]::GetFullPath($Root)
+    }
     $local = [Environment]::GetFolderPath('LocalApplicationData')
     if (-not $local) { $local = $env:LOCALAPPDATA }
     if (-not $local) { throw 'LOCALAPPDATA 위치를 확인할 수 없습니다.' }
-    return (Join-Path $local 'QUINTPACT\VAS')
+    $directory = Join-Path $local 'QUINTPACT\VAS'
+    Assert-VASMemoryPath $directory 'Directory'
+    return $directory
 }
 
 function Get-VASMemoryPath {
@@ -42,6 +48,7 @@ function Save-VASMemoryStore {
     )
 
     $memoryRoot = Get-VASMemoryRoot $Root
+    Assert-VASMemoryPaths $Root
     [IO.Directory]::CreateDirectory($memoryRoot) | Out-Null
     $path = Join-Path $memoryRoot 'memory.json'
     $temp = Join-Path $memoryRoot ('.memory-' + [Guid]::NewGuid().ToString('N') + '.tmp')
@@ -54,10 +61,14 @@ function Save-VASMemoryStore {
     else { Assert-VASMemoryHistoryCapacity $Root }
     $utf8 = New-Object Text.UTF8Encoding($false)
     try {
+        Assert-VASMemoryPath $temp
         [IO.File]::WriteAllText($temp, $json, $utf8)
         if ($PurgeHistory) {
             $backup = [NullString]::Value
         }
+        Assert-VASMemoryPath $temp
+        Assert-VASMemoryPath $path
+        if (-not $PurgeHistory) { Assert-VASMemoryPath $backup }
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             [IO.File]::Replace($temp, $path, $backup, $true)
         } else {
@@ -66,6 +77,7 @@ function Save-VASMemoryStore {
         # Preserve existing history until the replacement succeeds.
         if ($PurgeHistory) { Clear-VASMemoryHistory $Root $temp }
     } finally {
+        Assert-VASMemoryPath $temp
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
     }
     return $Store
@@ -82,6 +94,8 @@ function Enter-VASMemoryLock {
     $locked = $false
     try { $locked = $mutex.WaitOne(10000) } catch [Threading.AbandonedMutexException] { $locked = $true }
     if (-not $locked) { $mutex.Dispose(); throw 'VAS_MEMORY_BUSY' }
+    try { Assert-VASMemoryPaths $Root }
+    catch { $mutex.ReleaseMutex(); $mutex.Dispose(); throw }
     return [pscustomobject]@{ mutex = $mutex; locked = $true }
 }
 
@@ -96,6 +110,7 @@ function Read-VASMemoryStoreUnlocked {
     param([string]$Root)
 
     $memoryRoot = Get-VASMemoryRoot $Root
+    Assert-VASMemoryPaths $Root
     [IO.Directory]::CreateDirectory($memoryRoot) | Out-Null
     Remove-VASExpiredMemoryTemps $Root
     $path = Join-Path $memoryRoot 'memory.json'
@@ -103,18 +118,23 @@ function Read-VASMemoryStoreUnlocked {
         return (Save-VASMemoryStore (New-VASEmptyMemoryStore) $Root)
     }
 
+    Assert-VASMemoryPath $path
     if ((Get-Item -LiteralPath $path).Length -gt $script:MaxMemoryBytes) { throw 'VAS_MEMORY_LIMIT_EXCEEDED' }
     try {
+        Assert-VASMemoryPath $path
         $raw = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)
         $store = $raw | ConvertFrom-Json
         if ($null -eq $store -or $store.version -ne $script:SchemaVersion -or $null -eq $store.events) {
             throw '지원하지 않는 메모리 형식입니다.'
         }
     } catch {
+        Assert-VASMemoryPaths $Root
         Assert-VASMemoryHistoryCapacity $Root (Get-Item -LiteralPath $path).Length 1
         $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
         $corruptName = "memory.corrupt-$stamp-$([Guid]::NewGuid().ToString('N')).json"
         $corruptPath = Join-Path $memoryRoot $corruptName
+        Assert-VASMemoryPath $path
+        Assert-VASMemoryPath $corruptPath
         [IO.File]::Move($path, $corruptPath)
         return (Save-VASMemoryStore (New-VASEmptyMemoryStore $corruptName) $Root)
     }
@@ -180,6 +200,7 @@ function Get-VASMemoryStatus {
             throw
         }
         $path = Get-VASMemoryPath $Root
+        Assert-VASMemoryPath $path
         return [ordered]@{
             version = $store.version
             consent = Test-VASMemoryConsent $Root

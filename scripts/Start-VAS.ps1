@@ -4,12 +4,14 @@ param(
     [ValidateRange(2, 86400)][int]$IdleTimeoutSeconds = 1800,
     [string]$RootPath,
     [string]$StateRoot,
+    [ValidatePattern('^[a-f0-9]{32}$')][string]$SessionId,
     [switch]$NoBrowser,
     [switch]$Server
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'VAS.Runtime.State.ps1')
 
 if (-not $RootPath) { $RootPath = Split-Path -Parent $PSScriptRoot }
 $RootPath = [IO.Path]::GetFullPath($RootPath)
@@ -22,8 +24,15 @@ if (Test-Path -LiteralPath $migrationModule -PathType Leaf) {
 }
 
 if (-not $StateRoot) { $StateRoot = Get-VASMemoryRoot }
-$StateRoot = [IO.Path]::GetFullPath($StateRoot)
-[IO.Directory]::CreateDirectory($StateRoot) | Out-Null
+try {
+    Assert-VASRuntimePath -Path $StateRoot -ExpectedType Directory
+    $StateRoot = [IO.Path]::GetFullPath($StateRoot)
+    [IO.Directory]::CreateDirectory($StateRoot) | Out-Null
+    Assert-VASRuntimePath -Path $StateRoot -ExpectedType Directory
+} catch {
+    [Console]::Error.WriteLine('VAS_START_ERROR: Private local state is unavailable. Use a local Windows folder without links (-StateRoot), or restore the default state location.')
+    exit 1
+}
 $canonicalRoot = $RootPath.TrimEnd('\').ToUpperInvariant()
 $sha256 = [Security.Cryptography.SHA256]::Create()
 try { $rootHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($canonicalRoot)) } finally { $sha256.Dispose() }
@@ -39,28 +48,28 @@ function Write-VASRuntimeFile {
         rootPath = $RootPath; runtimeId = $runtimeId
         startedAt = [DateTime]::UtcNow.ToString('o')
     }
-    $temporary = Join-Path $StateRoot ('.runtime-' + [Guid]::NewGuid().ToString('N') + '.tmp')
-    $json = $runtime | ConvertTo-Json -Compress
-    [IO.File]::WriteAllText($temporary, $json, (New-Object Text.UTF8Encoding($false)))
-    Move-Item -LiteralPath $temporary -Destination $runtimePath -Force
+    Save-VASRuntimeState -Path $runtimePath -Runtime $runtime
 }
 
 function Remove-VASOwnedRuntimeFile {
     param([string]$Token)
-    if (-not (Test-Path -LiteralPath $runtimePath -PathType Leaf)) { return }
     try {
-        $current = [IO.File]::ReadAllText($runtimePath, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        $text = Read-VASRuntimeStateText $runtimePath
+        if ($null -eq $text) { return }
+        $current = $text | ConvertFrom-Json
         if ($current.token -eq $Token -and [int]$current.pid -eq $PID) {
-            Remove-Item -LiteralPath $runtimePath -Force
+            Remove-VASRuntimeStateFile $runtimePath
         }
     } catch { }
 }
 
 function Get-VASLiveRuntime {
-    if (-not (Test-Path -LiteralPath $runtimePath -PathType Leaf)) { return $null }
+    # Access/path failures are not stale state: preserve the file and stop launch.
+    $text = Read-VASRuntimeStateText $runtimePath
+    if ($null -eq $text) { return $null }
     try {
-        $runtime = [IO.File]::ReadAllText($runtimePath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-        if ($runtime.service -ne 'VAS' -or $runtime.version -ne '2.9.1' -or $runtime.runtimeId -ne $runtimeId -or -not $runtime.token -or [int]$runtime.port -lt 1) { throw 'invalid runtime' }
+        $runtime = $text | ConvertFrom-Json
+        if ($runtime.service -ne 'VAS' -or $runtime.version -ne '2.9.1' -or $runtime.runtimeId -ne $runtimeId -or -not $runtime.token -or [int]$runtime.port -lt 1 -or [int]$runtime.port -gt 65535) { throw 'invalid runtime' }
         if ([IO.Path]::GetFullPath([string]$runtime.rootPath) -ne $RootPath) { throw 'wrong VAS root' }
         $response = Invoke-WebRequest -Uri ("http://127.0.0.1:{0}/health" -f $runtime.port) -UseBasicParsing -TimeoutSec 2
         $health = $response.Content | ConvertFrom-Json
@@ -68,21 +77,28 @@ function Get-VASLiveRuntime {
             return $runtime
         }
     } catch { }
-    try { Remove-Item -LiteralPath $runtimePath -Force } catch { }
+    # A new server atomically replaces stale state only after private creation succeeds.
     return $null
 }
 
 function Get-VASLaunchUrl {
-    param($Runtime)
-    $encoded = [Uri]::EscapeDataString([string]$Runtime.token)
-    return ("http://127.0.0.1:{0}/src/vas-hub.html?vasToken={1}" -f $Runtime.port, $encoded)
+    param($Runtime, [switch]$Authenticated)
+    $page = '/src/vas-hub.html'
+    $query = @()
+    if ($SessionId) { $page = '/src/design-controller.html'; $query += 'session=' + $SessionId }
+    if ($Authenticated) { $query += 'vasToken=' + [Uri]::EscapeDataString([string]$Runtime.token) }
+    $url = "http://127.0.0.1:{0}{1}" -f $Runtime.port, $page
+    if ($query.Count -gt 0) { $url += '?' + ($query -join '&') }
+    return $url
 }
 
 function Open-VASBrowser {
     param($Runtime)
-    $url = Get-VASLaunchUrl $Runtime
-    if (-not $NoBrowser) { Start-Process $url | Out-Null }
-    Write-Output ("VAS_READY {0}" -f $url)
+    if (-not $NoBrowser) {
+        try { Start-Process (Get-VASLaunchUrl $Runtime -Authenticated) | Out-Null }
+        catch { throw 'VAS browser launch failed. Retry the launcher to open the authenticated local page.' }
+    }
+    Write-Output ("VAS_READY {0}" -f (Get-VASLaunchUrl $Runtime))
 }
 
 if ($Server) {
@@ -115,6 +131,10 @@ try {
         Open-VASBrowser $runtime
         exit 0
     }
+
+    $probe = Join-Path $StateRoot ('.runtime-' + [Guid]::NewGuid().ToString('N') + '.tmp')
+    $probeStream = New-VASRuntimeSecureStream $probe
+    try { $probeStream.Dispose() } finally { Remove-VASRuntimeStateFile $probe }
 
     $powerShell = Join-Path $PSHOME 'powershell.exe'
     if (-not (Test-Path -LiteralPath $powerShell)) { $powerShell = 'powershell.exe' }

@@ -13,6 +13,8 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
     def test_runtime_files_are_bounded_and_launcher_has_fallback(self):
         for relative in (
             "scripts/Start-VAS.ps1",
+            "scripts/VAS.LocalState.ps1",
+            "scripts/VAS.Runtime.State.ps1",
             "scripts/VAS.Server.psm1",
             "scripts/VAS.Memory.psm1",
             "scripts/VAS.Memory.Privacy.ps1",

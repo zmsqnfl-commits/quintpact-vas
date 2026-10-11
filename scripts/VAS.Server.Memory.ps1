@@ -53,6 +53,7 @@ function Invoke-VASMemoryHttpRoute {
     Write-VASError $Context 404 '작업 기억 요청을 찾을 수 없습니다.'
     } catch {
         switch ($_.Exception.Message) {
+            'VAS_MEMORY_PATH_INVALID' { Write-VASError $Context 503 '작업 기억 경로를 안전하게 열 수 없습니다. 링크가 없는 실제 로컬 폴더와 접근 권한을 확인해 주세요. 기존 자료는 보존됩니다.' 'memory_path_invalid'; return }
             'VAS_MEMORY_CONSENT_REQUIRED' { Write-VASError $Context 403 '작업 기억 저장 동의가 필요합니다.' 'memory_consent_required'; return }
             'VAS_MEMORY_LIMIT_EXCEEDED' { Write-VASError $Context 413 '작업 기억 저장 한도를 초과했습니다. 기존 기록을 정리한 뒤 다시 시도해 주세요.' 'memory_limit_exceeded'; return }
             'VAS_MEMORY_HISTORY_LIMIT_EXCEEDED' { Write-VASError $Context 413 '작업 기억 복구 자료의 보관 한도를 초과했습니다. 기존 파일은 보존됩니다. 필요한 자료를 내보내거나 별도 보관한 뒤 정리해 주세요.' 'memory_history_limit_exceeded'; return }

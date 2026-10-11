@@ -7,20 +7,34 @@ $script:MemoryTempPattern = '^\.(?:memory|consent)-.*\.tmp$'
 $script:MemoryExpiredTempPattern = '^\.(?:memory|consent)-[a-f0-9]{32}\.tmp$'
 $script:MemoryCorruptPattern = '^memory\.corrupt-.*\.json$'
 
+function Assert-VASMemoryPath {
+    param([string]$Path, [string]$ExpectedType = 'File')
+    try { Assert-VASLocalStatePath -Path $Path -ExpectedType $ExpectedType }
+    catch { throw 'VAS_MEMORY_PATH_INVALID' }
+}
+
+function Assert-VASMemoryPaths {
+    param([string]$Root)
+    $directory = Get-VASMemoryRoot $Root
+    foreach ($name in @('memory.json', 'memory-consent.json', 'memory.previous.json')) {
+        Assert-VASMemoryPath (Join-Path $directory $name)
+    }
+    Get-VASMemoryHistoryItems $Root | Out-Null
+}
+
 function Get-VASMemoryHistoryItems {
     param([string]$Root)
     $directory = [IO.Path]::GetFullPath((Get-VASMemoryRoot $Root)).TrimEnd('\')
     if (-not (Test-Path -LiteralPath $directory -PathType Container)) { return @() }
-    return @(Get-ChildItem -LiteralPath $directory -Force -File -ErrorAction Stop | Where-Object {
+    $items = @(Get-ChildItem -LiteralPath $directory -Force -ErrorAction Stop | Where-Object {
         [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($_.FullName)) -eq $directory
     })
-}
-
-function Test-VASMemoryHistoryRootIsReparse {
-    param([string]$Root)
-    $directory = Get-VASMemoryRoot $Root
-    return ((Test-Path -LiteralPath $directory) -and
-        ((Get-Item -LiteralPath $directory -Force).Attributes -band [IO.FileAttributes]::ReparsePoint))
+    foreach ($item in $items) {
+        if ((Test-VASManagedMemoryHistoryItem $item) -or $item.Name -eq 'memory-consent.json') {
+            Assert-VASMemoryPath $item.FullName
+        }
+    }
+    return @($items | Where-Object { -not $_.PSIsContainer })
 }
 
 function Test-VASManagedMemoryHistoryItem {
@@ -31,10 +45,9 @@ function Test-VASManagedMemoryHistoryItem {
 
 function Assert-VASMemoryHistoryDeletionSafe {
     param([string]$Root)
-    if (Test-VASMemoryHistoryRootIsReparse $Root) { throw 'VAS_MEMORY_PATH_INVALID' }
     foreach ($item in @(Get-VASMemoryHistoryItems $Root)) {
         if (Test-VASManagedMemoryHistoryItem $item) {
-            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'VAS_MEMORY_PATH_INVALID' }
+            Assert-VASMemoryPath $item.FullName
             # Reject already locked/inaccessible files before changing the live store.
             # Closing these probes does not promise an atomic multi-file transaction.
             $probe = [IO.File]::Open($item.FullName, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
@@ -45,12 +58,12 @@ function Assert-VASMemoryHistoryDeletionSafe {
 
 function Remove-VASExpiredMemoryTemps {
     param([string]$Root)
-    # Automatic cleanup never follows a reparse directory or file.
-    if (Test-VASMemoryHistoryRootIsReparse $Root) { return }
+    # Validate the complete managed inventory before deleting any expired item.
     $cutoff = [DateTime]::UtcNow.AddHours(-$script:MemoryTempMaxAgeHours)
     foreach ($item in @(Get-VASMemoryHistoryItems $Root)) {
         if ($item.Name -match $script:MemoryExpiredTempPattern -and $item.LastWriteTimeUtc -le $cutoff -and
             -not ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            Assert-VASMemoryPath $item.FullName
             try { Remove-Item -LiteralPath $item.FullName -Force -ErrorAction Stop }
             catch [IO.IOException] { } # A locked orphan remains counted; maintenance cannot prevent opting out.
             catch [UnauthorizedAccessException] { }
@@ -65,6 +78,7 @@ function Clear-VASMemoryHistory {
     foreach ($item in @(Get-VASMemoryHistoryItems $Root)) {
         if ($item.FullName -ne $CurrentTemp -and ($item.Name -eq 'memory.previous.json' -or
             $item.Name -match $script:MemoryCorruptPattern -or $item.Name -match $script:MemoryTempPattern)) {
+            Assert-VASMemoryPath $item.FullName
             Remove-Item -LiteralPath $item.FullName -Force -ErrorAction Stop
         }
     }
@@ -75,7 +89,7 @@ function Get-VASMemoryHistoryStatus {
     $history = [ordered]@{
         currentBytes = [long]0; backupBytes = [long]0; corruptBytes = [long]0; corruptCount = 0
         tempBytes = [long]0; tempCount = 0; totalBytes = [long]0; overLimit = $false
-        unsupportedPaths = [bool](Test-VASMemoryHistoryRootIsReparse $Root)
+        unsupportedPaths = $false
         limits = [ordered]@{
             maxCurrentBytes = $script:MaxMemoryBytes; maxBackupBytes = $script:MaxMemoryBytes
             maxCorruptBytes = $script:MaxMemoryCorruptBytes; maxCorruptFiles = $script:MaxMemoryCorruptFiles
@@ -85,9 +99,7 @@ function Get-VASMemoryHistoryStatus {
         }
     }
     foreach ($item in @(Get-VASMemoryHistoryItems $Root)) {
-        if ((Test-VASManagedMemoryHistoryItem $item) -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-            $history.unsupportedPaths = $true
-        }
+        if (Test-VASManagedMemoryHistoryItem $item) { Assert-VASMemoryPath $item.FullName }
         if ($item.Name -eq 'memory.json') { $history.currentBytes += $item.Length }
         elseif ($item.Name -eq 'memory.previous.json') { $history.backupBytes += $item.Length }
         elseif ($item.Name -match $script:MemoryCorruptPattern) {

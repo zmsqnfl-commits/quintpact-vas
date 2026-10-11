@@ -411,12 +411,12 @@ function New-VASServerState {
         if ($candidate -gt 0 -and $candidate -le 65535) { $ports += $candidate }
     }
     if ($ports.Count -eq 0) { throw '유효한 포트가 없습니다.' }
+    Get-VASMemoryStatus $MemoryRoot | Out-Null
     foreach ($port in $ports) {
         $listener = New-Object Net.HttpListener
         $listener.Prefixes.Add("http://127.0.0.1:$port/")
         try {
             $listener.Start()
-            Get-VASMemoryStatus $MemoryRoot | Out-Null
             return [ordered]@{
                 Listener = $listener; Port = $port; BaseUrl = "http://127.0.0.1:$port"
                 Token = New-VASSessionToken; RootPath = [IO.Path]::GetFullPath($RootPath)

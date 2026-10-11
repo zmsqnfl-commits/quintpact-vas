@@ -241,7 +241,7 @@ try { [Console]::WriteLine('LOCKED'); [Console]::ReadLine() | Out-Null } finally
         assert not orphan.exists()
 
 
-def test_linked_state_is_reported_and_explicit_delete_never_falsely_succeeds(tmp_path):
+def test_linked_state_is_rejected_before_runtime_or_memory_access(tmp_path):
     directory = tmp_path / "junction"
     directory.mkdir()
     target = directory / "owned-target"
@@ -257,14 +257,12 @@ def test_linked_state_is_reported_and_explicit_delete_never_falsely_succeeds(tmp
     assert state_link.resolve() == target.resolve()
     assert target.resolve().is_relative_to(tmp_path.resolve())
     try:
-        with launched(directory) as (client, _):
-            before = owned_files(target)
-            status = client.request("/api/memory/status")[1]
-            assert status["history"]["unsupportedPaths"] is True
-            assert status["history"]["overLimit"] is True
-            assert status["history"]["currentBytes"] > 0
-            error(client, "/api/memory/events", "DELETE", None, 500)
-            assert owned_files(target) == before
+        before = owned_files(target)
+        with pytest.raises(AssertionError, match="VAS launcher failed"):
+            with launched(directory):
+                pytest.fail("Linked state must not start a runtime")
+        assert owned_files(target) == before
+        assert not list(target.glob("runtime-*.json"))
     finally:
         assert state_link.resolve() == target.resolve()
         os.rmdir(state_link)  # Remove only this verified junction, never its target tree.
