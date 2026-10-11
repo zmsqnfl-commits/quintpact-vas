@@ -112,6 +112,8 @@ for (const width of [1440, 390]) test('new-project copy and JSON agree with all 
     expect(output).toContain('KeepLateRestrictionCanary'); expect(output).toContain('[ROLE INSTRUCTIONS: reviewer]');
   }
   expect(JSON.parse(raw).context.design.preset).toBe('bento');
+  // Copy/download completes before the optional asynchronous memory confirmation.
+  await expect.poll(() => page.evaluate(async () => (await VASPersonalization.list()).length)).toBe(1);
   const events = await page.evaluate(() => VASPersonalization.list());
   expect(events).toHaveLength(1); expect(events[0].type).toBe('theme_selected'); expect(events[0].payload.preset).toBe('bento');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
