@@ -36,6 +36,7 @@ function Save-VASMemoryConsentUnlocked {
     param([bool]$Consent, [string]$Root)
     $directory = Get-VASMemoryRoot $Root
     [IO.Directory]::CreateDirectory($directory) | Out-Null
+    Remove-VASExpiredMemoryTemps $Root
     $path = Join-Path $directory 'memory-consent.json'
     $temp = Join-Path $directory ('.consent-' + [Guid]::NewGuid().ToString('N') + '.tmp')
     $json = @{ version = 1; consent = $Consent } | ConvertTo-Json -Compress
@@ -60,11 +61,13 @@ function Set-VASMemoryConsent {
 }
 
 function Get-VASMemoryRecoveryStatus {
-    param([string]$Root)
+    param([string]$Root, [string]$Reason = 'VAS_MEMORY_LIMIT_EXCEEDED')
+    $history = Get-VASMemoryHistoryStatus $Root
     return [ordered]@{
         version = $script:SchemaVersion; consent = $false; paused = $true
-        count = $null; bytes = (Get-Item -LiteralPath (Get-VASMemoryPath $Root)).Length
+        count = $null; bytes = $history.currentBytes
         updatedAt = $null; retention = 'until-explicit-delete'
         recoveredFrom = $null; recoveryRequired = $true; limits = Get-VASMemoryLimits
+        recoveryReason = $Reason; history = $history
     }
 }

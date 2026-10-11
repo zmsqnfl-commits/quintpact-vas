@@ -45,19 +45,18 @@ function Write-VASError {
 }
 function Read-VASJsonBody {
     param([Net.HttpListenerRequest]$Request, [int]$MaximumBytes = 5242880)
-    if (-not $Request.HasEntityBody -or $Request.ContentLength64 -eq 0) { return [pscustomobject]@{} }; if ($Request.ContentLength64 -gt $MaximumBytes) { throw '요청 본문이 너무 큽니다.' }
+    if (-not $Request.HasEntityBody -or $Request.ContentLength64 -eq 0) { return [pscustomobject]@{} }; if ($Request.ContentLength64 -gt $MaximumBytes) { throw 'VAS_REQUEST_BODY_TOO_LARGE' }
     $memory = New-Object IO.MemoryStream
     $buffer = New-Object byte[] 8192
     try {
         while (($read = $Request.InputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
-            if ($memory.Length + $read -gt $MaximumBytes) { throw '요청 본문이 너무 큽니다.' }
+            if ($memory.Length + $read -gt $MaximumBytes) { throw 'VAS_REQUEST_BODY_TOO_LARGE' }
             $memory.Write($buffer, 0, $read)
         }
         if ($memory.Length -eq 0) { return [pscustomobject]@{} }
         $text = [Text.Encoding]::UTF8.GetString($memory.ToArray())
-        return ($text | ConvertFrom-Json)
-    } catch [ArgumentException] {
-        throw 'JSON 본문 형식이 올바르지 않습니다.'
+        try { return ($text | ConvertFrom-Json -ErrorAction Stop) }
+        catch { throw 'VAS_INVALID_JSON' }
     } finally {
         $memory.Dispose()
     }
@@ -257,7 +256,16 @@ function Invoke-VASApiRequest {
     $method = $request.HttpMethod.ToUpperInvariant()
     if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
     $body = $null
-    if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) { $body = Read-VASJsonBody $request }
+    if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) {
+        try { $body = Read-VASJsonBody $request }
+        catch {
+            switch ($_.Exception.Message) {
+                'VAS_REQUEST_BODY_TOO_LARGE' { Write-VASError $Context 413 '요청 본문은 5 MiB 이하여야 합니다.' 'request_body_too_large'; return }
+                'VAS_INVALID_JSON' { Write-VASError $Context 400 'JSON 본문 형식이 올바르지 않습니다.' 'invalid_json'; return }
+                default { throw }
+            }
+        }
+    }
     if ($path -eq '/api/heartbeat' -and $method -eq 'POST') {
         Write-VASResponse $Context 200 ([ordered]@{ ok = $true; serverTime = [DateTime]::UtcNow.ToString('o') }); return
     }

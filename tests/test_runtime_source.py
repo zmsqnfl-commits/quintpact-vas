@@ -17,6 +17,7 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
             "scripts/VAS.Memory.psm1",
             "scripts/VAS.Memory.Privacy.ps1",
             "scripts/VAS.Memory.Policy.ps1",
+            "scripts/VAS.Memory.History.ps1",
             "scripts/VAS.Server.Memory.ps1",
             "scripts/VAS.Projects.psm1",
             "scripts/VAS.AgentHandoff.psm1",

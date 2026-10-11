@@ -37,7 +37,11 @@ function Invoke-VASMemoryHttpRoute {
         Write-VASResponse $Context 200 (Export-VASMemory $State.MemoryRoot); return
     }
     if ($path -eq '/api/memory/import' -and $method -eq 'POST') {
-        $mode = [string](Get-VASBodyProperty $body 'mode' 'merge')
+        $mode = 'merge'
+        if ($null -ne $body -and $null -ne $body.PSObject.Properties['mode']) { $mode = $body.PSObject.Properties['mode'].Value }
+        if ($mode -isnot [string] -or $mode -cnotin @('merge', 'replace')) {
+            Write-VASError $Context 400 'mode는 merge 또는 replace여야 합니다.' 'invalid_memory_mode'; return
+        }
         $data = Get-VASBodyProperty $body 'data' $body
         Write-VASResponse $Context 200 (Import-VASMemory $data $mode $State.MemoryRoot); return
     }
@@ -51,6 +55,7 @@ function Invoke-VASMemoryHttpRoute {
         switch ($_.Exception.Message) {
             'VAS_MEMORY_CONSENT_REQUIRED' { Write-VASError $Context 403 '작업 기억 저장 동의가 필요합니다.' 'memory_consent_required'; return }
             'VAS_MEMORY_LIMIT_EXCEEDED' { Write-VASError $Context 413 '작업 기억 저장 한도를 초과했습니다. 기존 기록을 정리한 뒤 다시 시도해 주세요.' 'memory_limit_exceeded'; return }
+            'VAS_MEMORY_HISTORY_LIMIT_EXCEEDED' { Write-VASError $Context 413 '작업 기억 복구 자료의 보관 한도를 초과했습니다. 기존 파일은 보존됩니다. 필요한 자료를 내보내거나 별도 보관한 뒤 정리해 주세요.' 'memory_history_limit_exceeded'; return }
             default { throw }
         }
     }
