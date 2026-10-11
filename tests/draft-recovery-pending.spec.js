@@ -11,13 +11,15 @@ const originalDraft = {
 };
 
 async function openPending(page) {
-  await page.addInitScript(({ key, enabledKey, originalDraft }) => {
-    if (sessionStorage.getItem('draft-recovery-fixture')) return;
+  await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(({ key, enabledKey, originalDraft }) => {
+    // Seed once; file:// sessionStorage must not decide whether reload resets policy.
+    // Suspend beforeunload saves so the initial empty form cannot replace the fixture.
+    if (!VASClientDraft.clear()) throw new Error('Unable to prepare recovery fixture');
     localStorage.setItem(key, JSON.stringify(originalDraft));
     localStorage.setItem(enabledKey, '1');
-    sessionStorage.setItem('draft-recovery-fixture', '1');
   }, { key, enabledKey, originalDraft });
-  await page.goto(clientUrl, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#draftNotice')).toBeVisible();
   return readRaw(page);
 }
