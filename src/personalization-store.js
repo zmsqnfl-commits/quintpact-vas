@@ -126,8 +126,30 @@
     const text = String(value == null ? '' : value).trim();
     return /^[a-z0-9_-]{1,64}$/i.test(text) && !SECRET_VALUE.test(text) ? text : fallbackValue;
   }
+  const ENCODED_CHARACTER = /\\\\(?=u[a-f0-9]{4}|x[a-f0-9]{2})|\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))|%([a-f0-9]{2})|&#(x[a-f0-9]{1,6}|[0-9]{1,7});|&(amp|colon|equals|quot|apos|lt|gt|sol|bsol|percnt|lowbar|hyphen);/gi;
+  const ENTITY_CHARACTERS = { amp: '&', colon: ':', equals: '=', quot: '"', apos: "'", lt: '<', gt: '>', sol: '/', bsol: '\\', percnt: '%', lowbar: '_', hyphen: '-' };
+  const GAP = String.raw`\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*`;
+  const STATIC_LITERAL = '(?<![a-z0-9_"\'`])(?:br|rb|r|u|b)?(?:"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|`(?:\\\\.|[^`\\\\])*`)(?!["\'`])';
+  const LITERAL_CHAIN = new RegExp(STATIC_LITERAL + '(?:' + GAP + '(?:[+\\\\]' + GAP + ')?' + STATIC_LITERAL + ')+', 'gi');
+  function credentialView(value) {
+    let text = String(value);
+    for (let pass = 0; pass < 2; pass += 1) {
+      text = text.normalize('NFKC').replace(ENCODED_CHARACTER, function (match, unicode, hex, percent, numeric, named) {
+        if (match === '\\\\') return '\\';
+        if (named) return ENTITY_CHARACTERS[named.toLowerCase()];
+        const radix = unicode || hex || percent || /^x/i.test(numeric) ? 16 : 10;
+        const number = parseInt(unicode || hex || percent || numeric.replace(/^x/i, ''), radix);
+        return number > 0x10ffff || number >= 0xd800 && number <= 0xdfff || percent && number > 127 ? match : String.fromCodePoint(number);
+      });
+    }
+    text = text.normalize('NFKC').replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '');
+    return text.replace(LITERAL_CHAIN, function (chain) {
+      const tokens = chain.match(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g) || [];
+      return '"' + tokens.filter(token => /^["'`]/.test(token)).map(token => token.slice(1, -1)).join('') + '"';
+    });
+  }
   function privateText(value) {
-    let decoded = String(value).replace(/\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/gi, (_, u, x) => String.fromCharCode(parseInt(u || x, 16)));
+    let decoded = credentialView(value);
     for (let i = 0; i < 4; i += 1) {
       const next = decoded.replace(/"(?:\\.|[^"\\])*"/g, function (token) { try { return ' ' + JSON.parse(token) + ' '; } catch (error) { return token; } });
       if (next === decoded) break; if (i === 3) return true;
@@ -143,7 +165,7 @@
     return String(value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500) || undefined;
   }
   function sanitizeValue(value, key, depth) {
-    if (depth > 5 || (key && (BLOCKED_KEY.test(key) || privateText(key) || SECRET_VALUE.test(key + '=') || ['__proto__', 'constructor', 'prototype'].includes(key)))) return undefined;
+    if (depth > 5 || (key && (BLOCKED_KEY.test(credentialView(key)) || privateText(key) || SECRET_VALUE.test(credentialView(key) + '=') || ['__proto__', 'constructor', 'prototype'].includes(key)))) return undefined;
     if (typeof value === 'string') return sanitizeString(value);
     if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
     if (typeof value === 'boolean' || value === null) return value;

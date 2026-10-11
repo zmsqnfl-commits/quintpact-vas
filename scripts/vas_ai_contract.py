@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 from copy import deepcopy
 from typing import Any, Callable
 
@@ -45,8 +46,35 @@ CREDENTIAL_VALUE = re.compile(
 )
 
 
+ENCODED_CHARACTER = re.compile(r"\\\\(?=u[a-f0-9]{4}|x[a-f0-9]{2})|\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))|%([a-f0-9]{2})|&#(x[a-f0-9]{1,6}|[0-9]{1,7});|&(amp|colon|equals|quot|apos|lt|gt|sol|bsol|percnt|lowbar|hyphen);", re.I)
+ENTITY_CHARACTERS = dict(zip("amp colon equals quot apos lt gt sol bsol percnt lowbar hyphen".split(), "&:=\"'<>/\\%_-"))
+STATIC_LITERAL = r'''(?<![a-z0-9_"'`])(?:br|rb|r|u|b)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)(?!["'`])'''
+LITERAL_CHAIN = re.compile(STATIC_LITERAL + '(?:' + GAP + r'(?:[+\\]' + GAP + ')?' + STATIC_LITERAL + ')+', re.I)
+LITERAL_TOKEN = re.compile(r'''/\*[\s\S]*?\*/|//[^\r\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`''')
+
+
+def credential_view(value: Any) -> str:
+    """Detection only: at most two decoding passes, never execute expressions."""
+    def decode(match: re.Match[str]) -> str:
+        u, x, percent, numeric, named = match.groups()
+        if not any(match.groups()):
+            return '\\'
+        if named:
+            return ENTITY_CHARACTERS[named.lower()]
+        number = int(u or x or percent or (numeric[1:] if numeric.lower().startswith('x') else numeric),
+                     16 if u or x or percent or numeric.lower().startswith('x') else 10)
+        if number > 0x10ffff or 0xd800 <= number <= 0xdfff or (percent and number > 127):
+            return match.group()
+        return chr(number)
+    text = str(value)
+    for _ in range(2):
+        text = ENCODED_CHARACTER.sub(decode, unicodedata.normalize('NFKC', text))
+    text = re.sub(r'[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]', '', unicodedata.normalize('NFKC', text))
+    return LITERAL_CHAIN.sub(lambda m: '"' + ''.join(token[1:-1] for token in LITERAL_TOKEN.findall(m.group()) if token[0] in "\"'`") + '"', text)
+
+
 def sensitive_key(key: Any) -> bool:
-    return bool(CREDENTIAL_KEY.fullmatch(str(key)))
+    return bool(CREDENTIAL_KEY.fullmatch(credential_view(key)))
 
 
 def redact_yaml_blocks(source: str) -> str:
@@ -68,7 +96,7 @@ def redact_yaml_blocks(source: str) -> str:
     return '\n'.join(output)
 
 
-ADJACENT_LITERAL = re.compile(r"\s*(?:(?:\+|\\)\s*)?(?:[rbuf]{0,2})?[\"'`]", re.I)
+ADJACENT_LITERAL = re.compile(GAP + r"(?:(?:\+|\\)" + GAP + r")?(?:[rbuf]{0,2})?[\"'`]", re.I)
 
 
 def redact_triples(source: str) -> str:
@@ -88,6 +116,15 @@ URI_USERINFO = re.compile(r'''\b([a-z][a-z0-9+.-]*://)[^\s/\\"<>`?#]+@''', re.I)
 
 
 def redact_credentials(value: Any, depth: int = 0) -> str:
+    raw = str(value if value is not None else "")
+    safe, view = _redact_credentials(raw, depth), credential_view(raw)
+    # Compare complete fields before the raw filter can erase an encoded boundary.
+    if view != raw and _redact_credentials(view, depth).replace('\r\n', '\n') != credential_view(safe).replace('\r\n', '\n'):
+        return "[redacted]"
+    return safe
+
+
+def _redact_credentials(value: Any, depth: int = 0) -> str:
     raw = str(value if value is not None else "")
     labels = re.sub(r"\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))", lambda m: chr(int(m[1] or m[2], 16)), raw, flags=re.I)
     if INDEXED_CREDENTIAL.search(labels):

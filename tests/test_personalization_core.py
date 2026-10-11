@@ -102,6 +102,90 @@ class KnowledgeIndexTests(unittest.TestCase):
         self.assertIn("source", matches[0])
         self.assertIn("line", matches[0])
 
+    def test_index_redacts_complete_credentials_before_chunks_and_metadata(self):
+        builder = load_builder()
+        cases = {
+            "env": ('# Setup\nPGPASSWORD=fixture-postgres-value\n', ['fixture-postgres-value']),
+            "quoted": ('# Setup\npassword: "fixture first second tail"\n', ['fixture', 'second', 'tail']),
+            "json": ('# Setup\n{"password":"fixture-json-value","refresh_token":"fixture-refresh-value"}\n',
+                     ['fixture-json-value', 'fixture-refresh-value']),
+            "heading": ('# password: fixture-title-value\nUseful design guidance\n', ['fixture-title-value']),
+            "yaml": ('# Setup\npassword: |\n  fixture-yaml-first\n  fixture-yaml-last\n\n# Guide\nKeep typography clear.\n',
+                     ['fixture-yaml-first', 'fixture-yaml-last']),
+            "pem": ('# Setup\n-----BEGIN PRIVATE KEY-----\n# fixture-key-heading\n' + 'fixture-key-body ' * 200 +
+                    '\n-----END PRIVATE KEY-----\n# Guide\nKeep typography clear.\n',
+                    ['fixture-key-heading', 'fixture-key-body']),
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "docs").mkdir()
+            for name, (content, markers) in cases.items():
+                with self.subTest(name=name):
+                    path = root / "docs" / f"{name}.md"
+                    path.write_text(content, encoding="utf-8")
+                    entries = builder.parse_document(path, root)
+                    serialized = json.dumps(entries, ensure_ascii=False)
+                    self.assertTrue(entries)
+                    self.assertIn("[redacted]", serialized)
+                    for marker in markers:
+                        self.assertNotIn(marker, serialized)
+                    self.assertTrue(all(len(item["text"]) <= builder.MAX_SECTION_CHARS for item in entries))
+                    if name in {"yaml", "pem"}:
+                        guide = next(item for item in entries if item["title"] == "Guide")
+                        self.assertEqual(guide["line"], content.splitlines().index("# Guide") + 1)
+                        self.assertIn("Keep typography clear.", guide["text"])
+
+    def test_index_matches_all_shared_credential_fixtures(self):
+        builder = load_builder()
+        cases = json.loads((ROOT / 'tests/fixtures/secret-redaction-cases.json').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'docs').mkdir()
+            target = root / 'docs' / 'guide.md'
+            for case in cases:
+                with self.subTest(name=case['name']):
+                    target.write_text('# Guidance\n' + case['input'], encoding='utf-8', newline='')
+                    index = builder.build_index(root)
+                    self.assertTrue(index['entries'])
+                    self.assertNotIn(case['marker'], builder.render_index(index))
+
+    def test_index_preserves_normal_design_docs_and_source_lines(self):
+        builder = load_builder()
+        content = "# Design\nUse a 12-column grid and #f8f4ed.\n\n## Links\n[Guide](guide.md) and https://example.test/layout?q=grid.\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "docs").mkdir()
+            (root / "docs" / "design.md").write_text(content, encoding="utf-8")
+            first = builder.build_index(root)
+            self.assertEqual(first, builder.build_index(root))
+        self.assertEqual([(item["title"], item["line"]) for item in first["entries"]], [("Design", 1), ("Links", 4)])
+        self.assertEqual(first["entries"][0]["text"], "Use a 12-column grid and #f8f4ed.")
+        self.assertEqual(first["entries"][1]["text"], "[Guide](guide.md) and https://example.test/layout?q=grid.")
+
+    def test_index_excludes_sensitive_source_paths_without_rewriting_links(self):
+        builder = load_builder()
+        hidden = [
+            "docs/sk-FAKEONLY0123456789.md",
+            "docs/ghp_FAKEONLY0123456789/guide.md",
+            "docs/fixture-person@example.test/guide.md",
+        ]
+        visible = ["docs/design-tokens.md", "docs/layout/guide.md"]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in hidden + visible:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("# Design\nKeep typography clear.\n", encoding="utf-8")
+            index = builder.build_index(root)
+            serialized = builder.render_index(index)
+            self.assertEqual(index["sourceCount"], len(visible))
+            self.assertEqual({item["source"] for item in index["entries"]}, set(visible))
+            for relative in hidden:
+                self.assertFalse(builder.is_allowed(root / relative, root))
+                self.assertNotIn(relative, serialized)
+            for relative in visible:
+                self.assertTrue(builder.is_allowed(root / relative, root))
+
 
 class PersonalizationTests(unittest.TestCase):
     def test_portable_identity_matches_sha256_without_web_crypto(self):

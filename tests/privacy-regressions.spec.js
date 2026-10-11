@@ -47,6 +47,42 @@ for (const flow of ['new', 'existing']) test(`${flow} final copy and download ex
   if (flow === 'existing') { expect(copied).toContain('Z:\\synthetic-project'); expect(raw).not.toContain('synthetic-project'); }
   verifyHash(JSON.parse(raw));
 });
+for (const [encoding, input] of [
+  ['separator', "password%253aEncodedCanary012345; 'sk-' /* joined */ + 'SplitCanary012345'"],
+  ['quotation', 'password=&quot;EncodedCanary012345&quot;']
+]) for (const flow of ['new', 'existing']) test(`${flow} encoded ${encoding} input stays removed from final copy and JSON`, async ({ page }) => {
+  await page.goto(source(flow === 'new' ? 'client-application.html' : 'project-import.html'));
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedHandoff = text; } } }));
+  if (flow === 'new') {
+    await page.locator('[name="problem_desc"]').fill(input);
+    await page.evaluate(() => showDone());
+    await page.locator('#handoffInputReview input').check();
+    await page.locator('#copyNewPrompt').click();
+  } else {
+    await page.locator('#folderPath').fill('Z:\\synthetic-project');
+    await page.locator('#projectName').fill('Encoded input fixture');
+    await page.locator('#taskRequest').fill(input);
+    await page.locator('#continueSettings').click();
+    await page.locator('#handoffInputReview input').check();
+    await page.locator('#copyPrompt').click();
+  }
+  const copied = await page.evaluate(() => window.copiedHandoff);
+  const downloadPromise = page.waitForEvent('download');
+  if (flow === 'new') await page.evaluate(() => exportJson());
+  else await page.locator('#downloadAgain').click();
+  const download = await downloadPromise;
+  const raw = fs.readFileSync(await download.path(), 'utf8');
+  for (const output of [copied, raw]) {
+    expect(output).not.toContain('EncodedCanary012345');
+    expect(output).not.toContain('SplitCanary012345');
+    expect(output).toContain('[redacted]');
+    expect(output).toContain('[ROLE INSTRUCTIONS: implementer]');
+  }
+  const document = JSON.parse(raw);
+  expect(document.inputReview.required).toBe(true);
+  verifyHash(document);
+});
+
 test('existing UI downloads redact the entire payload after edits and provider changes', async ({ page }) => {
   await page.goto(source('project-import.html'));
   await page.locator('#folderPath').fill('Z:\\work\\real-project');

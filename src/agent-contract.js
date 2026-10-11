@@ -12,9 +12,30 @@
   const INDEXED_CREDENTIAL = new RegExp(String.raw`\[` + GAP + "[\"'`]" + CREDENTIAL_NAMES + "[\"'`]" + GAP + String.raw`\]`, 'i');
   const SECRET = /(?:\b(?:sk-(?:proj-)?|gh[pousr]_|github_pat_|AIza|xox[baprs]-)[a-z0-9_-]{12,}|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\b(?:\+?82[- ]?0?1[016789]|01[016789])[- ]?\d{3,4}[- ]?\d{4})/gi;
 
-  function sensitiveKey(key) { return CREDENTIAL_KEY.test(String(key)); }
+  const ENCODED_CHARACTER = /\\\\(?=u[a-f0-9]{4}|x[a-f0-9]{2})|\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))|%([a-f0-9]{2})|&#(x[a-f0-9]{1,6}|[0-9]{1,7});|&(amp|colon|equals|quot|apos|lt|gt|sol|bsol|percnt|lowbar|hyphen);/gi;
+  const ENTITY_CHARACTERS = { amp: '&', colon: ':', equals: '=', quot: '"', apos: "'", lt: '<', gt: '>', sol: '/', bsol: '\\', percnt: '%', lowbar: '_', hyphen: '-' };
+  const STATIC_LITERAL = '(?<![a-z0-9_"\'`])(?:br|rb|r|u|b)?(?:"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|`(?:\\\\.|[^`\\\\])*`)(?!["\'`])';
+  const LITERAL_CHAIN = new RegExp(STATIC_LITERAL + '(?:' + GAP + '(?:[+\\\\]' + GAP + ')?' + STATIC_LITERAL + ')+', 'gi');
+  function credentialView(value) {
+    let text = String(value);
+    for (let pass = 0; pass < 2; pass += 1) {
+      text = text.normalize('NFKC').replace(ENCODED_CHARACTER, function (match, unicode, hex, percent, numeric, named) {
+        if (match === '\\\\') return '\\';
+        if (named) return ENTITY_CHARACTERS[named.toLowerCase()];
+        const radix = unicode || hex || percent || /^x/i.test(numeric) ? 16 : 10;
+        const number = parseInt(unicode || hex || percent || numeric.replace(/^x/i, ''), radix);
+        return number > 0x10ffff || number >= 0xd800 && number <= 0xdfff || percent && number > 127 ? match : String.fromCodePoint(number);
+      });
+    }
+    text = text.normalize('NFKC').replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '');
+    return text.replace(LITERAL_CHAIN, function (chain) {
+      const tokens = chain.match(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g) || [];
+      return '"' + tokens.filter(token => /^["'`]/.test(token)).map(token => token.slice(1, -1)).join('') + '"';
+    });
+  }
+  function sensitiveKey(key) { return CREDENTIAL_KEY.test(credentialView(key)); }
 
-  const ADJACENT_LITERAL = /^\s*(?:(?:\+|\\)\s*)?(?:[rbuf]{0,2})?["'`]/i;
+  const ADJACENT_LITERAL = new RegExp('^' + GAP + '(?:(?:\\+|\\\\)' + GAP + ')?(?:[rbuf]{0,2})?["\'`]', 'i');
   function redactTriples(source) {
     let ambiguous = false;
     const safe = source.replace(TRIPLE_ASSIGNMENT, function (match, quote, offset) {
@@ -47,6 +68,11 @@
   const URI_USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/\\"<>`?#]+@/gi;
 
   function redactCredentials(value, depth) {
+    const raw = String(value == null ? '' : value), safe = redactRawCredentials(raw, depth), view = credentialView(raw);
+    // Keep original field context: raw redaction can consume encoded quotation marks.
+    return view !== raw && redactRawCredentials(view, depth).replace(/\r\n/g, '\n') !== credentialView(safe).replace(/\r\n/g, '\n') ? '[redacted]' : safe;
+  }
+  function redactRawCredentials(value, depth) {
     const raw = String(value == null ? '' : value);
     const labels = raw.replace(/\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/gi, (_, unicode, hex) => String.fromCharCode(parseInt(unicode || hex, 16)));
     if (INDEXED_CREDENTIAL.test(labels)) return '[redacted]';

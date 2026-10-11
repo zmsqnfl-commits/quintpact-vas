@@ -33,7 +33,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install chromium
       - name: Verify privacy and connected Windows contracts
-        run: python -m pytest -q tests/test_privacy_regressions.py tests/test_session_http.py tests/test_session_web.py tests/test_session_design_contract.py tests/test_session_execution.py tests/test_server_response_recovery.py tests/test_memory_policy.py tests/test_memory_retention.py tests/test_memory_http_errors.py tests/test_memory_paths.py tests/test_runtime_state.py
+        run: python -m pytest -q tests/test_privacy_regressions.py tests/test_session_http.py tests/test_session_web.py tests/test_session_design_contract.py tests/test_session_execution.py tests/test_server_response_recovery.py tests/test_memory_policy.py tests/test_memory_retention.py tests/test_memory_http_errors.py tests/test_memory_paths.py tests/test_runtime_state.py tests/test_encoded_credentials.py
       - name: Verify PowerShell runtime integration
         run: python tests/test_windows_runtime.py
       - name: Verify connected Windows browser workflows

@@ -3,9 +3,39 @@ $script:SensitiveValuePattern = '(?i)(?:\b(?:[a-z0-9]+[_-])*(?:password|pgpasswo
 $script:PathValuePattern = '(?i)(?:^|[\s''"(])(?:[a-z]:[\\/]|\\\\|file:/+|/(?:home|users?|var|tmp|etc|mnt|volumes)/|\.{1,2}[\\/])'
 $script:FileValuePattern = '(?i)(?:^|[\s''"(])[^<>:"/\\|?*\r\n]{1,100}\.[a-z0-9]{1,8}(?:$|[\s''",)])'
 
+function Get-VASCredentialView {
+    param($Value)
+    $text = [string]$Value
+    $entities = @{ amp = '&'; colon = ':'; equals = '='; quot = '"'; apos = "'"; lt = '<'; gt = '>'; sol = '/'; bsol = '\'; percnt = '%'; lowbar = '_'; hyphen = '-' }
+    $encoded = '\\\\(?=u[a-f0-9]{4}|x[a-f0-9]{2})|\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))|%([a-f0-9]{2})|&#(x[a-f0-9]{1,6}|[0-9]{1,7});|&(amp|colon|equals|quot|apos|lt|gt|sol|bsol|percnt|lowbar|hyphen);'
+    for ($pass = 0; $pass -lt 2; $pass++) {
+        try { $text = $text.Normalize([Text.NormalizationForm]::FormKC) } catch { }
+        $text = [regex]::Replace($text, $encoded, {
+            param($m)
+            if ($m.Value -eq '\\') { return '\' }
+            if ($m.Groups[5].Success) { return $entities[$m.Groups[5].Value.ToLowerInvariant()] }
+            $part = ($m.Groups[1..4] | Where-Object Success | Select-Object -First 1).Value
+            $radix = if ($m.Groups[4].Success -and $part -notmatch '^x') { 10 } else { 16 }
+            $number = [Convert]::ToInt32(($part -replace '^x', ''), $radix)
+            if ($number -gt 0x10ffff -or ($number -ge 0xd800 -and $number -le 0xdfff) -or ($m.Groups[3].Success -and $number -gt 127)) { return $m.Value }
+            return [char]::ConvertFromUtf32($number)
+        }, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    }
+    try { $text = $text.Normalize([Text.NormalizationForm]::FormKC) } catch { }
+    $text = [regex]::Replace($text, '[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]', '')
+    $gap = '\s*(?:(?:/\*[\s\S]*?\*/|//[^\r\n]*)\s*)*'
+    $literal = '(?<![a-z0-9_"''`])(?:br|rb|r|u|b)?(?:"(?:\\.|[^"\\])*"|''(?:\\.|[^''\\])*''|`(?:\\.|[^`\\])*`)(?!["''`])'
+    return [regex]::Replace($text, ($literal + '(?:' + $gap + '(?:[+\\]' + $gap + ')?' + $literal + ')+'), {
+        param($m)
+        $tokens = [regex]::Matches($m.Value, '/\*[\s\S]*?\*/|//[^\r\n]*|"(?:\\.|[^"\\])*"|''(?:\\.|[^''\\])*''|`(?:\\.|[^`\\])*`')
+        $parts = @($tokens | Where-Object { $_.Value -match '^["''`]' } | ForEach-Object { $_.Value.Substring(1, $_.Value.Length - 2) })
+        return '"' + ($parts -join '') + '"'
+    }, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+}
+
 function Test-VASPrivateText {
     param($Value)
-    $decoded = [regex]::Replace([string]$Value, '\\(?:u([a-f0-9]{4})|x([a-f0-9]{2}))', { param($m) $hex = if ($m.Groups[1].Success) { $m.Groups[1].Value } else { $m.Groups[2].Value }; [string][char][Convert]::ToInt32($hex, 16) }, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    $decoded = Get-VASCredentialView $Value
     for ($i = 0; $i -lt 4; $i++) {
         $next = [regex]::Replace($decoded, '"(?:\\.|[^"\\])*"', { param($match) try { $items = @(ConvertFrom-Json ('[' + $match.Value + ']') -ErrorAction Stop); ' ' + [string]$items[0] + ' ' } catch { $match.Value } })
         if ($next -eq $decoded) { break }
@@ -35,7 +65,7 @@ function ConvertTo-VASSafeValue {
         $safe = [ordered]@{}
         foreach ($key in $Value.Keys) {
             $name = [string]$key
-            if ($name -notmatch $script:SensitiveKeyPattern -and -not (Test-VASPrivateText $name)) {
+            if ((Get-VASCredentialView $name) -notmatch $script:SensitiveKeyPattern -and -not (Test-VASPrivateText $name)) {
                 $safe[$name] = ConvertTo-VASSafeValue $Value[$key] ($Depth + 1)
             }
         }
@@ -49,7 +79,7 @@ function ConvertTo-VASSafeValue {
 
     $safeObject = [ordered]@{}
     foreach ($property in $Value.PSObject.Properties) {
-        if ($property.Name -notmatch $script:SensitiveKeyPattern -and -not (Test-VASPrivateText $property.Name)) {
+        if ((Get-VASCredentialView $property.Name) -notmatch $script:SensitiveKeyPattern -and -not (Test-VASPrivateText $property.Name)) {
             $safeObject[$property.Name] = ConvertTo-VASSafeValue $property.Value ($Depth + 1)
         }
     }

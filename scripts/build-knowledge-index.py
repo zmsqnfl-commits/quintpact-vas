@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import re
 import sys
 from pathlib import Path
+
+# Also support importlib callers whose sys.path does not include scripts/.
+SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+from vas_ai_contract import redact_credentials
 
 SCHEMA = 1
 EXCLUDED_PARTS = {
@@ -22,14 +29,6 @@ INTERNAL_DOCUMENT_NAMES = {
 }
 EXCLUDED_NAMES = {"log.md"} | INTERNAL_DOCUMENT_NAMES
 SENSITIVE_NAME = re.compile(r"(?:secret|credential|password|private[-_ ]?key|api[-_ ]?key)", re.I)
-SENSITIVE_ASSIGNMENT = re.compile(
-    r"(?i)\b(password|passwd|secret|api[_ -]?key|access[_ -]?token|authorization)"
-    r"(\s*[:=]\s*)([^\s,;]+)"
-)
-CREDENTIAL_VALUE = re.compile(
-    r"(?i)(bearer\s+[a-z0-9._~-]{12,}|(?:sk|ghp|github_pat)-?[a-z0-9_-]{12,}|"
-    r"-----BEGIN [A-Z ]+PRIVATE KEY-----)"
-)
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 TOKEN = re.compile(r"[가-힣]{2,}|[a-z0-9]{2,}", re.I)
 STOP_WORDS = {"and", "are", "for", "from", "how", "the", "this", "with", "그리고", "대한", "에서", "으로", "있는", "하는", "합니다"}
@@ -45,6 +44,10 @@ def is_allowed(path: Path, root: Path) -> bool:
     if lowered & EXCLUDED_PARTS or name in EXCLUDED_NAMES or SENSITIVE_NAME.search(path.name):
         return False
     if path.suffix.lower() != ".md":
+        return False
+    # Source metadata is a real link: omit sensitive paths, never invent a
+    # redacted filename that would point to a nonexistent document.
+    if redact_credentials(relative.as_posix()) != relative.as_posix():
         return False
     return True
 
@@ -67,16 +70,27 @@ def source_files(root: Path) -> list[Path]:
     return sorted(set(files), key=lambda path: path.relative_to(root).as_posix().lower())
 
 
-def redact_line(line: str) -> str:
-    line = SENSITIVE_ASSIGNMENT.sub(lambda match: match.group(1) + match.group(2) + "[redacted]", line)
-    return CREDENTIAL_VALUE.sub("[redacted]", line)
+def safe_document_lines(source: str) -> list[tuple[int, str]]:
+    # Redact before heading parsing or chunking: a secret block may contain both.
+    original = source.splitlines()
+    safe = redact_credentials(source).splitlines()
+    mapped: list[tuple[int, str]] = []
+    for tag, start, end, safe_start, safe_end in difflib.SequenceMatcher(
+        None, original, safe, autojunk=False,
+    ).get_opcodes():
+        for offset, line in enumerate(safe[safe_start:safe_end]):
+            # Unchanged lines retain exact locations; changed blocks use their
+            # first source line as a conservative anchor, never a shifted offset.
+            line_number = start + offset + 1 if tag == "equal" else min(start + 1, max(1, len(original)))
+            mapped.append((line_number, line))
+    return mapped
 
 
 def clean_markdown(lines: list[str]) -> str:
     cleaned: list[str] = []
     blank = False
     for raw in lines:
-        line = redact_line(raw.rstrip())
+        line = raw.rstrip()
         if not line.strip():
             if cleaned and not blank:
                 cleaned.append("")
@@ -136,13 +150,13 @@ def document_rank(relative: str) -> float:
 
 def parse_document(path: Path, root: Path) -> list[dict]:
     relative = path.relative_to(root).as_posix()
-    lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+    lines = safe_document_lines(path.read_text(encoding="utf-8-sig", errors="replace"))
     sections: list[tuple[str, int, list[str]]] = []
-    title = path.stem.replace("-", " ")
+    title = redact_credentials(path.stem.replace("-", " "))
     start_line = 1
     body: list[str] = []
     in_fence = False
-    for line_number, raw in enumerate(lines, 1):
+    for line_number, raw in lines:
         if raw.strip().startswith("```"):
             in_fence = not in_fence
         match = HEADING.match(raw) if not in_fence else None
@@ -150,7 +164,7 @@ def parse_document(path: Path, root: Path) -> list[dict]:
             content = clean_markdown(body)
             if content:
                 sections.append((title, start_line, body))
-            title = re.sub(r"[*_`]", "", match.group(2)).strip()
+            title = redact_credentials(re.sub(r"[*_`]", "", match.group(2)).strip())
             start_line = line_number
             body = []
         else:
