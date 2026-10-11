@@ -173,6 +173,7 @@ test('autosave off still removes the draft and blocks every save path until turn
   });
   await page.waitForTimeout(300);
   expect(await readRaw(page)).toBeNull();
+  await page.evaluate(() => sessionStorage.clear()); // Persisted policy is independent of tab state.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#draftPolicyText')).toContainText('꺼져');
   await page.locator('#projectName').fill('New enabled draft');

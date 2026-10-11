@@ -15,11 +15,10 @@ const stable = value => Array.isArray(value) ? '[' + value.map(stable).join(',')
     : JSON.stringify(value);
 
 async function seed(page, tasks) {
-  await page.addInitScript(({ key, tasks }) => {
-    if (!sessionStorage.getItem('proof-seeded')) {
-      localStorage.setItem(key, JSON.stringify({ version: 1, tasks }));
-      sessionStorage.setItem('proof-seeded', 'yes');
-    }
+  // Seed once, without a navigation hook that can recreate deleted records.
+  await page.goto(appUrl);
+  await page.evaluate(({ key, tasks }) => {
+    localStorage.setItem(key, JSON.stringify({ version: 1, tasks }));
   }, { key: storageKey, tasks });
 }
 
@@ -54,14 +53,11 @@ test('historical VAS proof retains its original request, complete role instructi
 });
 
 test('task create, edit, completion and reload persist without altering VAS settings', async ({ page }) => {
-  await page.addInitScript(() => {
-    if (!sessionStorage.getItem('vas-sentinel')) {
-      localStorage.setItem('vasCurrentPreset', 'bento');
-      localStorage.setItem('vasFavorites', '["stripe"]');
-      sessionStorage.setItem('vas-sentinel', 'yes');
-    }
-  });
   await page.goto(appUrl);
+  await page.evaluate(() => {
+    localStorage.setItem('vasCurrentPreset', 'bento');
+    localStorage.setItem('vasFavorites', '["stripe"]');
+  });
   await expect(rows(page)).toHaveCount(4);
   await expect(page.getByText('예시 작업이 포함되어 있어요. 직접 수정하거나 지워보세요.')).toBeVisible();
   await create(page, '새 랜딩 페이지', '첫 화면 카피');
@@ -117,6 +113,7 @@ test('archive, restore, delete and undo change real tasks; empty storage stays e
   expect((await persisted(page)).tasks[0]).toEqual(before);
   await rowNamed(page, '실제 한 개 작업').getByRole('button', { name: '실제 한 개 작업', exact: true }).click();
   await page.getByRole('button', { name: '삭제', exact: true }).click();
+  await page.evaluate(() => sessionStorage.clear()); // Losing tab state must not reseed deleted tasks.
   await page.reload();
   await expect(rows(page)).toHaveCount(0);
   await expect(page.getByText('첫 작업을 적어보세요.')).toBeVisible();
