@@ -58,6 +58,7 @@ test('task create, edit, completion and reload persist without altering VAS sett
     localStorage.setItem('vasCurrentPreset', 'bento');
     localStorage.setItem('vasFavorites', '["stripe"]');
   });
+  await page.reload(); // Startup must also preserve the existing VAS settings.
   await expect(rows(page)).toHaveCount(4);
   await expect(page.getByText('예시 작업이 포함되어 있어요. 직접 수정하거나 지워보세요.')).toBeVisible();
   await create(page, '새 랜딩 페이지', '첫 화면 카피');
