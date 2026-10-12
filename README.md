@@ -1,12 +1,12 @@
-# VAS 2.9.2
+# VAS 2.10.0
 
 **Keep coding agents aligned from request to delivery.**
 
 VAS (Vibecoding Agent System) is a local workflow tool that helps coding agents turn a user's request into a working deliverable. It carries the agreed target, requirements, scope and completion conditions through task setup, implementation, verification and follow-up work.
 
-The main agent uses VAS to save and resume task settings, prepare current instructions, share a defined scope with supporting agents when useful, and compare reported results with the original requirements. Your coding host supplies the actual file, command, browser and delegation tools. Design choices are one part of that task context, used when the work needs them.
+The main agent uses VAS to save and resume settings and progress, prepare current instructions, coordinate scoped supporting work, and turn assessment into concrete next actions. Selected file observations help it distinguish checks that still apply from checks affected by later changes. Your coding host supplies the actual file, command, browser and delegation tools. Design choices are one part of that task context, used when the work needs them.
 
-**[Download VAS 2.9.2](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.2)** · **[Get started](#get-started-on-windows)** · **[Implementation and verification](docs/CHAT-EXECUTION.md)** · **[Release notes](docs/releases/2.9.2.md)**
+**[Download VAS 2.10.0](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0)** · **[Get started](#get-started-on-windows)** · **[Implementation and verification](docs/CHAT-EXECUTION.md)** · **[Release notes](docs/releases/2.10.0.md)**
 
 ## One connected workflow
 
@@ -14,39 +14,40 @@ Open the extracted **VAS folder** in a coding AI that reads project instructions
 
 | Stage | How VAS helps the agent move the work forward |
 | --- | --- |
-| **1. Clarify the task** | Separate the VAS tool from the application being built or changed. Carry the target, required behavior, allowed scope and completion conditions together. |
-| **2. Keep usable context** | Save the agreed settings locally and resume them in a fresh conversation. Read the latest revision before implementation, delegation or a settings update. |
-| **3. Prepare the work** | Create instructions tied to the current settings and role resources. Surface missing requirements or review needs before treating the task as ready. |
-| **4. Implement and coordinate** | Guide the coding host to read the actual project and follow its rules. When useful and supported, give other agents a defined responsibility, file scope and completion conditions. |
-| **5. Check and correct** | Have the main agent collect changes and actual tool results, run the relevant checks, fix failures and recheck the affected behavior. |
-| **6. Review and continue** | Compare the submitted report with the current handoff and original conditions. Show what changed, what was checked and what still needs verification; refresh the settings for further work. |
+| **1. Clarify the task** | Separate VAS from the application being built or changed. Keep the target, allowed scope and completion conditions together; distinguish blocking decisions from reference questions. |
+| **2. Keep usable context** | Resume current settings and the latest progress summary: decisions, changed files, actual checks, unresolved items and the next action. Recheck the real project before continuing. |
+| **3. Prepare the work** | Create instructions tied to the current settings and role resources. Missing requirements, unresolved blocking questions or required privacy review prevent a ready handoff. |
+| **4. Implement and coordinate** | Record the responsibility, allowed files and selected file observations before actual host work. Collect direct or delegated returns, including failures, timeouts and missing returns. |
+| **5. Check and correct** | Connect relevant checks to their original conditions and selected files. Inspect later changes, preserve failed reviews and recheck affected behavior without blindly repeating unaffected checks. |
+| **6. Review and continue** | Compare the report with the current handoff, read the follow-up actions, and save a progress checkpoint. Keep execution reports, VAS assessment and user acceptance separate. |
 
 ```mermaid
 flowchart TD
   A[User request] --> B[Target, scope and completion conditions]
-  B --> C[Save or resume current task settings]
+  B --> C[Save or resume settings and progress]
   C --> D[Prepare current agent instructions]
-  D --> E[Coding host reads and implements the application]
-  E --> F[Run checks and collect results]
-  F -->|Corrections needed| E
-  F --> G[Assess report against original conditions]
-  G --> H[Deliverable, evidence and remaining checks]
-  H -->|Further work requested| B
+  D --> E[Record scope, then implement using host tools]
+  E --> F[Record actual returns and check selected files]
+  F --> G[Assess report and identify follow-up actions]
+  G -->|Affected checks or failures remain| E
+  G --> H[Save progress and the actual next action]
+  H --> I[Deliverable, evidence and remaining checks]
+  I -->|Resume in a new conversation| C
   E -. Useful independent work .-> R[Supporting agents with defined scope]
   R -. Main agent reviews returned work .-> F
   C -. Visual choices when needed .-> V[Optional connected Design Studio]
   V -. Save choice to the task .-> C
 ```
 
-The coding host performs the implementation and verification steps. VAS provides the settings, instructions and comparison tools that support this workflow; host capabilities and permissions determine which actions can actually run.
+The coding host performs implementation and verification. VAS provides the settings, instructions, selected file observations and comparison tools; host capabilities and permissions determine which actions can actually run.
 
 ## What stays connected
 
 - **The request and the real project.** New applications, existing applications and VAS development are distinguished at the start. The agent reads the target project's own instructions, stack and source before making changes.
-- **The current settings and the next action.** Local sessions retain requirements, constraints, design scope, completion conditions and open questions. Revision checks reject stale writes; missing or replaced targets require review.
-- **The main agent and delegated work.** Role instructions carry the agreed target, responsibilities, file ownership and checks. The main agent retrieves and reviews the results, resolves problems and reports the combined outcome.
-- **The implementation report and the original conditions.** Prepared handoffs are linked to the session, settings and role resources. Assessment rejects mismatched reports and keeps failed checks, blockers and unverified conditions visible.
-- **Today's setup and the next conversation.** On the same PC and VAS installation, the agent can resume a saved settings summary and recheck the current application. Saved settings do not restore an entire chat transcript or prove that interrupted work finished.
+- **The current settings and the next action.** Local sessions retain requirements, constraints, design scope, completion conditions and questions. `blockingQuestions` stop preparation when an implementation decision is unresolved; ordinary `questions` remain reference context. Both lists and `nextStep` travel with the prepared handoff.
+- **The main agent and delegated work.** The main agent records the agreed responsibility and file scope before work, then collects actual host returns. Failed reviews, unreturned work and out-of-scope changes stay visible even when another check passes.
+- **The implementation report and its relevant files.** A bounded execution record connects original condition IDs and reported checks to selected file fingerprints. Follow-up identifies missing evidence, incompatible reports and affected checks. Unchanged relevant samples can remain reuse candidates after the host confirms the execution evidence.
+- **Today's work and the next conversation.** A progress checkpoint saves the latest decisions, changed relative files, performed and unperformed checks, unresolved items and next action. Independent revision checks prevent stale settings, progress or execution records from overwriting newer work. Resuming still requires the agent to inspect the current application.
 
 These capabilities support feature work, bug fixes and existing-project changes as well as new applications. Existing UI is preserved by default unless the requested scope calls for a change.
 
@@ -54,15 +55,17 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
-1. Open the [v2.9.2 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.9.2) and download `VAS-2.9.2-windows.zip`.
+1. Open the [v2.10.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0) and download `VAS-2.10.0-windows.zip`.
 2. Extract the entire archive into a stable folder.
 3. Open that VAS folder in a coding AI that reads its project instructions, then describe the work. Open a fresh conversation after upgrading the instructions.
 4. Continue in the conversation. The main agent saves the agreed settings, prepares the work, reads the target project, and uses its available tools to implement and check it. Visual choices can be added when the task needs them.
-5. Review the deliverable, actual checks and remaining conditions. To continue later on the same PC and installation, ask to resume the saved task; the agent rechecks the current files before proceeding.
+5. Review the deliverable, actual checks and remaining conditions. To continue later on the same PC and installation, say “Resume the saved task.” The agent reads the latest settings and progress, rechecks the current files, and works through the remaining actions.
 
-For the screen-based alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.9.2.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+The host handles the session commands and result format. Users do not need to author a settings file, execution record or result JSON.
 
-When upgrading, keep a backup of the previous installation and user data. Sessions are associated with the VAS installation path: a new extraction at a different path does not automatically discover the old installation's tasks. Do not assume that copying the VAS folder moves its private settings store. The [settings guide](docs/CHAT-STATE.md) explains these boundaries. Existing handoff formats and standalone design selections remain compatible.
+For the screen-based alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.10.0.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification.
+
+When upgrading, close the old runtime and back up the previous installation and user data. To retain the same installation's task lookup, replace the product at the same stable path and preserve its separate private local settings store. Extraction at another path or movement to another PC does not automatically migrate sessions or target bindings. Copying only the VAS folder or a public settings export does not restore those private bindings. The [settings guide](docs/CHAT-STATE.md) explains these boundaries. Older settings without the new optional fields remain supported.
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -70,27 +73,31 @@ For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사
 
 VAS provides a shared workflow for the main coding agent and role instructions for supporting work. Native definitions are included for supported Codex and Claude environments; actual availability depends on the host and its permissions.
 
-When independent work would help, the main agent can delegate implementation, design or review with the current task context and a clear file scope. It remains responsible for collecting the result, inspecting the changes and verifying the combined application. If delegation is unavailable or unnecessary, the main agent performs the work in sequence.
+When independent work would help, the main agent can delegate implementation, design or review with the current task context and a clear file scope. It remains responsible for collecting the result, inspecting the changes and verifying the combined application. If delegation is unavailable or unnecessary, the main agent performs the work in sequence. A role file by itself is not evidence that an agent ran.
 
-The host handles the session commands and result format. Users can continue with ordinary requests such as “Build this,” “Fix this part,” or “Resume the saved task.” A role file by itself is not evidence that an agent ran. See the [execution guide](docs/CHAT-EXECUTION.md) and [agent workflow](.agents/HANDOFF-WORKFLOW.md).
+`prepare` creates an instruction package. After opening the execution record, the host records each work unit with `work start` before execution and `work finish` after the actual return. It uses `work inspect` to compare selected files. `assess` returns both the conservative assessment and `followUp`, a bounded list of actions such as recover a missing return, fix a failure, rerun an affected check, reconcile evidence or confirm an original manual condition. The host chooses and performs the applicable actions, then saves a `checkpoint` and reads it back.
 
-`prepare` creates an instruction package; `assess` compares submitted evidence with the current task. Actual code changes and test execution come from the coding host. Agent reports, VAS assessment and user acceptance remain separate: an agent-reported pass can still need direct verification. Further work uses refreshed settings and a new preparation; automatic iteration numbering and linked result history are not provided.
+These records do not execute commands, authenticate host reports or grant new permissions. File fingerprints cover only the selected files at the observed times. A changed setting or checkpoint can make an older execution context stale without implying that application files changed.
 
-## What's new in VAS 2.9.2
+Agent reports, VAS assessment and user acceptance remain separate. When a task has only automatic conditions and all relevant evidence is consistent, `followUp.actions` can be empty while the assessment remains `needs-verification`. That does not invent another manual test or approval step. Originally required manual/static conditions remain visible. Further work uses refreshed settings and a new preparation; automatic iteration numbering and a complete result history are not provided.
 
-This patch strengthens the storage and privacy boundaries that help the agent continue a task reliably.
+See [progress and resume](docs/CHAT-PROGRESS.md), [work and file observations](docs/CHAT-WORK.md), [assessment follow-up](docs/CHAT-FOLLOWUP.md), and the [agent workflow](.agents/HANDOFF-WORKFLOW.md) for the host procedure and limits.
 
-- **Resume older tasks safely.** Tasks affected only by updated privacy rules open as sanitized views, with fields marked for review. The main agent reviews and saves the full settings before preparing further work; unrelated valid tasks remain usable.
-- **Bound memory recovery files.** Backups, corrupt originals and recognized temporary files have explicit limits. Capacity and cleanup failures preserve existing data and report what needs attention.
-- **Protect runtime credentials and state paths.** Restricted Windows file permissions apply before credentials are written, unsafe state paths are rejected, and launcher output excludes the token.
-- **Improve shared-data handling.** Bounded encoded-credential detection and quoted optional RAG references strengthen the handoff boundary while keeping normal text usable.
-- **Report recovery and request errors clearly.** Invalid or oversized requests have specific responses; tested paths cover task settings, preparation, assessment and restart.
+## What's new in VAS 2.10.0
 
-The established handoff v3 / result v1 contracts, consent rules and saved-task workflow remain available. Read the [detailed changes and upgrade guidance](docs/releases/2.9.2.md) and [operations guide](docs/OPERATIONS.md) for limits and recovery behavior.
+This release connects task context, actual host work and the next conversation more closely.
+
+- **Ask the questions that matter.** Explicit blocking questions prevent a ready implementation handoff. Reference questions stay available without automatically blocking useful work.
+- **Resume progress as well as settings.** One latest checkpoint carries decisions, performed and unperformed checks, remaining issues and the next action. Conflicting or invalid records stay visible instead of being silently overwritten.
+- **Connect role returns to scope and selected files.** Record direct or delegated work before it starts, collect its actual return, and detect missing returns, scope violations and changes around a check.
+- **Follow the assessment with useful actions.** Identify the affected condition or work unit, keep failed reviews visible, and separate evidence repair from a necessary rerun. Preserve reusable automatic checks when their relevant samples and execution evidence still apply.
+- **Keep completion claims precise.** Reported success, file consistency, VAS assessment and user acceptance remain distinct. Valid automatic-only work does not acquire an invented manual acceptance requirement.
+
+The established handoff v3 / result v1 contracts, optional Design Studio and storage protections remain available. Read the [detailed changes and upgrade guidance](docs/releases/2.10.0.md). The earlier [2.9.2 storage and privacy changes](docs/releases/2.9.2.md) and [operations guide](docs/OPERATIONS.md) remain relevant.
 
 ## A working deliverable: Morrow
 
-[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.9.2) is a task-board application built through an earlier VAS handoff workflow, with separate implementation and independent review. It demonstrates a concrete request becoming an application with testable behavior.
+[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.10.0) is a task-board application built through an earlier VAS handoff workflow, with separate implementation and independent review. It demonstrates a concrete request becoming an application with testable behavior.
 
 You can create and edit tasks, search and filter them, manage due dates and status, archive and restore records, undo the latest deletion, and export JSON. Data persists in the browser. Verification covered keyboard interaction, responsive layouts at 1440, 768, 390 and 320 pixels, and persistence after a 5,001st task. Review found and corrected focus handling, small mobile controls and a save/reload limit mismatch.
 
@@ -102,7 +109,7 @@ The connected Design Studio helps users and agents agree on visual requirements 
 
 When you use it, **Save to chat settings** commits the selection. The main agent reads the latest settings before continuing. Opening a sample or saving a design does not wake the AI or replace its active conversation context. GitHub Pages previews are separate from the PC's private task store.
 
-[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.2) · [Connect a local task](docs/CHAT-DESIGN.md)
+[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.10.0) · [Connect a local task](docs/CHAT-DESIGN.md)
 
 <details>
 <summary>View design collections and interactive samples</summary>
@@ -128,7 +135,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four interactive sample websites
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.9.2). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.10.0). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -154,7 +161,9 @@ The image is an earlier promotional composition of the app and design samples.
 
 ## Verification and development
 
-The [2.9.2 release notes](docs/releases/2.9.2.md) describe the release scope and verification boundaries. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
+The [2.10.0 release notes](docs/releases/2.10.0.md) describe the release scope and verification boundaries. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
+
+The [2.10.0 agent-flow verification record](docs/verification/2.10.0-agent-flow.md) describes the tested scenarios and their limits.
 
 The required gates cover Python contracts and local storage, browser workflows, session/design integration, Windows HTTP behavior and extracted-package contents. Actual-host checks exercise instruction discovery, saved-task resume and result linkage separately. A successful implementation/reviewer delegation exercise does not mean every app run uses subagents; tools and execution records determine that for each run. An application's remaining manual checks stay visible even when its automated checks pass.
 

@@ -4,7 +4,7 @@
 
 ## 목적
 
-VAS는 새 프로그램과 기존 프로그램의 설정을 `VAS-AI-HANDOFF.json`으로 정리해 코딩 AI에 전달하는 로컬 초기 설정 도구다. 대화형 시작 규칙은 `.agents/BOOTSTRAP.md`에 있다.
+VAS는 요청·설정·진행 요약·실행 근거를 이어 코딩 AI의 구현·검증·후속 작업을 돕는 로컬 작업 도구다. 인계 자료는 `VAS-AI-HANDOFF.json`으로 정리하며 대화형 시작 규칙은 `.agents/BOOTSTRAP.md`에 있다.
 
 ## 에이전트 실행
 

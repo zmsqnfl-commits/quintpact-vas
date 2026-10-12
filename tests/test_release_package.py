@@ -179,11 +179,14 @@ class ReleasePackageTests(unittest.TestCase):
             ".agents/ENTRYPOINT.md", ".agents/CONTEXT.md", ".agents/BOOTSTRAP.md",
             ".agents/DEVELOPMENT.md", ".agents/SESSION.md", ".agents/EXECUTION.md",
             "docs/CHAT-START.md", "docs/CHAT-STATE.md", "docs/CHAT-DESIGN.md", "docs/CHAT-EXECUTION.md",
+            "docs/CHAT-PROGRESS.md", "docs/CHAT-WORK.md", "docs/CHAT-FOLLOWUP.md",
         }
         session_scripts = {
             "scripts/vas-session.py", "scripts/vas_session.py", "scripts/vas_session_store.py",
             "scripts/vas_session_web.py", "scripts/VAS.Session.psm1", "scripts/VAS.Server.Session.ps1",
-            "scripts/vas_session_execution.py",
+            "scripts/vas_session_execution.py", "scripts/vas_followup.py",
+            "scripts/vas_session_progress.py", "scripts/vas_session_work.py",
+            "scripts/vas_work_contract.py", "scripts/vas_work_files.py", "scripts/vas_work_inspection.py",
             "src/chat-design-sync.js", "src/chat-design-sync.css",
         }
         for relative in sorted(entrypoints | guides | session_scripts):
@@ -207,7 +210,7 @@ class ReleasePackageTests(unittest.TestCase):
                 assert_safe_relative(self, target)
                 self.assertIn(target, payload, f"배포 문서의 누락 링크: {relative}: {reference}")
         recipient_readme = payload["README.md"].decode("utf-8")
-        for marker in ("첫 요청", "실제 작업 폴더", "VAS 2.9.2 대화형 작업 흐름", "Python 3.10", "공통 설정 저장", "다음 대화 이어가기",
+        for marker in ("첫 요청", "실제 작업 폴더", "VAS 2.10.0 대화형 작업 흐름", "Python 3.10", "공통 설정 저장", "다음 대화 이어가기",
                        "PC 전용 연결 정보", "공유 JSON에는 넣지 않습니다", "대화 설정에 저장", "편집 중 충돌은 덮어쓰지 않습니다",
                        "[대화로 시작하기](docs/CHAT-START.md)", "[설정 저장과 이어가기](docs/CHAT-STATE.md)",
                        "[대화와 디자인 연결](docs/CHAT-DESIGN.md)", "[저장 설정으로 구현·검증](docs/CHAT-EXECUTION.md)",
@@ -258,6 +261,47 @@ class ReleasePackageTests(unittest.TestCase):
             assessed = invoke(["assess"] + selector, result)
             self.assertEqual(assessed["reportedStatus"], "complete")
             self.assertEqual(assessed["assessment"]["status"], "needs-verification")
+            self.assertEqual(assessed["followUp"]["actions"][0]["kind"], "inspect-evidence")
+            self.assertFalse(assessed["followUp"]["executionAuthorized"])
+            invoke(["work", "open"] + selector + ["--expected-work-revision", "0"])
+            started = invoke(["work", "start"] + selector + ["--expected-work-revision", "1"], {
+                "kind": "review", "role": "reviewer", "mode": "direct", "label": "Package fixture",
+                "observedFiles": ["sentinel.txt"], "writableFiles": [], "criterionIds": []})
+            pending = invoke(["work", "inspect"] + selector)
+            self.assertTrue(any(reason.startswith("work-unreturned:") for reason in pending["reasons"]))
+            invoke(["work", "finish"] + selector + ["--expected-work-revision", "2",
+                    "--unit", started["unitId"]], {
+                "state": "returned", "hostCallId": "package_fixture_read",
+                "summary": "Package fixture read; application criteria were not checked.",
+                "changedFiles": [], "exitCode": None, "criteria": []})
+            checked = invoke(["work", "inspect"] + selector)
+            self.assertTrue(checked["units"][0]["sampleMatches"])
+            self.assertFalse(checked["hostReportsVerified"])
+            self.assertEqual(checked["missingCriteria"], ["C1"])
+            result["artifactVersion"] = checked["artifactVersion"]
+            gated = invoke(["assess"] + selector, result)
+            self.assertEqual(gated["assessment"]["status"], "incomplete")
+            checkpoint = invoke(["checkpoint"] + selector + ["--expected-progress-revision", "0"], {
+                "phase": "paused", "summary": "Implementation report; verification remains.",
+                "changedFiles": ["sentinel.txt"],
+                "checks": [{"name": "App test", "status": "not-run", "summary": "Next conversation"}],
+                "nextStep": "Inspect the actual source and run the remaining tests."
+            })
+            self.assertEqual(checkpoint["session"]["revision"], 2)
+            resumed = invoke(["resume", "--session", session["sessionId"]])
+            self.assertEqual(resumed["progress"]["status"], "available")
+            self.assertEqual(resumed["work"]["status"], "stale")
+            self.assertFalse(resumed["work"]["filesChecked"])
+            self.assertTrue(resumed["progress"]["referenceOnly"])
+            self.assertFalse(resumed["progress"]["filesVerified"])
+            self.assertEqual(resumed["progress"]["record"]["summary"]["checks"][0]["status"], "not-run")
+            exported = invoke(["export", "--session", session["sessionId"]])
+            self.assertNotIn("progress", exported)
+            self.assertNotIn("work", exported)
+            cleared = invoke(["clear-progress", "--session", session["sessionId"], "--expected-revision", "2"])
+            self.assertNotIn("progress", cleared)
+            self.assertEqual(cleared["session"]["settings"]["nextStep"],
+                             checkpoint["session"]["settings"]["nextStep"])
             self.assertEqual(tree_fingerprints(app), before)
 
     def test_standalone_form_is_self_contained(self) -> None:
@@ -429,6 +473,10 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn('runs-on: windows-latest', release)
         self.assertIn('tests/integrated-runtime.spec.js', release)
         self.assertIn('python tests/test_release_runtime_flow.py', release)
+        for testcase in ('test_session_progress_cli.py', 'test_session_work_cli.py',
+                         'test_session_followup.py', 'test_session_delivery_flow.py'):
+            self.assertIn(testcase, ci)
+            self.assertIn(testcase, release)
         for filename in ("VAS-${version}-windows.zip", "VAS-Client-Form-${version}.zip",
                          "release-manifest.json", "SHA256SUMS.txt"):
             self.assertIn(filename, release)

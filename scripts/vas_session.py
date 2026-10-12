@@ -37,7 +37,8 @@ def fields(value, allowed, required=()):
 
 
 def normalize_settings(raw):
-    fields(raw, {"project", "task", "design", "questions", "nextStep"}, {"project", "task"})
+    fields(raw, {"project", "task", "design", "questions", "blockingQuestions", "nextStep"},
+           {"project", "task"})
     project = raw["project"]
     fields(project, {"name", "sourceType"}, {"name", "sourceType"})
     require(project["sourceType"] in ("new", "existing"))
@@ -101,6 +102,14 @@ def normalize_settings(raw):
                 "task": normalized_task, "design": design,
                 "questions": [safe_text(item, 500, "questions", changes) for item in questions],
                 "nextStep": safe_text(raw.get("nextStep", ""), 1000, "nextStep", changes)}
+    # Keep the optional key absent in earlier canonical sessions and their hashes.
+    if "blockingQuestions" in raw:
+        blockers = raw["blockingQuestions"]
+        require(isinstance(blockers, list) and len(blockers) <= 10, "question_invalid")
+        require(all(isinstance(item, str) for item in blockers), "question_invalid")
+        blockers = [safe_text(item, 500, "blockingQuestions", changes) for item in blockers]
+        require(all(blockers), "question_invalid")
+        settings["blockingQuestions"] = blockers
     def local_paths(value):
         if isinstance(value, str):
             return LOCAL_POSIX.sub("[absolute-path]", value)
@@ -166,8 +175,9 @@ def _privacy_settings(settings):
         item["description"] = text(item["description"])
     if "tokens" in candidate.get("design", {}):
         candidate["design"]["tokens"] = tokens(candidate["design"]["tokens"])
-    if "questions" in candidate:
-        candidate["questions"] = [text(value) for value in candidate["questions"]]
+    for key in ("questions", "blockingQuestions"):
+        if key in candidate:
+            candidate[key] = [text(value) for value in candidate[key]]
     return candidate
 
 
@@ -210,7 +220,7 @@ class SessionManager:
     def _records(self, data):
         records = data["sessions"]
         for key, record in records.items():
-            fields(record, {"document", "binding"}, {"document", "binding"})
+            fields(record, {"document", "binding", "progress", "work"}, {"document", "binding"})
             valid_document(record["document"])
             require(key == record["document"]["sessionId"])
             binding = record["binding"]
@@ -239,6 +249,12 @@ class SessionManager:
                 "session": document, "target": {"path": binding["path"], "status": status}}
         if changes:
             view["reviewFields"] = changes
+        if "progress" in record:
+            from vas_session_progress import progress_view
+            view["progress"] = progress_view(record["progress"], document)
+        if "work" in record:
+            from vas_session_work import work_view
+            view["work"] = work_view(record["work"], document, binding)
         return view
 
     @staticmethod
@@ -324,10 +340,22 @@ class SessionManager:
             return self._view(record)
         return self.store.mutate(update)
 
-    def forget(self, session_id, expected_revision):
+    def forget(self, session_id, expected_revision, expected_work_revision=None):
         def update(data):
             records = self._records(data)
-            self._revision(self._record(records, session_id), expected_revision)
+            record = self._record(records, session_id)
+            self._revision(record, expected_revision)
+            if "work" in record:
+                from vas_work_contract import validate_work
+                try:
+                    revision = validate_work(record["work"])["revision"]
+                except SessionError:
+                    revision = -1
+                require(type(expected_work_revision) is int and expected_work_revision == revision,
+                        "work_revision_conflict")
+            elif expected_work_revision is not None:
+                require(type(expected_work_revision) is int and expected_work_revision == 0,
+                        "work_revision_conflict")
             del records[session_id]
             return {"status": "forgotten", "sessionId": session_id}
         return self.store.mutate(update)
@@ -335,3 +363,11 @@ class SessionManager:
     def export(self, session_id):
         record = self._record(self._records(self.store.read()), session_id)
         return valid_document(record["document"])[0]
+
+    def checkpoint(self, session_id, expected_revision, expected_progress_revision, raw):
+        from vas_session_progress import checkpoint
+        return checkpoint(self, session_id, expected_revision, expected_progress_revision, raw)
+
+    def clear_progress(self, session_id, expected_revision):
+        from vas_session_progress import clear_progress
+        return clear_progress(self, session_id, expected_revision)
