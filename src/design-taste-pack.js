@@ -85,6 +85,7 @@
     return [
       '[VAS DESIGN STUDIO PROMPT]\nPreset: ' + presetKey + '\nTaste Profile: ' + profile.label + '\nTaste Source: ' + profile.source,
       '[REFERENCE USAGE]\n' + window.VASDesignReference.usagePrompt(),
+      '[DESIGN ANALYSIS]\n' + window.VASAgentResources.designAnalysis,
       '[DESIGN SKILL]\n' + window.VASAgentResources.designer,
       formatRuleList('BASELINE RULES', TASTE_BASELINE.rules),
       formatRuleList('TASTE PROFILE RULES', profile.rules),

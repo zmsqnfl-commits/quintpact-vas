@@ -213,6 +213,7 @@
       (global.VASDesignReference ? VASDesignReference.prompt(document) : '') +
       '디자인 방향:\n' + designDirection + '\n\n' +
       (design.included && design.tokens ? '확정 디자인 토큰(JSON):\n' + JSON.stringify(design.tokens, null, 2) + '\n\n' : '') +
+      (global.VASDesignReference ? VASDesignReference.analysisPrompt(document) : '') +
       '에이전트 작업 방식:\n' + workflow + '\n\n' +
       '작업 규칙:\n' +
       '1. RBG(Read Before Generate): ' + sourceRule + '\n' +

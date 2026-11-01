@@ -33,6 +33,7 @@ def outputs() -> dict[str, str]:
         f"[ROLE INSTRUCTIONS: {role}]\n{instructions}" for role, instructions in roles.items())
     data = {
         "designer": body(".agents/skills/designer/SKILL.md"),
+        "designAnalysis": body(".agents/skills/design-analysis/SKILL.md"),
         "workflow": workflow,
         "roles": roles,
         "profiles": profiles,
@@ -60,6 +61,8 @@ def outputs() -> dict[str, str]:
             "is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only "
             "to VAS product development; otherwise follow the target project's rules.\n\n"
         ) + body(source)
+        if role == "designer":
+            instructions += "\n\n[DESIGN ANALYSIS]\n" + data["designAnalysis"]
         name = "vas_" + role
         toml = f'name = "{name}"\ndescription = {json.dumps(description, ensure_ascii=False)}\n'
         if role == "reviewer":

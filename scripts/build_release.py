@@ -25,6 +25,8 @@ ROOT_FILES = [
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
 LEGAL_FILES = ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md")
 HOST_GUIDES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules")
+PROJECT_SKILLS = ("design-analysis",)
+SKILL_HOSTS = (".agents", ".claude")
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
     ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session",
@@ -177,6 +179,11 @@ def build_windows(stage: Path) -> Path:
         shutil.copy2(ROOT / filename, root / filename)
     for filename in HOST_GUIDES:
         shutil.copy2(engine / ".agents/PROJECT-ROOT.md", root / filename)
+    # Hosts can discover the bundled skill without scanning the private engine.
+    # All copies come from the maintained source; relative references stay intact.
+    for skill in PROJECT_SKILLS:
+        for host in SKILL_HOSTS:
+            copy_tree(engine / ".agents/skills" / skill, root / host / "skills" / skill)
     for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
         for role in ("implementer", "designer", "reviewer"):
             relative = Path(host) / "agents" / ("vas_" + role + suffix)

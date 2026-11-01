@@ -75,6 +75,15 @@
       (value.samplePreset ? '' : '\n이 스타일의 공개 샘플은 없습니다. 다른 스타일의 샘플로 대체하지 말고 확정 토큰을 기준으로 구현하세요.') + '\n\n';
   }
 
+  function analysisPrompt(document) {
+    const design = document.context && document.context.design;
+    if (!design || design.included !== true || (document.task && document.task.designScope && document.task.designScope.mode === 'preserve')) return '';
+    const instructions = global.VASAgentResources && VASAgentResources.designAnalysis;
+    const renderedDirection = typeof design.direction === 'string' ? VASAgentContract.clean(design.direction, 12000) : '';
+    if (!instructions || renderedDirection.includes(instructions)) return '';
+    return '[DESIGN ANALYSIS]\n' + instructions + '\n\n';
+  }
+
   global.VASDesignReference = Object.freeze({ reference: reference, attach: attach, prompt: prompt,
-    usage: usage, usagePrompt: usagePrompt, applyUsage: applyUsage });
+    usage: usage, usagePrompt: usagePrompt, applyUsage: applyUsage, analysisPrompt: analysisPrompt });
 })(window);

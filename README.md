@@ -59,6 +59,8 @@ The local starter hub also lets you edit and save the project's working instruct
 
 In this development preview, design samples supply typography, color, layout, imagery and spacing references. Sample pricing, checkout, login and domain-specific screens are included only when the actual task calls for them. Browser exports and chat preparation carry the same visual-only policy; built-in profiles describe visual relationships to adapt to the requested app. This preserves explicitly requested commerce features and still requires the host to inspect its output. See [design reference scope](docs/DESIGN-REFERENCE-SCOPE.md).
 
+The preview also bundles a **design-analysis** skill. Attach your reference image in the coding chat: the agent inspects its five visual elements, distinguishes observations from proposed implementation values, maps them to your app, and checks the rendered result. Active browser and chat handoffs include the same instructions. VAS does not upload or analyze image pixels itself; the coding host supplies image and browser tools. See [reference image analysis](docs/DESIGN-ANALYSIS.md).
+
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
 1. Open the [v2.10.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0) and download `VAS-2.10.0-windows.zip`.

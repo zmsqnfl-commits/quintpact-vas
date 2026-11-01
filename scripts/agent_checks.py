@@ -156,7 +156,7 @@ def main() -> int:
     import json
     import zipfile
     import hashlib
-    from build_release import FULL_DIRS, ROOT_FILES, LEGAL_FILES, HOST_GUIDES, allowed, native_project_role, version
+    from build_release import FULL_DIRS, ROOT_FILES, LEGAL_FILES, HOST_GUIDES, PROJECT_SKILLS, SKILL_HOSTS, allowed, native_project_role, version
     source_files = {
         path.relative_to(ROOT)
         for directory in FULL_DIRS for path in (ROOT / directory).rglob("*")
@@ -170,6 +170,13 @@ def main() -> int:
         expected[name] = expected[".vas/" + name]
     for name in HOST_GUIDES:
         expected[name] = expected[".vas/.agents/PROJECT-ROOT.md"]
+    for skill in PROJECT_SKILLS:
+        folder = Path(".agents/skills") / skill
+        for relative in source_files:
+            if relative.is_relative_to(folder):
+                for host in SKILL_HOSTS:
+                    copied = Path(host) / "skills" / skill / relative.relative_to(folder)
+                    expected[copied.as_posix()] = expected[".vas/" + relative.as_posix()]
     for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
         for role in ("implementer", "designer", "reviewer"):
             relative = Path(host) / "agents" / ("vas_" + role + suffix)

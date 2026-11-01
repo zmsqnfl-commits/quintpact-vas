@@ -41,7 +41,11 @@ def prompt_details(document: dict) -> str:
         sections.append("확정 디자인 토큰(JSON):\n" + clean(json.dumps(design["tokens"], ensure_ascii=False, indent=2), 4000))
     resource = ROOT / ".agents/agent-resources.json"
     if resource.is_file():
-        workflow = json.loads(resource.read_text(encoding="utf-8"))["workflow"]
+        resources = json.loads(resource.read_text(encoding="utf-8"))
+        workflow = resources["workflow"]
+        analysis = resources.get("designAnalysis", "")
+        if design.get("included") is True and not preserve and analysis and analysis not in clean(design.get("direction", ""), 12000):
+            sections.append("[DESIGN ANALYSIS]\n" + analysis)
     else:
         workflow = "주 실행자가 원본을 확인하고 구현·검증을 완료하세요. 실제 호출 도구가 제공될 때만 필요한 역할에 위임하세요."
     sections.append("에이전트 작업 방식:\n" + workflow)
