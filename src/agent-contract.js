@@ -200,6 +200,7 @@
   }
 
   async function finalize(document, promptBuilder, target) {
+    if (global.VASDesignReference) VASDesignReference.applyUsage(document);
     const safe = sanitize(document, 0);
     const changed = stable(safe) !== stable(document);
     Object.keys(document).forEach(function (key) { delete document[key]; });

@@ -1,9 +1,10 @@
 # Subscription Studio
 
-- Identity: a refined subscription software site with cool white canvas, navy text, muted blue action and diffuse product-panel depth. Treat Stripe as a visual reference, not a copied identity.
-- Composition: expressive headline and concise product explanation beside one native billing dashboard, followed by a billing-period selector and two distinct horizontal pricing plans. Avoid decorative floating payment cards or repetitive feature tiles.
-- Typography: editorial serif display where the confirmed font allows it, with clear sans UI labels and calm price hierarchy. Preserve user-selected fonts and Korean fallback.
-- Product view: implement charts, subscription rows and labels as native accessible UI rather than a flattened screenshot. Label illustrative values as sample data and provide a readable chart description.
-- Pricing: monthly and yearly choices must update amounts and explain the billing period. Selecting a plan must provide truthful feedback and must not imply a real purchase when no checkout exists.
-- Tokens: maintain confirmed colors, radius and shadow; use appropriate readable foregrounds on primary buttons. Keep whitespace consistent between hero and pricing.
-- Responsive: stack hero copy and product panel, simplify the dashboard rail and place plans vertically on narrow screens. Verify price legibility, keyboard controls and 320px overflow.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: cool white canvas, navy text, muted blue actions and diffuse surface depth. Stripe and the subscription demo are visual references, not a business model or feature specification.
+- Composition: borrow the contrast between an expressive heading and a structured content region, followed by open horizontal groupings when useful for the requested task. Do not add billing dashboards, period selectors, pricing plans or checkout from the sample.
+- Typography: editorial serif display where the confirmed font allows it, clear sans labels and a calm numeric hierarchy. Preserve selected fonts and Korean fallback; numbers need not be prices.
+- Content: render the user's actual fields, rows and controls as native accessible UI. Include charts only when required, with truthful data labels and a readable description; sample subscription records are not production data.
+- Interaction: functionality comes from user requirements. If pricing or payment is explicitly requested, implement the agreed scope and truthful states; the sample alone neither requests nor authorizes purchases or integrations.
+- Tokens: maintain confirmed colours, radius and shadow; use readable foregrounds on primary buttons. Keep a consistent whitespace rhythm across the app's real sections.
+- Responsive: stack supporting regions, simplify existing navigation and rearrange actual rows at narrow widths. Check text and numeric legibility, keyboard controls and 320px overflow without forcing plan cards.

@@ -1,10 +1,11 @@
 # Soft Premium Interface
 
-- Composition: for a consumer or product page use a quiet masthead, a 6:5 copy/image split, concise benefits, then a curated product or service list. For finance and admin work retain the data workflow and apply only the surface/type treatment.
-- Hierarchy: headline at 2.75-3.5 times body size with 1.2 line height, readable supporting copy at base size with 1.7 line height, and restrained metadata. Avoid using thin text for functional labels.
-- Rhythm: use generous section gaps at 2 times the confirmed padding token and compact groups at half a token. Let the visual and heading establish hierarchy rather than oversized empty cards.
-- Material: start with background and one surface layer. Use confirmed radii, fine borders, and a single subtle shadow style; translucent material must improve layer separation and preserve text contrast.
-- Visual: use relevant, well-cropped product or environment imagery. If assets are unavailable, make a deliberate illustration or type composition, and identify it as illustrative.
-- Actions: one prominent primary action with a readable foreground; secondary actions are quieter. Provide keyboard focus and legible disabled/error states; do not rely on pale color alone.
-- Responsive: stack heading, image, benefits and details in reading order below 700px. Maintain image proportions and 44px touch targets, and respect reduced motion.
-- Preserve confirmed tokens and font assets. Verify crops, spacing, contrast, long Korean text and mobile/desktop renders before completion.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Composition: quiet hierarchy and generous spacing adapted to the actual task. A 6:5 copy/image balance can serve expressive content; operational screens retain controls and data. Do not add benefit sections or product/service lists from a sample.
+- Hierarchy: display heading at 2.75-3.5 times body size where appropriate, 1.2 heading leading, readable body at base size with 1.7 leading and restrained secondary labels. Functional labels never rely on thin pale type.
+- Rhythm: section gaps of 2 times confirmed padding and compact groups at half a token. Let actual content establish hierarchy rather than oversized empty containers.
+- Material: background and one surface layer, confirmed radii, fine borders and one subtle shadow treatment. Translucency must clarify layers and preserve text contrast.
+- Visual: use relevant well-cropped imagery only when useful. If required assets are absent, make an identified illustrative or typographic study; do not invent product data.
+- Actions: clear primary emphasis when the actual workflow has a main action, quieter supporting controls, visible keyboard focus and legible disabled/error states.
+- Responsive: stack regions in logical reading order below 700px, preserve image proportions and 44px touch targets, and respect reduced motion.
+- Preserve confirmed tokens and font assets. Verify crop where used, spacing, contrast, long Korean text and mobile/desktop renders.

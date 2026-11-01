@@ -49,7 +49,8 @@
       basePreset: state.basePreset,
       tasteProfileMode: state.tasteProfileMode,
       tokens: state.tokens,
-      direction: direction
+      direction: direction,
+      referenceUsage: VASDesignReference.usage()
     };
     if (global.VASDesignReference) design.visualReference = VASDesignReference.reference(design, scope || { mode: 'new', scope: '' }, global.VASConfig && VASConfig.version);
     return design;

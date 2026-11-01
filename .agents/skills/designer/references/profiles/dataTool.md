@@ -1,10 +1,11 @@
 # Dense Data Tool
 
-- Composition: use a compact page title and scoped summary, a search/filter/action toolbar, then a real table or operations list. Keep the main data within the first desktop viewport.
-- Hierarchy: page title at 1.75-2 times body size, table text at 0.875-1 times, labels at 0.8 times. Use tabular numbers, right-aligned amounts and stable column widths.
-- Density: target 44-52px rows with the confirmed padding token governing container spacing. Distinguish table headings, totals and selected rows using weight and surface contrast.
-- Content: show meaningful identifiers, names, states and timestamps. Use text labels as well as colors for warnings and completion; unavailable values must say so rather than becoming zero.
-- Controls: place filters together, display active filter count and a clear action, preserve selections while sorting, and explain empty/error states near the affected data.
-- Responsive: keep comparison tables in a labeled local horizontal scroller when columns must remain aligned; otherwise use stacked labeled rows. Never hide critical status or identifiers just to fit mobile.
-- Keep decorative heroes, product illustrations and unrelated metrics out of operational workflows. A precise grid and clear state hierarchy carry the visual identity.
-- Preserve confirmed tokens. Verify a populated view, no results, error, keyboard navigation and 320/390px layouts with real browser evidence.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Composition: prioritize the actual task with a compact heading and aligned content. Use a table or operations list only when the requested data needs comparison; do not add search, filters, metrics or a dashboard solely from this profile.
+- Hierarchy: heading at 1.75-2 times body size, dense data text at 0.875-1 times and secondary labels at 0.8 times. Use tabular numbers and stable alignment where numeric comparison matters.
+- Density: for required rows, target readable 44-52px heights; confirmed padding governs container spacing. Distinguish headings, selections and totals only when those concepts exist in the app.
+- Content: label actual values and states with text as well as colour. Do not invent identifiers, timestamps, totals or status data; unavailable values must not become zero.
+- Controls: group controls by the content they affect. If the task includes filtering or sorting, make active states and feedback clear; the style itself does not request those features.
+- Responsive: comparison tables may use a labeled local horizontal scroller when columns must stay aligned; otherwise stack labeled rows. Preserve critical content and existing workflow.
+- Identity: precise grids, clear state hierarchy and restrained decoration. Do not force a decorative hero or unrelated metrics onto operational screens.
+- Preserve confirmed tokens. Verify actual populated, empty and error states where relevant, keyboard access and 320/390px layouts with browser evidence.

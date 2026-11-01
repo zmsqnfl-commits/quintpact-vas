@@ -255,6 +255,13 @@ def finalize_handoff(
     document: dict[str, Any],
     prompt_builder: Callable[[dict[str, Any]], str],
 ) -> dict[str, Any]:
+    try:
+        from .vas_design_reference import apply_usage
+    except ImportError:
+        from vas_design_reference import apply_usage
+    # Normalize this derived policy even on imported legacy handoffs. Preserve
+    # user directions and reference metadata; neither can authorize new features.
+    apply_usage(document)
     safe = sanitize(document)
     changed = safe != document
     document.clear()
@@ -297,9 +304,12 @@ def build_prompt(document: dict[str, Any], target: str = "universal", *, project
                        ".vas/는 VAS 도구 전용입니다. 앱 원본으로 읽거나 앱 작업으로 수정하지 마세요.")
     try:
         from .vas_handoff_details import prompt_details, design_direction
+        from .vas_design_reference import prompt as reference_prompt
     except ImportError:
         from vas_handoff_details import prompt_details, design_direction
+        from vas_design_reference import prompt as reference_prompt
     direction = design_direction(document)
+    reference_text = reference_prompt(document)
     constraints = task.get("constraints", []) if isinstance(task, dict) else []
     criteria = task.get("acceptanceCriteria", []) if isinstance(task, dict) else []
     constraint_text = "\n".join(f"- {clean(item, 12_000)}" for item in constraints) or "- 없음"
@@ -319,7 +329,7 @@ def build_prompt(document: dict[str, Any], target: str = "universal", *, project
 완료 기준:
 {criteria_text}
 
-디자인 방향:
+{reference_text}디자인 방향:
 {direction}
 
 {details_text}

@@ -181,7 +181,8 @@
     const tool = labels[provider] || labels.universal;
     const project = document.project || {};
     const task = document.task || {};
-    const design = document.context && document.context.design || {};
+    const design = task.designScope && task.designScope.mode === 'preserve'
+      ? { included: false } : document.context && document.context.design || {};
     const details = document.context && document.context.requirements && document.context.requirements.value || {};
     const requirementDetails = ['reference', 'capabilities', 'dataReadiness', 'platforms', 'deadline', 'budget', 'attachments'].reduce(function (out, key) { if (details[key] !== undefined) out[key] = details[key]; return out; }, {});
     const workflow = global.VASAgentResources ? VASAgentResources.workflow : '주 실행자가 원본을 읽고 구현·검증을 완료하세요. 실제 서브에이전트 도구가 제공되는 경우에만 필요한 역할에 위임하고 결과를 회수하세요.';
@@ -193,7 +194,7 @@
       ? '루트에 .vas/project-layout.json과 .vas/src/vas-hub.html이 있으면 최상위 src/에 앱을 만들고 .vas/는 보존하세요. 별도 하위 프로젝트를 만들지 마세요. 일반 작업 폴더는 확인한 대상의 기존 구조와 파일을 보존하세요.'
       : '프로젝트 구조·기술 스택·실행 방법은 현재 폴더의 실제 파일을 직접 읽어 판단하세요.';
     const designDirection = VASTaskPolicy.direction(task.designScope) + '\n' + (design.included === true && design.direction
-      ? clean(design.direction, 12000)
+      ? '디자인 참고 문구 (기능 요구사항 아님):\n' + clean(design.direction, 12000)
       : '기존 프로젝트의 디자인 규칙을 우선하며, 별도 지시가 없으면 현재 모습을 유지하세요.');
     const folder = isNew ? '' : localFolder(folderPath);
     const folderToken = '__VAS_LOCAL_FOLDER_LOCATION__';
@@ -209,9 +210,9 @@
       '공통 확인 안내 (작업별 완료조건이나 확인 근거가 아님):\n' + listText(task.validationGuidance) + '\n\n' +
       '추가 요구사항(JSON):\n' + JSON.stringify(requirementDetails, null, 2) + '\n\n' +
       (details.attachments && details.attachments.count ? '참고 파일: 필요한 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 이름과 내용을 전송하지 않았습니다. AI는 파일을 받기 전에는 내용을 추정하지 마세요.\n\n' : '') +
+      (global.VASDesignReference ? VASDesignReference.prompt(document) : '') +
       '디자인 방향:\n' + designDirection + '\n\n' +
       (design.included && design.tokens ? '확정 디자인 토큰(JSON):\n' + JSON.stringify(design.tokens, null, 2) + '\n\n' : '') +
-      (global.VASDesignReference ? VASDesignReference.prompt(document) : '') +
       '에이전트 작업 방식:\n' + workflow + '\n\n' +
       '작업 규칙:\n' +
       '1. RBG(Read Before Generate): ' + sourceRule + '\n' +

@@ -50,6 +50,7 @@
   ];
   const OUTPUT_CONTRACT = [
     'Treat preset brand names as style references, not a request to copy a brand. The studio demo content, geometric studies and sample counts are illustrative and must not become production data.',
+    'Reference scope is visual elements only. Derive features from the current user task, saved project instructions and completion criteria; never add sample pricing, checkout, login, shop, music or other domain features just because they appear in a sample. Keep those features when the user actually requests them.',
     'Before implementation, name the actual screen task, the chosen composition, type ratios, spacing rhythm and focal point. Adapt editorial or consumer layouts to the requested product instead of forcing every screen into a hero plus three metric cards.',
     'Implement the requested result with concrete layout, typography, spacing, color and component states.',
     'Use actual reference files and screenshots. Name missing inputs instead of inventing their contents.',
@@ -83,6 +84,7 @@
 
     return [
       '[VAS DESIGN STUDIO PROMPT]\nPreset: ' + presetKey + '\nTaste Profile: ' + profile.label + '\nTaste Source: ' + profile.source,
+      '[REFERENCE USAGE]\n' + window.VASDesignReference.usagePrompt(),
       '[DESIGN SKILL]\n' + window.VASAgentResources.designer,
       formatRuleList('BASELINE RULES', TASTE_BASELINE.rules),
       formatRuleList('TASTE PROFILE RULES', profile.rules),

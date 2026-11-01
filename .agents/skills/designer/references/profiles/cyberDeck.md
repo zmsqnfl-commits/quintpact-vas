@@ -1,9 +1,10 @@
 # Cyber Deck
 
-- Identity: an instrument-style science-fiction console with near-black, acid lime and restrained cyan. Use purposeful technical structure rather than random glowing ornaments.
-- Composition: a narrow status rail, dominant wireframe globe or relevant technical visualization, terminal pane and a thin signal strip. The visualization takes more space than the surrounding instruments.
-- Typography: local monospace, compact uppercase instrument labels and a large two-line status title. Keep important labels readable and avoid using illegible microtype for actual controls.
-- Artwork: use an original wire-globe image with CSS orbit animation, or render a relevant visualization in SVG or canvas. Separate decorative coordinates from real telemetry; label sample data and simulated status explicitly.
-- Detail: fine lime borders, dark solid panels, restrained glow and a high-contrast primary console action. A future HUD can use chamfered geometry while retaining accessible rectangular hit areas.
-- Responsive: reduce three instrument columns to two then one. Keep the visual large, wrap terminal lines and make each control at least 44px tall. Verify 320px and desktop without horizontal scrolling.
-- Behaviour: local sample diagnostics must never pretend to operate real infrastructure. Provide a visible pause for looping visualization and disable it with reduced motion; verify focus, readable results and selected tokens.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: instrument-style near-black, acid lime and restrained cyan. Technical precision and fine line work carry the visual identity, not a requirement for a terminal or monitoring system.
+- Composition: contrast one dominant content region with narrow supporting rails if the task needs them. Borrow aligned divisions, chamfered edges and horizontal rhythm; a globe, terminal and signal strip are optional decorative references, not required features.
+- Typography: local monospace, compact uppercase secondary labels and a stronger main heading. Keep actual controls legible; do not shrink essential labels into instrument microtype.
+- Artwork: choose a relevant line-based visualization or abstract wire geometry where useful. Decorative coordinates are not live telemetry; never invent operational, security or financial data.
+- Detail: fine lime borders, dark solid panels, restrained glow and a high-contrast primary action. Chamfered geometry must retain accessible hit areas.
+- Responsive: reduce supporting columns as needed, wrap actual content and retain 44px controls. Test 320px and desktop without page-level horizontal overflow.
+- Behaviour: required actions keep their own meaning. Do not add diagnostics or terminal commands from the sample. Optional looping graphics need pause and reduced-motion support; static graphics are sufficient.

@@ -30,7 +30,7 @@ test('design preview reflects preset tokens', async ({ page }) => {
   await expect(page.locator('.ds-projects details')).toHaveCount(3);
   await expect(page.locator('.p-stat-card')).toHaveCount(0);
   await expect(page.locator('.ds-contact form')).toHaveCount(1);
-  await expect(page.locator('.btn-preset[data-preset="awwwards"] span')).toContainText('잡지처럼');
+  await expect(page.locator('.btn-preset[data-preset="awwwards"] span')).toContainText('큰 활자, 비대칭 구도');
   const presetColumns = await page.locator('.preset-grid').first().evaluate(element =>
     getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
   );

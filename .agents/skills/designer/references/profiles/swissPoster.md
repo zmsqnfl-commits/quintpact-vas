@@ -1,9 +1,10 @@
 # Swiss Poster
 
-- Identity: an international typography exhibition in saturated cobalt, warm ivory and a single vermilion disc. A strong grid and monumental condensed letters carry the design.
-- Composition: compact masthead; narrow date rail; oversized NEW above a wide PERSPECTIVES line; a partially cropped disc behind the title; then a ruled programme index.
-- Typography: Anton or another locally available condensed display face, with normal-width sans or mono for small metadata. Size each title line deliberately rather than uniformly scaling a generic heading.
-- Artwork: the simple vermilion circle is the intended abstract poster artwork. Keep it behind the typographic hierarchy and outside reading paths; it does not need stock photography.
-- Detail: square controls, fine aligned rules, generous blue negative space and large programme labels. Avoid rounded card grids and decorative shadows in this direction.
-- Responsive: retain the date rail when it fits, move explanatory text below the title and allow programme metadata to wrap onto a second line. Test at 320px and desktop, including long translated titles.
-- Behaviour: programme actions reveal session details with keyboard focus. Keep motion minimal; check title bounds, contrast, font loading and chosen tokens before declaring the design complete.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: saturated cobalt, warm ivory and one vermilion accent, with a strong asymmetric grid and monumental condensed letters. The exhibition sample does not define the requested app's subject.
+- Composition: contrast oversized native headings with quiet narrow supporting regions and fine-rule groupings. Use only the user's content; do not copy the sample's slogans, date rail or programme index as required sections.
+- Typography: Anton or another local condensed display face, normal-width sans or mono for secondary labels. Deliberately size display lines while keeping functional screens readable.
+- Artwork: a simple abstract vermilion circle can provide contrast behind typography, outside reading paths. Geometry is decorative and does not imply an exhibition or event feature.
+- Detail: square controls, aligned fine rules and generous blue negative space. Scale the display treatment down where the actual task needs dense content; avoid gratuitous shadows.
+- Responsive: collapse narrow supporting regions when necessary and wrap actual secondary information. Test 320px and desktop with long translated headings, not the sample copy.
+- Behaviour: retain requested actions and visible keyboard focus. Motion is minimal; check bounds, contrast, font loading and confirmed tokens on the implemented screen.

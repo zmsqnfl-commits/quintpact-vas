@@ -1,9 +1,10 @@
 # Clay Pop
 
-- Identity: a friendly creative learning space with peach, lilac, cream and plum. Use soft dimensional objects and inflated surfaces rather than generic flat illustrations.
-- Composition: rounded heavy headline at left, one large lilac clay sculpture at right, followed by three course modules with different sculptural symbols. On task screens retain the same material language without forcing a marketing hero.
-- Typography: Bricolage Grotesque or a rounded expressive sans; strong friendly display weight, compact title lines and simple readable Korean body text.
-- Media: a tactile clay headphone or subject-relevant 3D object with visible surface texture, soft directional light and contact shadow. The real image must anchor the layout; avoid substituting a blank blob.
-- Material: peach background, cream inflated course surfaces, large 24-32px corners, subtle inner highlight and a grounded soft shadow. Use the confirmed tokens as the adjustable base.
-- Interaction: a raised main action has a visible focus state and opens course details; small hover motion may reinforce its volume without moving surrounding text.
-- Responsive: stack the sculpture below the headline and change course cards into compact horizontal rows on phones. Verify shape, image crop and 320px reading; disable decorative motion for reduced motion.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: friendly peach, lilac, cream and plum, with soft dimensional objects and inflated surfaces. This material language does not require a learning platform.
+- Composition: pair a rounded heavy heading with one relevant sculptural focal point when the screen allows it. Group only requested content using varied softly inset surfaces; operational screens keep their controls and data first.
+- Typography: Bricolage Grotesque or a rounded expressive sans, strong friendly display weight, compact title lines and simple readable Korean body text.
+- Media: use a subject-relevant tactile 3D object with visible texture, soft directional light and contact shadow. The sample's headphone is illustrative; it does not define the app's subject or features.
+- Material: peach background, cream inflated surfaces, generous corners, subtle inner highlight and grounded soft shadow. Confirmed tokens remain the adjustable base.
+- Interaction: required actions have visible focus and meaningful feedback; a small hover motion may reinforce volume without moving surrounding text. Do not add course navigation from the sample.
+- Responsive: stack the focal point below the heading and rearrange required content into readable rows on phones. Verify image crop, 320px reading and reduced motion.

@@ -1,9 +1,10 @@
 # Product Workspace
 
-- Identity: a focused dark productivity workspace, with off-black background, quiet dark surfaces and one muted periwinkle accent. The Linear name is a style reference, not an instruction to copy the product.
-- Composition: compact sidebar, project breadcrumb and heading, progress strip, category filters, three kanban columns and an inline task inspector. Build the actual workflow instead of a marketing hero with fake metrics.
-- Typography: readable system sans for controls, consistent label sizes, restrained headings and tabular details. Keep confirmed font and color tokens.
-- Detail: fine borders, modest radii, subtle elevation and compact status labels; reserve the accent for selected tasks and actionable controls.
-- Interaction: search and filters combine, tasks open an inspector, status edits move the task to the correct column, and task creation updates derived totals. Use native controls and visible keyboard focus.
-- Data: calculate progress from actual tasks. Sample records and fictional team members demonstrate layout only and must not become production project facts or falsely live data.
-- Responsive: collapse the sidebar to compact navigation and stack kanban columns when cards no longer fit. Test search, creation, status changes and empty states at desktop and 320px.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: focused off-black background, quiet dark surfaces and one muted periwinkle accent. The Linear name denotes visual styling, not a project-management feature set.
+- Composition: use compact navigation where needed, a restrained heading and a clearly dominant content area. Adapt the fine divisions and density to the requested form, list or other workflow; do not insert kanban columns, task inspectors or progress strips from the sample.
+- Typography: readable system sans controls, consistent labels, restrained headings and tabular numbers where needed. Preserve confirmed font and colour tokens.
+- Detail: fine borders, modest radii, subtle elevation and compact secondary labels. Reserve the accent for selected states and actionable controls belonging to the task.
+- Interaction: preserve the requested behaviour and show keyboard focus, loading, empty and error feedback as applicable. Search, filters, task creation and status editing are features only when the actual requirements call for them.
+- Data: use the app's real or explicitly identified test data. ORBIT tasks and fictional team members demonstrate appearance only; do not copy them as production facts or fabricate live metrics.
+- Responsive: collapse existing navigation and rearrange real content when columns no longer fit. Verify the requested main workflow at desktop and 320px without forcing the sample's board structure.

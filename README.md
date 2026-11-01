@@ -57,6 +57,8 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 The local starter hub also lets you edit and save the project's working instructions. The screen and coding agent read the same portable `VAS-PROJECT-PROMPT.json` in the project root, even before a private chat session exists. Saved changes are read before the next task and delegation; saving does not wake or interrupt an AI. Concurrent edits require an explicit refresh or comparison, and missing session-store permissions are reported separately from reading the project instructions.
 
+In this development preview, design samples supply typography, color, layout, imagery and spacing references. Sample pricing, checkout, login and domain-specific screens are included only when the actual task calls for them. Browser exports and chat preparation carry the same visual-only policy; built-in profiles describe visual relationships to adapt to the requested app. This preserves explicitly requested commerce features and still requires the host to inspect its output. See [design reference scope](docs/DESIGN-REFERENCE-SCOPE.md).
+
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
 1. Open the [v2.10.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0) and download `VAS-2.10.0-windows.zip`.

@@ -15,8 +15,9 @@ def design_direction(document: dict) -> str:
         from vas_task_policy import design_direction as scope_direction
         from vas_ai_contract import clean
     design = (document.get("context") or {}).get("design") or {}
-    direction = clean(design.get("direction", ""), 12000) if design.get("included") else ""
-    return scope_direction(document) + ("\n" + direction if direction else "")
+    preserve = ((document.get("task") or {}).get("designScope") or {}).get("mode") == "preserve"
+    direction = clean(design.get("direction", ""), 12000) if design.get("included") and not preserve else ""
+    return scope_direction(document) + ("\n디자인 참고 문구 (기능 요구사항 아님):\n" + direction if direction else "")
 
 
 def prompt_details(document: dict) -> str:
@@ -35,15 +36,9 @@ def prompt_details(document: dict) -> str:
     if attachments.get("count") or attachments.get("files"):
         sections.append("참고 파일 원본을 코딩 AI에 별도로 첨부하세요. VAS는 파일 내용을 전송하지 않았습니다. AI는 받지 않은 내용을 추정하지 마세요.")
     design = context.get("design") or {}
-    if design.get("included") and design.get("tokens"):
+    preserve = ((document.get("task") or {}).get("designScope") or {}).get("mode") == "preserve"
+    if design.get("included") and design.get("tokens") and not preserve:
         sections.append("확정 디자인 토큰(JSON):\n" + clean(json.dumps(design["tokens"], ensure_ascii=False, indent=2), 4000))
-    try:
-        from .vas_design_reference import prompt as reference_prompt
-    except ImportError:
-        from vas_design_reference import prompt as reference_prompt
-    reference = reference_prompt(document)
-    if reference:
-        sections.append(reference.rstrip())
     resource = ROOT / ".agents/agent-resources.json"
     if resource.is_file():
         workflow = json.loads(resource.read_text(encoding="utf-8"))["workflow"]

@@ -1,9 +1,10 @@
 # Retro Sunset
 
-- Identity: a sunny analogue music poster in buttercream, burgundy and burnt orange. Use chunky retro lettering and recognisable record graphics.
-- Composition: a short oversized stacked title on the left, nested sunset arches and a large vinyl disc on the right, then a full-width event band and a flat lineup timetable.
-- Typography: Caprasimo or a comparably soft heavy retro serif for display, with plain sans timetable text. Preserve the character of the thick curved letters; a thin default serif loses this identity.
-- Artwork: concentric record grooves, an orange sun arch and a small contrasting centre label can be drawn with CSS or vector shapes. These are intentional poster graphics, not placeholder media.
-- Detail: warm printed colours, minimal shadow and rounded pill actions. Keep the timetable unboxed and aligned; do not add unrelated SaaS cards or fake attendee counts.
-- Responsive: place the record below the headline and move timetable metadata beneath each event name on phones. Keep the title complete at 320px; reduce artwork size before shrinking body text.
-- Behaviour: lineup actions expose event information. Optional record rotation must have a pause and reduced-motion fallback; a static record is sufficient. Respect confirmed tokens and check contrast.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: buttercream, burgundy and burnt orange with chunky analogue lettering, warm printed colour and rounded geometry. A music poster is the sample context, not the app requirement.
+- Composition: use short stacked headings, curved or concentric shapes and optional full-width colour emphasis. Arrange the actual content in aligned open rows where appropriate; do not add an event band, lineup timetable or music player from the sample.
+- Typography: Caprasimo or a comparably soft heavy retro serif for display, plain readable sans for functional text. Preserve thick curved letterforms with confirmed fonts and Korean fallback.
+- Artwork: arches, circles and concentric line rhythms can be CSS or vector decoration. A vinyl disc is optional only when relevant to the subject; it does not require music content or playback.
+- Detail: warm flat colour, minimal shadow and rounded pill treatment for required actions. Keep alignment clear and avoid fake attendance or invented events.
+- Responsive: stack decorative regions below headings when needed, wrap actual row labels and keep titles complete at 320px. Reduce decoration before shrinking body text.
+- Behaviour: retain the requested workflow. Optional decorative rotation needs pause and reduced-motion fallback; static shapes are sufficient. Respect confirmed tokens and check contrast.

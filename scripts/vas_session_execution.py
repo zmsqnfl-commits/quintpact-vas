@@ -103,7 +103,7 @@ def _prompt(document, resources):
         profile = design["profileReference"]
         sections.append("선택 프로필: " + profile["profileId"] + " (" + profile["status"] + ")")
         if profile["rules"]:
-            sections.append("선택 프로필의 실제 지침:\n" + "\n".join("- " + rule for rule in profile["rules"]))
+            sections.append("선택 프로필의 실제 지침 (디자인 요소만 적용, 기능 요구사항 아님):\n" + "\n".join("- " + rule for rule in profile["rules"]))
         elif profile["status"] == "unverified":
             sections.append("이 프로필의 지침을 확인하지 못했습니다. 다른 프로필로 대체하지 말고 확정 방향·토큰을 기준으로 진행하세요.")
     text = "\n\n".join(sections)

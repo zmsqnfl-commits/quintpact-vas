@@ -1,9 +1,10 @@
 # Bento Studio
 
-- Identity: a playful independent studio, with lavender canvas, lime utility tile, coral print and a near-black contact block. These are purposeful colour islands, not a gradient across every surface.
-- Composition: build an irregular modular grid with a double-width oversized headline, a tall art tile, a working checklist, a small graphic tile and an indexed project tile. Mix spans and information density; do not repeat the same three-card hero used by other presets.
+- Scope: borrow visual elements only. Features, routes, data and actions come from the user request and existing app, not this sample. Add sample functionality only when explicitly requested; preserve required functionality even when the sample lacks it.
+- Identity: playful lavender, lime, coral and near-black colour islands, with varied modular proportions rather than a gradient across every surface.
+- Composition: place the requested content in an irregular grid with a wider heading module and mixed tall, small and wide supporting modules. Vary spans according to actual information; do not invent a checklist, portfolio or contact area to fill tiles.
 - Typography: Bricolage Grotesque or a similarly expressive locally available sans, strong weight and tight display spacing. Keep body text and Korean fallback calm, legible and at least 1.6 line height.
-- Media: use an original abstract print with a circular pink form, black flowing wave and cream stripes. The shipped art is a style sample; choose subject-relevant original media for the actual project. Keep text and controls as real HTML.
-- Detail: 24px rounded modules, flat bold colour, generous internal padding and little shadow. A checkbox must change state; a project action must open relevant content.
-- Responsive: change three columns to two at medium widths; give the headline full width on small screens and keep small modules paired only while labels fit. Test 320px and desktop without clipping.
-- Motion: short tile hover or a single entrance sequence; respect reduced motion. Validate actual rendered colour balance, different tile proportions, keyboard controls and the selected tokens.
+- Media: an original abstract print can balance the layout. Borrow the sample's circular forms, flowing wave and contrasting stripes only as visual relationships; choose relevant original media and keep text and controls native.
+- Detail: rounded modules, flat bold colour, generous internal padding and little shadow. Apply confirmed radius and spacing tokens; controls required by the task need visible state feedback.
+- Responsive: change three columns to two at medium widths; give the heading full width on small screens and pair small modules only while labels fit. Test 320px and desktop without clipping.
+- Motion: a short tile hover or one entrance sequence is optional; respect reduced motion. Check colour balance, tile proportions, keyboard access and confirmed tokens on the actual app.
