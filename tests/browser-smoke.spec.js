@@ -47,7 +47,7 @@ test('new project flow is step-by-step and safely renders file names', async ({ 
 
 test('new project produces the common safe VAS-AI-HANDOFF.json', async ({ page }) => {
   await reachDone(page);
-  await expect(page.locator('#handoffReview')).toContainText('사용 중인 코딩 도구에서 새 프로젝트를 만들 빈 폴더를 여세요');
+  await expect(page.locator('#handoffReview')).toContainText('최상위 src/에 앱을 만들고 .vas/는 보존하세요');
   await expect(page.locator('#handoffReview')).toContainText('Preset: awwwards');
   await expect(page.locator('#handoffReview')).not.toContainText('VAS-AI-RESULT.json');
   await expect(page.locator('#handoffInputReview')).toContainText('필수');

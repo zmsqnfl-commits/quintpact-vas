@@ -4,6 +4,7 @@ $projectsModule = Join-Path $PSScriptRoot 'VAS.Projects.psm1'; if (-not (Get-Com
 . (Join-Path $PSScriptRoot 'VAS.Server.Handoff.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Server.Session.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Server.Memory.ps1')
+. (Join-Path $PSScriptRoot 'VAS.ProjectLayout.ps1')
 function Set-VASSecurityHeaders {
     param([Net.HttpListenerResponse]$Response, [bool]$Api = $false)
     $Response.Headers['X-Content-Type-Options'] = 'nosniff'
@@ -254,6 +255,12 @@ function Invoke-VASApiRequest {
     $State.LastActivity = [DateTime]::UtcNow
     $path = $request.Url.AbsolutePath.TrimEnd('/').ToLowerInvariant()
     $method = $request.HttpMethod.ToUpperInvariant()
+    if ($State.Layout -eq 'project') {
+        if ($path -eq '/api/projects' -and $method -eq 'GET') { Write-VASResponse $Context 200 @{ projects = @() }; return }
+        if ($path -match '^/api/(projects|migrations|handoffs)(/|$)' -or $path -eq '/api/knowledge/projects') {
+            Write-VASError $Context 409 '지금 연 폴더가 이미 앱 프로젝트입니다. 채팅에서 이 폴더의 src/를 사용하세요.' 'project_root_layout'; return
+        }
+    }
     if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
     $body = $null
     if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) {
@@ -275,11 +282,12 @@ function Invoke-VASApiRequest {
         $migrationAvailable = [bool](Import-VASMigrationModuleIfAvailable)
         $importAvailable = $migrationAvailable -and [bool]$python.available
         $reason = if (-not $migrationAvailable) { 'migration-module-unavailable' } elseif (-not [bool]$python.available -and $python.version) { 'python-version-unsupported' } elseif (-not [bool]$python.available) { 'python-unavailable' } else { $null }
+        if ($State.Layout -eq 'project') { $importAvailable = $false; $reason = 'project-root-layout' }
         $capabilities = [ordered]@{
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.10.0'; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.10.0'; layout = $State.Layout; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path.StartsWith('/api/memory/')) { Invoke-VASMemoryHttpRoute $path $method $body $Context $State; return }
     if ($path -eq '/api/files/read' -and $method -eq 'GET') {
@@ -405,6 +413,8 @@ function Invoke-VASStaticRequest {
 }
 function New-VASServerState {
     param([string]$RootPath, [string]$MemoryRoot, [int]$PreferredPort = 41725, [string]$RuntimeId)
+    $layout = Get-VASRuntimeLayout $RootPath
+    if ($layout -eq 'project') { Assert-VASProjectStateLocation $RootPath $MemoryRoot }
     $ports = @()
     for ($offset = 0; $offset -lt 10; $offset++) {
         $candidate = $PreferredPort + $offset
@@ -420,6 +430,7 @@ function New-VASServerState {
             return [ordered]@{
                 Listener = $listener; Port = $port; BaseUrl = "http://127.0.0.1:$port"
                 Token = New-VASSessionToken; RootPath = [IO.Path]::GetFullPath($RootPath)
+                Layout = $layout
                 MemoryRoot = $MemoryRoot; RuntimeId = $RuntimeId; StartedAt = [DateTime]::UtcNow
                 LastActivity = [DateTime]::UtcNow; Shutdown = $false
             }

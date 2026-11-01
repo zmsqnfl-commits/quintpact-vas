@@ -278,7 +278,7 @@ def finalize_handoff(
     return document
 
 
-def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
+def build_prompt(document: dict[str, Any], target: str = "universal", *, project_root: bool = False) -> str:
     project = document.get("project", {})
     task = document.get("task", {})
     context = document.get("context", {})
@@ -289,6 +289,12 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
     opening = f"{tool}에서 새 프로젝트를 만들 빈 폴더를 여세요." if is_new else f"{tool}에서 실제 작업할 원본 프로젝트 폴더를 여세요."
     source_rule = ("현재 열린 빈 폴더에 요구사항에 맞는 구조를 직접 설계하세요." if is_new
                    else "프로젝트 구조·기술 스택·실행 방법은 현재 폴더의 실제 파일을 직접 읽어 판단하세요.")
+    location = "현재 열린 폴더가 새 프로젝트 작업 공간입니다." if is_new else "현재 열린 폴더가 작업 원본입니다."
+    if project_root:
+        opening = f"{tool}에서 현재 연결한 프로젝트 루트를 그대로 사용하세요. 별도 앱 폴더를 만들지 마세요."
+        location = "이 폴더가 사용자 앱의 프로젝트 루트이며 src/는 새 프로그램의 소스 위치입니다."
+        source_rule = ("프로젝트의 기존 파일과 지침을 보존하고 앱 코드는 루트의 src/에 구현하세요. "
+                       ".vas/는 VAS 도구 전용입니다. 앱 원본으로 읽거나 앱 작업으로 수정하지 마세요.")
     try:
         from .vas_handoff_details import prompt_details, design_direction
     except ImportError:
@@ -301,7 +307,7 @@ def build_prompt(document: dict[str, Any], target: str = "universal") -> str:
     details_text = prompt_details(document)
     text = f"""{opening}
 
-{'현재 열린 폴더가 새 프로젝트 작업 공간입니다.' if is_new else '현재 열린 폴더가 작업 원본입니다.'}
+{location}
 프로젝트: {clean(project.get('name'), 80)}
 
 요청:

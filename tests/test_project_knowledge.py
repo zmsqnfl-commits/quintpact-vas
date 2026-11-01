@@ -65,7 +65,7 @@ class ProjectKnowledgeTests(unittest.TestCase):
             path.write_text(f"safe searchable content {number}", encoding="utf-8")
             expected.add("workspace/projects/registered/" + relative)
         (unregistered / "ignored.md").write_text("must not appear", encoding="utf-8")
-        for folder in (".git", "node_modules", "vendor", "build", "dist", "cache", "secrets"):
+        for folder in (".vas", ".git", "node_modules", "vendor", "build", "dist", "cache", "secrets"):
             path = project / folder
             path.mkdir()
             (path / "ignored.js").write_text("must not appear", encoding="utf-8")

@@ -15,6 +15,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from vas_project_layout import reserves_engine
 
 SCHEMA_VERSION = 1
 EXCLUDED_DIRS = {
@@ -114,6 +115,8 @@ class MigrationManager:
 
     def __init__(self, root: str | os.PathLike[str], large_file_mb: int = 50):
         self.root = Path(root).resolve()
+        if self.root.name.casefold() == ".vas":
+            raise MigrationError("프로젝트형 VAS에서는 이전 가져오기·복구 기능을 사용하지 않습니다.")
         self.workspace = self.root / "workspace"
         self.projects = self.workspace / "projects"
         self.staging = self.workspace / ".staging"
@@ -122,6 +125,8 @@ class MigrationManager:
 
     def _validate_source(self, source: Path, must_exist: bool = True) -> Path:
         source = source.expanduser().resolve(strict=False)
+        if any(reserves_engine(folder) or reserves_engine(folder / ".vas") for folder in (source, *source.parents)):
+            raise MigrationError("프로젝트형 VAS는 직접 열어 작업하세요.")
         if must_exist and not source.is_dir():
             raise MigrationError(f"원본 폴더가 존재하지 않습니다: {source}")
         if source.exists() and _is_reparse(source):
@@ -160,6 +165,8 @@ class MigrationManager:
                     skipped.append({"path": rel, "reason": "reparse-point"})
                     continue
                 if entry.is_dir(follow_symlinks=False):
+                    if entry.name.casefold() == ".vas" and reserves_engine(path):
+                        raise MigrationError("프로젝트형 VAS를 포함한 폴더는 가져올 수 없습니다.")
                     if entry.name.casefold() in EXCLUDED_DIRS:
                         skipped.append({"path": rel, "reason": "dependency-or-cache"})
                     else:

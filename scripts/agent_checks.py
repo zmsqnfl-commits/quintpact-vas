@@ -38,7 +38,7 @@ WRITE_ROOTS = {
     "tester": {"tests"},
     "security": {"docs"},
 }
-PROTECTED = {"workspace", "dist", "node_modules", ".git", ".vas_backups", ".temp data", "logs", "backups"}
+PROTECTED = {"workspace", "dist", "node_modules", ".git", ".vas", ".vas_backups", ".temp data", "logs", "backups"}
 WRITE_TOOLS = {"write", "edit", "write_to_file", "replace_file_content", "multi_replace_file_content"}
 
 
@@ -156,28 +156,34 @@ def main() -> int:
     import json
     import zipfile
     import hashlib
-    from build_release import FULL_DIRS, allowed, version
-    expected = {
-        path.relative_to(ROOT).as_posix()
+    from build_release import FULL_DIRS, ROOT_FILES, LEGAL_FILES, HOST_GUIDES, allowed, native_project_role, version
+    source_files = {
+        path.relative_to(ROOT)
         for directory in FULL_DIRS for path in (ROOT / directory).rglob("*")
         if path.is_file() and allowed(path.relative_to(ROOT))
     }
-    expected.update(f"{host}/agents/vas_{role}{suffix}"
-                    for host, suffix in ((".codex", ".toml"), (".claude", ".md"))
-                    for role in ("implementer", "designer", "reviewer"))
+    source_files.update(Path(name) for name in ROOT_FILES)
+    expected = {".vas/" + rel.as_posix(): hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
+                for rel in source_files}
+    expected[".vas/project-layout.json"] = hashlib.sha256(b'{ "layout": "vas-project", "version": 1 }\n').hexdigest()
+    for name in LEGAL_FILES:
+        expected[name] = expected[".vas/" + name]
+    for name in HOST_GUIDES:
+        expected[name] = expected[".vas/.agents/PROJECT-ROOT.md"]
+    for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
+        for role in ("implementer", "designer", "reviewer"):
+            relative = Path(host) / "agents" / ("vas_" + role + suffix)
+            expected[relative.as_posix()] = hashlib.sha256(native_project_role(relative)).hexdigest()
     with zipfile.ZipFile(ROOT / f"dist/VAS-{version()}-windows.zip") as archive:
         manifest = json.loads(archive.read(f"VAS-{version()}-windows/manifest.json"))
-        packaged = {item["path"] for item in manifest["files"]
-                    if item["path"].startswith(("src/", "scripts/", "docs/", ".agents/", ".codex/agents/", ".claude/agents/"))}
-        if packaged != expected:
+        generated = {"README.md", "00-처음-사용하기.txt", "Run-VAS-System.bat", "src/.gitkeep"}
+        packaged = {item["path"]: item["sha256"] for item in manifest["files"]}
+        if set(packaged) != set(expected) | generated:
             print("Release file list is stale; rebuild the package", file=sys.stderr)
             return 1
-        for item in manifest["files"]:
-            if item["path"] in expected:
-                path = ROOT / item["path"]
-                if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
-                    print("Release source is stale; rebuild the package", file=sys.stderr)
-                    return 1
+        if any(packaged[name] != digest for name, digest in expected.items()):
+            print("Release source is stale; rebuild the package", file=sys.stderr)
+            return 1
     print("Release boundary and source hashes passed")
     return 0
 

@@ -23,6 +23,8 @@ ROOT_FILES = [
     ".cursorrules", ".windsurfrules",
 ]
 FULL_DIRS = ["src", "docs", "scripts", ".agents"]
+LEGAL_FILES = ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md")
+HOST_GUIDES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules")
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
     ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session",
@@ -145,64 +147,61 @@ def zip_directory(source: Path, destination: Path) -> None:
             archive.writestr(info, path.read_bytes())
 
 
+def native_project_role(relative: Path) -> bytes:
+    """Keep the maintained role and host-specific tool limits in project coordinates."""
+    source = (ROOT / relative).read_text(encoding="utf-8")
+    old = "Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md."
+    if source.count(old) != 1:
+        raise RuntimeError(f"Unrecognized host role preamble: {relative}")
+    source = source.replace(old, "Follow the project root AGENTS.md. App code belongs in src/. "
+                            "Do not edit the bundled .vas engine. Use the app's own checks.")
+    # The generated role contains both prose and commands; never relocate an app's src/.
+    source = re.sub(r"(?<![\w./])(?=(?:\.agents|docs|scripts)/)", ".vas/", source)
+    return source.encode("utf-8")
+
+
 def build_windows(stage: Path) -> Path:
     subprocess.run([sys.executable, str(ROOT / "scripts/build-agent-resources.py"), "--check"], check=True)
-    name = f"VAS-{version()}-windows"
-    root = stage / name
-    root.mkdir(parents=True)
+    root = stage / f"VAS-{version()}-windows"
+    engine = root / ".vas"
+    engine.mkdir(parents=True)
     for filename in ROOT_FILES:
-        shutil.copy2(ROOT / filename, root / filename)
+        shutil.copy2(ROOT / filename, engine / filename)
     for dirname in FULL_DIRS:
-        copy_tree(ROOT / dirname, root / dirname)
+        copy_tree(ROOT / dirname, engine / dirname)
+    (engine / "project-layout.json").write_bytes(b'{ "layout": "vas-project", "version": 1 }\n')
+    (root / "src").mkdir()
+    (root / "src/.gitkeep").write_bytes(b"")
+    for filename in LEGAL_FILES:
+        shutil.copy2(ROOT / filename, root / filename)
+    for filename in HOST_GUIDES:
+        shutil.copy2(engine / ".agents/PROJECT-ROOT.md", root / filename)
     for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
         for role in ("implementer", "designer", "reviewer"):
             relative = Path(host) / "agents" / ("vas_" + role + suffix)
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / relative, destination)
-    (root / "README.md").write_text(
-        f"""# VAS {version()} Windows 실행본
+            destination.write_bytes(native_project_role(relative))
+    # pushd supports UNC folders. CALL only a constant relative path: it reparses arguments.
+    launcher = ["@echo off", "setlocal DisableDelayedExpansion", 'pushd "%~dp0.vas" || exit /b 1',
+                'if not exist ".\\Run-VAS-System.bat" goto :missing', 'call ".\\Run-VAS-System.bat"',
+                'set "vasLaunchResult=%ERRORLEVEL%"', "popd", "exit /b %vasLaunchResult%", ":missing",
+                "echo Missing .vas\\Run-VAS-System.bat. Extract the entire project ZIP.", "popd", "exit /b 1"]
+    (root / "Run-VAS-System.bat").write_bytes(("\r\n".join(launcher) + "\r\n").encode("ascii"))
+    # Keep the root quick start independent of the installation folder's name.
+    start = f"""# VAS {version()} 프로젝트 시작
 
-## 시작
+ZIP을 새 위치에 **전체 압축 해제**한 뒤, Run-VAS-System.bat과 src가 있는 폴더의 이름을 프로젝트 이름으로 바꾸세요.
+그 폴더 자체를 코딩 AI에서 열고 “재고 관리 앱을 만들어줘”처럼 요청합니다. 앱 소스는 src/에 작성됩니다.
+.vas/는 함께 제공되는 도구입니다. 앱 코드를 여기에 넣거나 도구 파일을 수정하지 마세요.
+이후 같은 위치에서 작업을 재개하려면 먼저 폴더 이름을 정한 뒤 첫 대화를 시작하세요.
 
-ZIP을 새 폴더에 **전체 압축 해제**한 뒤 두 방식 중 하나로 시작합니다.
-
-### AI와 대화로 시작
-
-프로젝트 지침을 자동으로 읽는 AI 도구에서 이 폴더를 열고 첫 요청을 보내세요. 예: "예약 관리 앱 만들어줘".
-AI는 대화형 시작 지침에 따라 새 앱 제작·기존 앱 수정·VAS 자체 개발을 구분하고 요청과 실제 작업 폴더를 정리합니다.
-VAS 2.10.0 대화형 작업 흐름을 제공합니다. Python 3.10 이상이 있는 코딩 호스트에서 CLI로 공통 설정 저장과 다음 대화 이어가기를 제공합니다.
-작업 경로는 PC 전용 연결 정보로만 저장하며 공유 JSON에는 넣지 않습니다.
-로컬 디자인 화면에서 작업을 연결하고 '대화 설정에 저장'을 누르면 같은 설정에 반영됩니다.
-채팅의 변경은 편집 중이 아닌 화면에 자동 반영됩니다. 편집 중 충돌은 덮어쓰지 않습니다.
-AI는 다음 대화나 구현 전에 최신 설정을 다시 읽습니다. 화면 저장만으로 AI 실행이 시작되지는 않습니다.
-자세한 지원 범위와 진행 방식은 [대화로 시작하기](docs/CHAT-START.md)를 확인하세요.
-[설정 저장과 이어가기](docs/CHAT-STATE.md)에서 저장 위치와 삭제 방법을 확인할 수 있습니다.
-[대화와 디자인 연결](docs/CHAT-DESIGN.md)에서 작업 선택과 충돌 해결 방법을 확인하세요.
-[저장 설정으로 구현·검증](docs/CHAT-EXECUTION.md)은 실행 지시 준비, 실제 역할 위임, 완료조건별 검사와 결과 대조를 설명합니다.
-[진행 요약](docs/CHAT-PROGRESS.md)을 저장하면 새 대화에서 결정·변경 파일·미실행 검사·다음 행동을 이어갑니다.
-[실행 기록](docs/CHAT-WORK.md)은 실제 반환 보고와 선택 파일의 검사 전후·현재 지문을 연결합니다.
-[후속 행동](docs/CHAT-FOLLOWUP.md)은 실패·근거 누락·재검사·원래 직접 확인 조건을 구분합니다. 유효한 검사를 무조건 다시 실행하지 않습니다.
-VAS의 prepare·assess 명령은 앱을 실행하지 않습니다. 실제 구현과 검사는 코딩 호스트가 수행하며, 보고만으로 완료를 인증하지 않습니다.
-
-### 화면에서 직접 설정
-
-`00-처음-사용하기.txt`를 참고하세요.
-
-1. ZIP을 새 폴더에 **전체 압축 해제**합니다.
-2. `Run-VAS-System.bat`를 더블클릭합니다.
-3. 시작 화면에서 새 프로젝트를 만들거나 **기존 프로그램 AI로 연결**을 선택합니다.
-
-Windows 10/11과 PowerShell 5.1 이상을 사용합니다. 기존 프로그램은 폴더 위치만 프롬프트에 넣으며 실제 파일 분석은 코딩 AI가 담당합니다.
-
-새 프로젝트와 기존 프로그램 모두 마지막에 코딩 AI용 프롬프트를 만듭니다. 코딩 도구에서 실제 작업 폴더를 열고 복사된 프롬프트를 붙여넣으세요. `VAS-AI-HANDOFF.json` 저장은 선택입니다.
-
-작업 기억은 사용자가 설정에서 직접 켠 경우에만 이 기기에서 작동합니다. 설정에서 언제든 중지·삭제할 수 있으며 원본 기록과 폴더 위치는 최종 JSON에 들어가지 않습니다. 비밀 후보도 제외합니다.
-
-문제가 생기면 BAT 창의 안내를 확인한 뒤 다시 실행하세요. 사용하지 않으면 로컬 서버는 기본 30분 뒤 자동 종료됩니다.
-""",
-        encoding="utf-8",
-    )
+화면으로 설정하려면 프로젝트 루트의 Run-VAS-System.bat을 더블클릭합니다.
+Windows PowerShell 5.1 이상, 대화형 세션에는 Python 3.10 이상이 필요합니다.
+프로젝트 설정과 다음 작업 안내: [프로젝트 사용법](.vas/docs/PROJECT-ROOT.md).
+"""
+    (root / "README.md").write_text(start, encoding="utf-8", newline="\n")
+    (root / "00-처음-사용하기.txt").write_text(start, encoding="utf-8", newline="\n")
     write_json(root / "manifest.json", manifest_for(root, "windows", ["Run-VAS-System.bat"]))
     return root
 

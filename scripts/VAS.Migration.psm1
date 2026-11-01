@@ -1,5 +1,6 @@
 ﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'VAS.ProjectLayout.ps1')
 
 function Resolve-VASRoot {
     param([string]$Root)
@@ -11,7 +12,9 @@ function Resolve-VASRoot {
 
 function Get-VASStateRoot {
     param([string]$Root)
-    $path = Join-Path (Resolve-VASRoot $Root) 'workspace\.vas'
+    $vasRoot = Resolve-VASRoot $Root
+    Assert-VASLegacyWorkspace $vasRoot
+    $path = Join-Path $vasRoot 'workspace\.vas'
     [IO.Directory]::CreateDirectory($path) | Out-Null
     return $path
 }
@@ -122,6 +125,7 @@ function Invoke-VASPythonUtf8 {
 function Invoke-VASMigrationCli {
     param([string]$Root, [string[]]$Arguments)
     $vasRoot = Resolve-VASRoot $Root
+    Assert-VASLegacyWorkspace $vasRoot
     $script = Join-Path $PSScriptRoot 'vas-project-import.py'
     if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw "CLI를 찾을 수 없습니다: $script" }
     $python = Get-VASPythonCommand
@@ -145,6 +149,7 @@ function Update-VASProjectKnowledge {
     param([string]$Root)
     try {
         $vasRoot = Resolve-VASRoot $Root
+        Assert-VASLegacyWorkspace $vasRoot
         $script = Join-Path $PSScriptRoot 'vas-project-knowledge.py'
         if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw 'missing knowledge builder' }
         $python = Get-VASPythonCommand
@@ -191,6 +196,7 @@ function Save-VASSelection {
 
 function Resolve-VASSelection {
     param([string]$Root, [string]$SelectionId, [string]$Path)
+    Assert-VASLegacyWorkspace (Resolve-VASRoot $Root)
     if (-not [string]::IsNullOrWhiteSpace($Path)) {
         if (-not (Test-Path -LiteralPath $Path -PathType Container)) { throw "폴더가 존재하지 않습니다: $Path" }
         return (Get-Item -LiteralPath $Path -Force).FullName

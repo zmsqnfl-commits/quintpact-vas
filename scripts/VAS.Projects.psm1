@@ -1,5 +1,6 @@
 ﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'VAS.ProjectLayout.ps1')
 
 function Get-VASProjectValue {
     param($Object, [string]$Name, $Default = $null)
@@ -13,6 +14,7 @@ function Get-VASProjectValue {
 
 function Get-VASProjectStatePath {
     param([Parameter(Mandatory)][string]$Root)
+    Assert-VASLegacyWorkspace $Root
     $state = Join-Path ([IO.Path]::GetFullPath($Root)) 'workspace\.vas'
     [IO.Directory]::CreateDirectory($state) | Out-Null
     return (Join-Path $state 'projects.json')

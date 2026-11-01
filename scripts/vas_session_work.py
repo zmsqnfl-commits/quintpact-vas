@@ -60,6 +60,13 @@ def prepared_context(manager, session_id, number, binding):
     return context, criteria
 
 
+def capture_target(manager, binding, paths):
+    from vas_work_files import capture
+    selected = target(manager, binding)
+    in_project = manager.root.name.casefold() == ".vas" and selected == manager.root.parent
+    return capture(selected, binding["identity"], paths, in_project)
+
+
 def work_view(raw, document, binding):
     """Only metadata freshness: this deliberately never prepares or reads app files."""
     from vas_work_contract import validate_work
@@ -127,7 +134,6 @@ def open_work(manager, session_id, expected_revision, expected_work_revision):
 
 def start_work(manager, session_id, expected_revision, expected_work_revision, raw):
     from vas_work_contract import normalize_start
-    from vas_work_files import capture
     def update(data):
         record, work = _record(manager, data, session_id, expected_revision, expected_work_revision)
         require(work is not None, "work_not_found")
@@ -140,8 +146,7 @@ def start_work(manager, session_id, expected_revision, expected_work_revision, r
         for unit in work["units"]:
             paths.update(unit["observedFiles"])
         require(len(paths) <= 64, "work_too_large")
-        before = capture(target(manager, record["binding"]), record["binding"]["identity"],
-                         normalized["observedFiles"])
+        before = capture_target(manager, record["binding"], normalized["observedFiles"])
         # An external editor is not locked. Resource/settings changes cannot silently
         # attach the captured sample to another prepared task.
         require(prepared_context(manager, session_id, expected_revision, record["binding"]) ==
@@ -159,7 +164,6 @@ def start_work(manager, session_id, expected_revision, expected_work_revision, r
 
 def finish_work(manager, session_id, expected_revision, expected_work_revision, unit_id, raw):
     from vas_work_contract import normalize_finish
-    from vas_work_files import capture
     def update(data):
         record, work = _record(manager, data, session_id, expected_revision, expected_work_revision)
         require(work is not None, "work_not_found")
@@ -172,8 +176,7 @@ def finish_work(manager, session_id, expected_revision, expected_work_revision, 
         try:
             require(digest(record["binding"]) == work["context"]["targetBindingSha256"],
                     "work_target_changed")
-            after = capture(target(manager, record["binding"]), record["binding"]["identity"],
-                            unit["observedFiles"])
+            after = capture_target(manager, record["binding"], unit["observedFiles"])
             unit.update(after=after, afterError=None)
         except (OSError, SessionError) as error:
             code = getattr(error, "code", "work_files_unavailable")

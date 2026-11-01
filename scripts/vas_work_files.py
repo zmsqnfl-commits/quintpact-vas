@@ -9,6 +9,7 @@ import stat
 import unicodedata
 
 from vas_ai_contract import canonical, clean, safe_relative, sensitive_key
+from vas_project_layout import is_project_engine, reserves_engine
 from vas_session import SessionError, require, safe_directory
 
 MAX_FILES = 64
@@ -150,11 +151,29 @@ def _read(root, relative, before, parents, used):
         os.close(fd)
 
 
-def capture(target, expected_identity, paths):
+def _exclude_engine(root, paths, required):
+    engine = root / ".vas"
+    if not required:
+        return
+    _check(is_project_engine(engine), "target_changed")
+    reserved = engine.lstat()
+    for name in {path.split("/", 1)[0] for path in paths}:
+        # Windows may expose a short-name alias for the engine directory.
+        _check(unicodedata.normalize("NFKC", name).casefold() != ".vas", "path_invalid")
+        try:
+            first = (root / name).lstat()
+        except FileNotFoundError:
+            continue
+        _check(not os.path.samestat(first, reserved), "path_invalid")
+
+
+def capture(target, expected_identity, paths, project_root=False):
     """Read selected bytes only. Recheck common races; no atomic tree snapshot claim."""
     paths = normalize_paths(paths)
     try:
         root = _root(target, expected_identity)
+        reserved = project_root or reserves_engine(root / ".vas")
+        _exclude_engine(root, paths, reserved)
         files, observations, used = [], [], 0
         for relative in paths:
             before, ancestry = _inspect(root, relative)
@@ -173,6 +192,7 @@ def capture(target, expected_identity, paths):
                     (before is not None and after is not None and
                      _signature(before) == _signature(after))), "changed")
         _root(target, expected_identity)
+        _exclude_engine(root, paths, reserved)
         return {"files": files, "sha256": hashlib.sha256(canonical(files)).hexdigest()}
     except OSError:
         raise SessionError("work_files_unavailable") from None

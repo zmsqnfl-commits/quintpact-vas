@@ -138,35 +138,25 @@ class ReleasePackageTests(unittest.TestCase):
         manifest, payload = self.read_and_verify_zip(
             WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"]
         )
-        self.assertIn("src/vas-hub.html", payload)
-        for resource in ("src/agent-resources.js", ".agents/agent-resources.json", ".agents/HANDOFF-WORKFLOW.md"):
-            self.assertIn(resource, payload)
-        self.assertIn(f"docs/releases/{VERSION}.md", payload)
-        for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
-            for role in ("implementer", "designer", "reviewer"):
-                self.assertIn(f"{host}/agents/vas_{role}{suffix}", payload)
-        launcher_bytes = payload["Run-VAS-System.bat"]
-        self.assertIn(b"\r\n", launcher_bytes)
-        self.assertNotIn(b"\n", launcher_bytes.replace(b"\r\n", b""))
-        launcher = launcher_bytes.decode("utf-8", errors="replace")
-        launcher_paths = set(re.findall(r"(?:src|scripts)[\\/][A-Za-z0-9_.-]+", launcher, re.I))
-        self.assertTrue(launcher_paths, "실행 BAT의 로컬 진입 대상이 없습니다.")
-        for reference in launcher_paths:
-            self.assertIn(reference.replace("\\", "/"), payload, f"실행 BAT 누락 대상: {reference}")
-        recipient_readme = payload["README.md"].decode("utf-8")
-        quick_start = payload["00-처음-사용하기.txt"].decode("utf-8")
-        self.assertIn(f"VAS {VERSION} — 처음에는 이것만 하세요", quick_start)
-        for marker in ("기존 디자인 유지", "부분 디자인 수정", "완료조건", "인계 자료 준비 완료", "전달 내용 다시 준비"):
-            self.assertIn(marker, quick_start)
-        self.assertIn("Run-VAS-System.bat", quick_start)
-        self.assertIn("기존 프로그램 AI로 연결", quick_start)
-        self.assertIn("VAS-AI-HANDOFF.json", quick_start)
-        self.assertIn("폴더 위치 선택", quick_start)
-        self.assertIn("전체 압축 해제", recipient_readme)
-        self.assertIn("폴더 위치만 프롬프트에", recipient_readme)
-        self.assertIn("프롬프트", recipient_readme)
-        self.assertIn("저장은 선택입니다", recipient_readme)
-        self.assertNotIn("npm.cmd", recipient_readme)
+        self.assertIn(".vas/src/vas-hub.html", payload)
+        self.assertEqual({path for path in payload if path.startswith("src/")}, {"src/.gitkeep"})
+        self.assertEqual(payload["src/.gitkeep"], b"")
+        self.assertEqual(json.loads(payload[".vas/project-layout.json"]), {"layout": "vas-project", "version": 1})
+        self.assertEqual(payload[".vas/Run-VAS-System.bat"], (ROOT / "Run-VAS-System.bat").read_bytes())
+        for name in ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md"):
+            self.assertEqual(payload[name], (ROOT / name).read_bytes())
+        launcher = payload["Run-VAS-System.bat"]
+        self.assertNotIn(b"\n", launcher.replace(b"\r\n", b""))
+        self.assertIn(b'pushd "%~dp0.vas"', launcher)
+        # The app folder is never interpolated into a reparsed CALL command.
+        self.assertIn(b'call ".\\Run-VAS-System.bat"', launcher)
+        engine_launcher = payload[".vas/Run-VAS-System.bat"].decode("utf-8")
+        for reference in re.findall(r"(?:src|scripts)[\\/][A-Za-z0-9_.-]+", engine_launcher, re.I):
+            self.assertIn(".vas/" + reference.replace("\\", "/"), payload)
+        for name in ("README.md", "00-처음-사용하기.txt"):
+            text = payload[name].decode("utf-8")
+            for marker in ("전체 압축 해제", "Run-VAS-System.bat", "src/", ".vas/", "폴더 자체", "Python 3.10"):
+                self.assertIn(marker, text)
         release = json.loads((DIST / "release-manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["commit"], release["commit"])
 
@@ -189,17 +179,18 @@ class ReleasePackageTests(unittest.TestCase):
             "scripts/vas_work_contract.py", "scripts/vas_work_files.py", "scripts/vas_work_inspection.py",
             "src/chat-design-sync.js", "src/chat-design-sync.css",
         }
-        for relative in sorted(entrypoints | guides | session_scripts):
-            with self.subTest(packaged_instruction=relative):
-                self.assertIn(relative, payload)
-                self.assertEqual(payload[relative], (ROOT / relative).read_bytes(),
-                                 f"배포 시작 지침이 원본과 다릅니다: {relative}")
+        guides.add("docs/PROJECT-ROOT.md")
+        for relative in sorted(guides | session_scripts):
+            self.assertEqual(payload[".vas/" + relative], (ROOT / relative).read_bytes(), relative)
+        template = (ROOT / ".agents/PROJECT-ROOT.md").read_bytes()
         for relative in sorted(entrypoints):
-            text = payload[relative].decode("utf-8")
-            references = set(re.findall(r"\.agents/[A-Za-z0-9_.-]+\.md", text))
-            self.assertTrue(references, f"시작 지침 연결이 없습니다: {relative}")
-            for reference in references:
-                self.assertIn(reference, payload, f"누락된 시작 지침: {relative}: {reference}")
+            self.assertEqual(payload[relative], template)
+        for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
+            for role in ("implementer", "designer", "reviewer"):
+                text = payload[f"{host}/agents/vas_{role}{suffix}"].decode("utf-8")
+                self.assertIn("Do not edit the bundled .vas engine", text)
+                self.assertNotRegex(text, r"(?<![\w./])(?:\.agents|docs|scripts)/")
+        guides = {".vas/" + name for name in guides}
         for relative in sorted(entrypoints | guides | {"README.md"}):
             text = payload[relative].decode("utf-8")
             for reference in re.findall(r"\[[^\]]+\]\(([^)\s]+)\)", text):
@@ -209,24 +200,33 @@ class ReleasePackageTests(unittest.TestCase):
                 target = posixpath.normpath(str(PurePosixPath(relative).parent / unquote(parsed.path)))
                 assert_safe_relative(self, target)
                 self.assertIn(target, payload, f"배포 문서의 누락 링크: {relative}: {reference}")
-        recipient_readme = payload["README.md"].decode("utf-8")
-        for marker in ("첫 요청", "실제 작업 폴더", "VAS 2.10.0 대화형 작업 흐름", "Python 3.10", "공통 설정 저장", "다음 대화 이어가기",
-                       "PC 전용 연결 정보", "공유 JSON에는 넣지 않습니다", "대화 설정에 저장", "편집 중 충돌은 덮어쓰지 않습니다",
-                       "[대화로 시작하기](docs/CHAT-START.md)", "[설정 저장과 이어가기](docs/CHAT-STATE.md)",
-                       "[대화와 디자인 연결](docs/CHAT-DESIGN.md)", "[저장 설정으로 구현·검증](docs/CHAT-EXECUTION.md)",
-                       "prepare·assess 명령은 앱을 실행하지 않습니다"):
-            self.assertIn(marker, recipient_readme)
+
+    @unittest.skipUnless(os.name == "nt", "Windows BAT entrypoint")
+    def test_launcher_follows_renamed_project_and_propagates_engine_exit_code(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            project = Path(scratch) / "한글 프로젝트 (A&B) !literal! %PATH%"
+            engine = project / ".vas"
+            engine.mkdir(parents=True)
+            with zipfile.ZipFile(WINDOWS_ZIP) as archive:
+                (project / "Run-VAS-System.bat").write_bytes(archive.read(f"{WINDOWS_NAME}/Run-VAS-System.bat"))
+            launcher = ["cmd.exe", "/d", "/c", "Run-VAS-System.bat"]
+            missing = subprocess.run(launcher, cwd=project, capture_output=True, timeout=15)
+            self.assertEqual(missing.returncode, 1)
+            (engine / "Run-VAS-System.bat").write_bytes(b"@echo off\r\n>launcher.marker echo ran\r\nexit /b 23\r\n")
+            run = subprocess.run(launcher, cwd=project, capture_output=True, timeout=15)
+            self.assertEqual(run.returncode, 23, run.stderr)
+            self.assertTrue((engine / "launcher.marker").is_file())
+            self.assertFalse((project / "launcher.marker").exists())
 
     def test_extracted_windows_zip_can_prepare_and_assess_session(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vas-release-execution-") as temporary:
             base = Path(temporary)
             with zipfile.ZipFile(WINDOWS_ZIP) as archive:
                 archive.extractall(base)
-            vas = base / WINDOWS_NAME
-            self.assertFalse((vas / "package.json").exists())
-            app = base / "app"
-            app.mkdir()
-            (app / "sentinel.txt").write_text("unchanged", encoding="utf-8")
+            app = (base / WINDOWS_NAME).rename(base / "재고 프로젝트 renamed")
+            vas = app / ".vas"
+            self.assertFalse((app / "package.json").exists())
+            (app / "src/sentinel.txt").write_text("unchanged", encoding="utf-8")
             before = tree_fingerprints(app)
             command = [sys.executable, "-B", str(vas / "scripts/vas-session.py"),
                        "--state-home", str(base / "state")]
@@ -243,7 +243,7 @@ class ReleasePackageTests(unittest.TestCase):
                         "task": {"request": "Fix CSV export", "designScope": {"mode": "preserve"},
                                  "completionCriteria": [{"description": "CSV round trip",
                                                          "method": "automatic", "required": True}]}}
-            session = invoke(["create", "--target", str(app)], settings)["session"]
+            session = invoke(["create", "--target", "."], settings)["session"]
             selector = ["--session", session["sessionId"], "--expected-revision", "1"]
             prepared = invoke(["prepare"] + selector)
             self.assertEqual(prepared["status"], "prepared")
@@ -266,7 +266,7 @@ class ReleasePackageTests(unittest.TestCase):
             invoke(["work", "open"] + selector + ["--expected-work-revision", "0"])
             started = invoke(["work", "start"] + selector + ["--expected-work-revision", "1"], {
                 "kind": "review", "role": "reviewer", "mode": "direct", "label": "Package fixture",
-                "observedFiles": ["sentinel.txt"], "writableFiles": [], "criterionIds": []})
+                "observedFiles": ["src/sentinel.txt"], "writableFiles": [], "criterionIds": []})
             pending = invoke(["work", "inspect"] + selector)
             self.assertTrue(any(reason.startswith("work-unreturned:") for reason in pending["reasons"]))
             invoke(["work", "finish"] + selector + ["--expected-work-revision", "2",
@@ -283,7 +283,7 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertEqual(gated["assessment"]["status"], "incomplete")
             checkpoint = invoke(["checkpoint"] + selector + ["--expected-progress-revision", "0"], {
                 "phase": "paused", "summary": "Implementation report; verification remains.",
-                "changedFiles": ["sentinel.txt"],
+                "changedFiles": ["src/sentinel.txt"],
                 "checks": [{"name": "App test", "status": "not-run", "summary": "Next conversation"}],
                 "nextStep": "Inspect the actual source and run the remaining tests."
             })

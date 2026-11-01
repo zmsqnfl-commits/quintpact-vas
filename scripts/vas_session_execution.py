@@ -68,7 +68,7 @@ def _prompt(document, resources):
     # values here instead; a too-large execution prompt fails rather than truncates.
     base = deepcopy(document)
     base["context"]["design"].pop("tokens", None)
-    text = build_prompt(base)
+    text = build_prompt(base, project_root=document["context"]["execution"].get("projectLayout") == "vas-project")
     require(clean(resources["workflow"], MAX_PROMPT) in clean(text, MAX_PROMPT),
             "execution_resources_changed")
     execution = document["context"]["execution"]
@@ -145,6 +145,9 @@ def prepare(manager, session_id, expected_revision):
         "assistantGuide": {"target": "universal", "originalFolderRequired": True, "pasteText": ""},
         "integrity": {"algorithm": "SHA-256", "payloadSha256": "", "sourcePackSha256": None},
     }
+    # _current already verified the marker, engine fingerprint, target and private binding.
+    if manager.root.name.casefold() == ".vas" and Path(view["target"]["path"]) == manager.root.parent:
+        document["context"]["execution"]["projectLayout"] = "vas-project"
     apply_task(document, settings["task"], [])
     attach(document)
     before = deepcopy(document["context"])

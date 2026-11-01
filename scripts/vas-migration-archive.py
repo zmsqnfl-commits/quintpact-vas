@@ -22,8 +22,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
-    manager = MigrationManager(args.root)
     try:
+        manager = MigrationManager(args.root)
         if args.dry_run:
             result = manager.analyze(args.source)
         else:

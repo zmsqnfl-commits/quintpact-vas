@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from vas_ai_contract import redact_credentials, sanitize, sensitive_key
+from vas_project_layout import is_project_engine, reserves_engine
 from vas_task_policy import apply_task, safe_text
 from vas_session_store import Store
 
@@ -206,11 +207,22 @@ class SessionManager:
     def __init__(self, vas_root: Path, state_home: Path | None = None):
         self.store = Store(vas_root, state_home)
         self.root = self.store.root
-        require((self.root / "Run-VAS-System.bat").is_file() and
+        require(not reserves_engine(self.root / ".vas") and (self.root / "Run-VAS-System.bat").is_file() and
                 (self.root / "src/vas-hub.html").is_file(), "vas_root_invalid")
 
     def _target(self, value):
         target = safe_directory(value)
+        # A different installation must not register another kit's engine as an external app.
+        require(not any(p.name.casefold() == ".vas" and reserves_engine(p)
+                        for p in (target, *target.parents)), "target_is_vas")
+        if self.root.name.casefold() == ".vas":
+            if target == self.root.parent:
+                require(is_project_engine(self.root), "target_is_vas")
+                # The starter's app directory must not redirect a host out of the project.
+                safe_directory(target / "src")
+                return target
+            # Never fall back to an inner app/engine folder when the marker disappears.
+            require(not target.is_relative_to(self.root.parent), "target_is_vas")
         require(target != self.root and not self.root.is_relative_to(target), "target_is_vas")
         if target.is_relative_to(self.root):
             require(target.is_relative_to(self.root / "workspace") and

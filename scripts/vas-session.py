@@ -7,6 +7,10 @@ import json
 import sys
 from pathlib import Path
 
+# Do not populate a packaged project's reserved engine with bytecode on first use.
+if Path(__file__).resolve().parents[1].name.casefold() == ".vas":
+    sys.dont_write_bytecode = True
+
 from vas_session import MAX_INPUT, SessionError, SessionManager
 from vas_session_store import SessionStoreError
 from vas_session_web import dispatch

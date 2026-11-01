@@ -12,6 +12,12 @@
     return Boolean(window.VASRuntime && VASRuntime.isAvailable());
   }
 
+  // Only the authenticated starter runtime can identify its containing project.
+  // Keep the path itself local; an explicit different target still takes priority.
+  const projectLayout = runtimeAvailable()
+    ? VASRuntime.request('/api/status').then(function (status) { return status.layout === 'project'; }).catch(function () { return false; })
+    : Promise.resolve(false);
+
   VASThemeState.init();
   VASThemeState.decorateLinks(document);
   VASSetupDesign.mount('handoffDesignPreset', 'handoffDesignSummary');
@@ -147,8 +153,9 @@
     const folder = document.getElementById('folderPath');
     const name = document.getElementById('projectName');
     const task = document.getElementById('taskRequest');
-    if (!folder.value.trim()) return invalid(folder, '작업할 폴더 위치를 선택하거나 붙여넣어 주세요.');
-    if (!/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) return invalid(folder, '드라이브부터 시작하는 전체 폴더 위치를 적어주세요.');
+    const useOpenedProject = !folder.value.trim() && await projectLayout;
+    if (!folder.value.trim() && !useOpenedProject) return invalid(folder, '작업할 폴더 위치를 선택하거나 붙여넣어 주세요.');
+    if (folder.value.trim() && !/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) return invalid(folder, '드라이브부터 시작하는 전체 폴더 위치를 적어주세요.');
     if (!name.value.trim()) return invalid(name, '프로젝트 이름을 적어주세요.');
     if (!task.value.trim()) return invalid(task, 'AI에게 맡길 일을 한 줄 이상 적어주세요.');
     const criteria = VASTaskInputs.validate('completionConditions');
@@ -196,7 +203,7 @@
       await VASAgentHandoffWeb.refreshIntegrity(result.document, document.getElementById('provider').value);
       ensureCurrent(result);
       await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
-      document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 폴더 위치가 포함된 프롬프트를 코딩 AI에 붙여넣으세요.';
+      document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 작업할 프로젝트에서 프롬프트를 코딩 AI에 붙여넣으세요.';
       try { if (designScope().mode !== 'preserve') await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
     } catch (error) { showError(error); }
   }
@@ -211,7 +218,8 @@
       ensureCurrent(result);
       VASAgentHandoffWeb.assertReviewed(result.document);
       await VASAgentHandoffWeb.copy(currentPrompt());
-      document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. 프롬프트에 적힌 폴더 위치를 코딩 AI가 확인합니다.';
+      document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. ' +
+        (folderLocation() ? '지정한 원본 폴더에서 사용하세요.' : '지금 연 프로젝트 폴더에서 사용하세요.');
       try { if (designScope().mode !== 'preserve') await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
       if (advance !== false) go(3);
     } catch (error) { showError(error); }
@@ -221,6 +229,13 @@
     ? '버튼을 누르면 Windows 폴더 선택창이 열립니다. 폴더 내부는 읽지 않습니다.'
     : 'Windows 폴더 선택창을 사용하려면 Run-VAS-System.bat로 실행해 주세요.';
   document.getElementById('selectFolder').addEventListener('click', function () { selectFolderLocation().catch(showError); });
+  projectLayout.then(function (active) {
+    if (!active) return;
+    const folder = document.getElementById('folderPath');
+    folder.required = false;
+    folder.placeholder = '현재 프로젝트 (다른 프로젝트라면 경로 입력)';
+    document.getElementById('runtimeNotice').textContent = '비워 두면 VAS를 실행한 프로젝트 폴더를 사용합니다. 다른 앱에 작업하려면 위치를 지정하세요.';
+  });
   document.getElementById('continueSettings').addEventListener('click', continueSettings);
   document.getElementById('preparePreview').addEventListener('click', function () { prepare().catch(showError); });
   document.getElementById('downloadJson').addEventListener('click', saveJson);

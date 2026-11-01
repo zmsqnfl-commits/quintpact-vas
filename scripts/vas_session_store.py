@@ -104,6 +104,7 @@ class Store:
             self.root = source.resolve(strict=True)
             if not self.root.is_dir():
                 _fail("path_invalid")
+            self.private_boundary = self.root.parent if self.root.name.casefold() == ".vas" else self.root
             if state_home is None:
                 if os.name == "nt":
                     local = os.environ.get("LOCALAPPDATA")
@@ -118,7 +119,7 @@ class Store:
             self.home = Path(os.path.abspath(state_home))
             _check_path(self.home, directory=True)
             self.home = self.home.resolve(strict=False)
-            if _inside(self.home, self.root):
+            if _inside(self.home, self.private_boundary):
                 _fail("path_invalid")
             self.root_key = hashlib.sha256(os.path.normcase(str(self.root)).encode("utf-8")).hexdigest()
             self.directory = self.home / self.root_key
@@ -135,7 +136,7 @@ class Store:
         if not self.root.is_dir():
             _fail("path_invalid")
         _check_path(self.directory, directory=True)
-        if _inside(self.directory.resolve(strict=False), self.root):
+        if _inside(self.directory.resolve(strict=False), self.private_boundary):
             _fail("path_invalid")
         _check_path(self.path)
         _check_path(self.lock_path)

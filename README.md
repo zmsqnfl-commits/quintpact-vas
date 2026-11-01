@@ -53,6 +53,8 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 ## Get started on Windows
 
+**Development preview — project-folder layout.** In a Windows ZIP built from this working tree, rename the extracted folder, open that folder as your project, and build your app in its top-level `src/`. The bundled VAS tools live in `.vas/`. This preview changes the Windows package layout; the published v2.10.0 release and GitHub's **Code → Download ZIP** use the earlier developer/tool layout. See [the project-folder guide](docs/PROJECT-ROOT.md).
+
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
 1. Open the [v2.10.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0) and download `VAS-2.10.0-windows.zip`.

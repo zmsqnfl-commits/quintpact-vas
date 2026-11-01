@@ -159,10 +159,10 @@
     const workflow = global.VASAgentResources ? VASAgentResources.workflow : '주 실행자가 원본을 읽고 구현·검증을 완료하세요. 실제 서브에이전트 도구가 제공되는 경우에만 필요한 역할에 위임하고 결과를 회수하세요.';
     const isNew = project.sourceType === 'new';
     const opening = isNew
-      ? tool + '에서 새 프로젝트를 만들 빈 폴더를 여세요.'
+      ? tool + '에서 새 앱의 프로젝트 폴더를 여세요. VAS 프로젝트 ZIP을 풀었다면 이름을 바꿔 연 그 폴더가 작업 대상입니다.'
       : tool + '에서 실제 작업할 원본 프로젝트 폴더를 여세요.';
     const sourceRule = isNew
-      ? '현재 열린 빈 폴더에 요구사항에 맞는 구조를 직접 설계하세요.'
+      ? '루트에 .vas/project-layout.json과 .vas/src/vas-hub.html이 있으면 최상위 src/에 앱을 만들고 .vas/는 보존하세요. 별도 하위 프로젝트를 만들지 마세요. 일반 작업 폴더는 확인한 대상의 기존 구조와 파일을 보존하세요.'
       : '프로젝트 구조·기술 스택·실행 방법은 현재 폴더의 실제 파일을 직접 읽어 판단하세요.';
     const designDirection = VASTaskPolicy.direction(task.designScope) + '\n' + (design.included === true && design.direction
       ? clean(design.direction, 12000)
@@ -171,7 +171,7 @@
     const folderToken = '__VAS_LOCAL_FOLDER_LOCATION__';
     const uncleaned = opening + '\n\n' +
       (folder ? '작업 폴더 위치:\n' + folderToken + '\n\n' : '') +
-      (isNew ? '현재 열린 폴더가 새 프로젝트 작업 공간입니다.' : '현재 열린 폴더가 작업 원본입니다.') + '\n' +
+      (isNew ? '앱의 실제 루트를 확인하고 그 위치에서 구현하세요.' : '지정한 원본 프로젝트에서 구현하세요. VAS 프로젝트 ZIP의 .vas/는 앱 수정 대상이 아닙니다.') + '\n' +
       '프로젝트: ' + clean(project.name, 80) + '\n\n' +
       '요청:\n' + clean(task.request, 4000) + '\n\n' +
       '제약사항:\n' + listText(task.constraints) + '\n\n' +

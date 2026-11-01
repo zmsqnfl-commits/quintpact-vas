@@ -12,9 +12,12 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'VAS.Runtime.State.ps1')
+. (Join-Path $PSScriptRoot 'VAS.ProjectLayout.ps1')
 
 if (-not $RootPath) { $RootPath = Split-Path -Parent $PSScriptRoot }
 $RootPath = [IO.Path]::GetFullPath($RootPath)
+try { $layout = Get-VASRuntimeLayout $RootPath }
+catch { [Console]::Error.WriteLine('VAS_START_ERROR: Check the extracted project folder and its .vas engine.'); exit 1 }
 
 Import-Module (Join-Path $PSScriptRoot 'VAS.Memory.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'VAS.Server.psm1') -Force
@@ -25,6 +28,7 @@ if (Test-Path -LiteralPath $migrationModule -PathType Leaf) {
 
 if (-not $StateRoot) { $StateRoot = Get-VASMemoryRoot }
 try {
+    if ($layout -eq 'project') { Assert-VASProjectStateLocation $RootPath $StateRoot }
     Assert-VASRuntimePath -Path $StateRoot -ExpectedType Directory
     $StateRoot = [IO.Path]::GetFullPath($StateRoot)
     [IO.Directory]::CreateDirectory($StateRoot) | Out-Null

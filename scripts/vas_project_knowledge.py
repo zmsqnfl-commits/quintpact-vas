@@ -23,7 +23,7 @@ ALLOWED_SUFFIXES = {
 }
 EXCLUDED_DIRS = {
     ".cache", ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    ".ssh", ".tox", ".vas-session", ".venv", "__pycache__", "build", "cache", "caches",
+    ".ssh", ".tox", ".vas", ".vas-session", ".venv", "__pycache__", "build", "cache", "caches",
     "coverage", "credentials", "dist", "keys", "node_modules", "out",
     "private", "secrets", "target", "vendor", "venv",
 }
@@ -299,6 +299,8 @@ def _project_entries(project: dict[str, Any]) -> tuple[list[dict[str, Any]], int
 
 def build_index(root: Path) -> dict[str, Any]:
     root = root.resolve()
+    if root.name.casefold() == ".vas":
+        raise KnowledgeError("프로젝트형 VAS에서는 등록 프로젝트 색인을 만들지 않습니다.")
     projects = registered_projects(root)
     generated: list[dict[str, Any]] = []
     for project in projects:

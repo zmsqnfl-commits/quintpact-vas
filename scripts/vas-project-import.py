@@ -65,9 +65,9 @@ def _emit(value: dict[str, Any], as_json: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    manager = MigrationManager(args.root, args.large_file_mb)
     as_json = bool(getattr(args, "json", False))
     try:
+        manager = MigrationManager(args.root, args.large_file_mb)
         if args.command == "analyze":
             result = manager.analyze(args.source)
         elif args.command == "rollback":

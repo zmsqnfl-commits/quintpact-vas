@@ -2,6 +2,7 @@
 
 $script:SchemaVersion = 1
 . (Join-Path $PSScriptRoot 'VAS.LocalState.ps1')
+. (Join-Path $PSScriptRoot 'VAS.ProjectLayout.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.Privacy.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.Policy.ps1')
 . (Join-Path $PSScriptRoot 'VAS.Memory.History.ps1')
@@ -363,6 +364,7 @@ function ConvertTo-VASSafeRagValue {
 
 function New-VASLocalProject {
     param([Parameter(Mandatory = $true)][string]$Root, [Parameter(Mandatory = $true)]$InputObject)
+    Assert-VASLegacyWorkspace $Root
 
     foreach ($forbidden in @('path', 'target', 'source', 'root')) {
         if ($null -ne $InputObject.PSObject.Properties[$forbidden]) { throw 'VAS_PROJECT_PATH_FORBIDDEN' }

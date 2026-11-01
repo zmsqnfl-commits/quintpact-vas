@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 from vas_session import SessionError, require
-from vas_session_work import digest, prepared_context, target
+from vas_session_work import capture_target, digest, prepared_context, target
 
 
 def _empty(revision=None):
@@ -74,7 +74,6 @@ def _unit(unit, current):
 
 def inspect_work(manager, session_id, expected_revision):
     from vas_work_contract import validate_work
-    from vas_work_files import capture
     record = manager._record(manager._records(manager.store.read()), session_id)
     manager._revision(record, expected_revision)
     require("work" in record, "work_not_found")
@@ -99,10 +98,11 @@ def inspect_work(manager, session_id, expected_revision):
     try:
         require(digest(record["binding"]) == work["context"]["targetBindingSha256"],
                 "work_target_unavailable")
-        selected = target(manager, record["binding"])
         if paths:
-            current = capture(selected, record["binding"]["identity"], paths)
+            current = capture_target(manager, record["binding"], paths)
             view["artifactVersion"] = "vas-files-" + current["sha256"]
+        else:
+            target(manager, record["binding"])
     except (SessionError, OSError) as error:
         reasons.append("work-target-unavailable" if getattr(error, "code", "") ==
                        "work_target_unavailable" else "work-files-unavailable")

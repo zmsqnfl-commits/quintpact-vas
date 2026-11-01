@@ -282,3 +282,16 @@ def test_powershell_module_persists_selection_job_and_registry(
     assert (root / "workspace" / ".vas" / "selections.json").is_file()
     assert (root / "workspace" / ".vas" / "jobs" / f"{payload['job']['jobId']}.json").is_file()
     assert (root / "workspace" / ".vas" / "projects.json").is_file()
+
+
+@pytest.mark.parametrize("source_kind", ["starter", "src", "container"])
+def test_starter_is_not_imported_into_a_legacy_installation(setup, source_kind):
+    manager, root, source = setup
+    project = source / "inventory"
+    (project / ".vas").mkdir(parents=True)
+    (project / ".vas/project-layout.json").write_text('{"layout":"vas-project","version":1}')
+    (project / "src").mkdir()
+    target = {"starter": project, "src": project / "src", "container": source}[source_kind]
+    with pytest.raises(MigrationError, match="프로젝트형 VAS"):
+        manager.import_project(target)
+    assert (project / "src").is_dir() and not (root / "workspace/projects/inventory").exists()
