@@ -1,4 +1,4 @@
-"""VAS 2.10.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.11.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
