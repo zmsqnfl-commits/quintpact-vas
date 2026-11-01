@@ -85,7 +85,8 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             runtime = start_release(engine, state)
             client = RuntimeClient(runtime)
             try:
-                self.assertEqual(Path(runtime["rootPath"]), engine)
+                # Windows runners may expose TEMP through its equivalent 8.3 alias.
+                self.assertTrue(Path(runtime["rootPath"]).samefile(engine))
                 self.assertEqual(client.request("/src/vas-hub.html")[1], (engine / "src/vas-hub.html").read_bytes())
                 for url in ["/src/inventory.txt", "/api/files/read?scope=src&path=inventory.txt",
                             "/.vas/scripts/Start-VAS.ps1"]:
