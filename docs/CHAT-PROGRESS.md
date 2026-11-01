@@ -37,6 +37,8 @@ AI는 요약을 읽은 뒤 대상의 현재 지침·원본·diff·실제 검사 
 python scripts/vas-session.py checkpoint --session ID --expected-revision N --expected-progress-revision P
 ```
 
+프로젝트형 ZIP에서 작업 지시를 저장한 적이 있으면 `vas-project-prompt.py get`으로 실제 작업한 판본 `Q`를 확인하고 위 명령에 `--expected-project-prompt-revision Q`도 붙입니다. 프로젝트 루트에서 실행하는 스크립트 경로는 `.vas/scripts/`입니다. 지시를 비운 뒤에도 판본은 증가합니다. 판본이 달라지면 실패한 저장을 우회하지 말고 변경된 지시와 수행한 작업을 비교합니다. 저장 후 지시가 바뀌면 요약은 `project-prompt-changed`로 오래된 상태가 되며 새 지시의 완료 근거로 쓰지 않습니다.
+
 JSON은 UTF-8 표준입력으로 보냅니다. 호스트의 구조화된 실행 도구나 subprocess 입력을 사용하고 PowerShell 파이프는 UTF-8을 명시합니다. 원본 대화나 비밀값을 인수·임시 JSON 파일에 기록하지 않습니다.
 
 `checkpoint`는 요약과 설정의 `nextStep`을 같은 원자적 저장으로 갱신합니다. `nextStep`이 같아도 세션 revision은 항상 1 증가하며 진행 revision도 1 증가합니다. 기록의 `basedOn`은 저장 요청 시 세션 revision `N`과 설정 해시, `savedFor`는 `nextStep` 반영 후 `N+1`과 설정 해시에 연결됩니다. 이 연결 정보는 파일 검증 증거가 아닙니다.

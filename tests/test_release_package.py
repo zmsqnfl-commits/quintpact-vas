@@ -121,6 +121,15 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertIn(entrypoint, payload)
         return manifest, payload
 
+    def test_portable_instructions_are_not_republished(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vas-prompt-boundary-") as tmp:
+            source, output = Path(tmp) / "source", Path(tmp) / "output"
+            source.mkdir()
+            for name in ("VAS-PROJECT-PROMPT.json", ".vas-project-prompt.tmp", "keep.md"):
+                (source / name).write_text("synthetic user instructions", encoding="utf-8")
+            BUILD.copy_tree(source, output)
+            self.assertEqual({p.name for p in output.iterdir()}, {"keep.md"})
+
     def test_version_and_expected_release_files(self) -> None:
         self.assertEqual(VERSION, CONFIG_VERSION)
         self.assertFalse({name.casefold() for name in BUILD.ROOT_FILES} & INTERNAL_DOCUMENT_NAMES)

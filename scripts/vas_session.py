@@ -261,12 +261,16 @@ class SessionManager:
                 "session": document, "target": {"path": binding["path"], "status": status}}
         if changes:
             view["reviewFields"] = changes
+        prompt_hash = None
+        if "progress" in record or "work" in record:
+            from vas_prompt_context import current_hash
+            prompt_hash = current_hash(self, binding["path"], status == "available")
         if "progress" in record:
             from vas_session_progress import progress_view
-            view["progress"] = progress_view(record["progress"], document)
+            view["progress"] = progress_view(record["progress"], document, prompt_hash)
         if "work" in record:
             from vas_session_work import work_view
-            view["work"] = work_view(record["work"], document, binding)
+            view["work"] = work_view(record["work"], document, binding, prompt_hash)
         return view
 
     @staticmethod
@@ -376,9 +380,11 @@ class SessionManager:
         record = self._record(self._records(self.store.read()), session_id)
         return valid_document(record["document"])[0]
 
-    def checkpoint(self, session_id, expected_revision, expected_progress_revision, raw):
+    def checkpoint(self, session_id, expected_revision, expected_progress_revision, raw,
+                   expected_project_prompt_revision=None):
         from vas_session_progress import checkpoint
-        return checkpoint(self, session_id, expected_revision, expected_progress_revision, raw)
+        return checkpoint(self, session_id, expected_revision, expected_progress_revision, raw,
+                          expected_project_prompt_revision)
 
     def clear_progress(self, session_id, expected_revision):
         from vas_session_progress import clear_progress

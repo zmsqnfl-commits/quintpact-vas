@@ -153,25 +153,30 @@
     const folder = document.getElementById('folderPath');
     const name = document.getElementById('projectName');
     const task = document.getElementById('taskRequest');
-    const useOpenedProject = !folder.value.trim() && await projectLayout;
+    const revision = inputRevision, request = ++preparation;
+    const initialFolder = folder.value.trim();
+    const useOpenedProject = !initialFolder && await projectLayout;
+    if (revision !== inputRevision || request !== preparation || folder.value.trim() !== initialFolder) return false;
     if (!folder.value.trim() && !useOpenedProject) return invalid(folder, '작업할 폴더 위치를 선택하거나 붙여넣어 주세요.');
     if (folder.value.trim() && !/^(?:[A-Za-z]:[\\/]|\\\\|\/)/.test(folder.value.trim())) return invalid(folder, '드라이브부터 시작하는 전체 폴더 위치를 적어주세요.');
     if (!name.value.trim()) return invalid(name, '프로젝트 이름을 적어주세요.');
     if (!task.value.trim()) return invalid(task, 'AI에게 맡길 일을 한 줄 이상 적어주세요.');
     const criteria = VASTaskInputs.validate('completionConditions');
-    const revision = inputRevision;
-    const request = ++preparation;
     const signature = currentSignature();
     const provider = document.getElementById('provider').value;
     preview = null; previewSignature = '';
     document.getElementById('previewContent').textContent = '최신 입력으로 인계 자료를 준비하고 있습니다.';
     document.getElementById('previewStatus').textContent = '인계 준비 중';
     try {
+      const savedPrompt = useOpenedProject ? await VASAgentHandoffWeb.projectPrompt() : null;
       const result = await VASAgentHandoffWeb.buildExisting(name.value, task.value, taskContext(), {
+        projectPrompt: savedPrompt,
         designScope: designScope(), completionCriteria: criteria,
         rag: { included: false, items: [] }, ragReviewed: false,
         continuation: { included: false }
       });
+      await VASAgentHandoffWeb.assertProjectPrompt(savedPrompt);
+      result.projectPromptSnapshot = savedPrompt;
       if (legacyScopeReview) { result.document.inputReview.fields.push('이전 초안의 디자인 범위'); result.document.inputReview.required = true; }
       await VASAgentHandoffWeb.refreshIntegrity(result.document, provider);
       if (revision !== inputRevision || request !== preparation || signature !== currentSignature()) return false;
@@ -202,7 +207,7 @@
       VASTaskInputs.confirm(result.document, 'handoffInputReview');
       await VASAgentHandoffWeb.refreshIntegrity(result.document, document.getElementById('provider').value);
       ensureCurrent(result);
-      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
+      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json', result.projectPromptSnapshot, function () { ensureCurrent(result); });
       document.getElementById('resultMessage').textContent = 'JSON을 저장했습니다. 작업할 프로젝트에서 프롬프트를 코딩 AI에 붙여넣으세요.';
       try { if (designScope().mode !== 'preserve') await VASSetupDesign.confirm(); } catch (error) { document.getElementById('resultMessage').textContent += ' 작업 기억은 저장하지 못했습니다.'; }
     } catch (error) { showError(error); }
@@ -217,6 +222,8 @@
       await VASAgentHandoffWeb.refreshIntegrity(result.document, document.getElementById('provider').value);
       ensureCurrent(result);
       VASAgentHandoffWeb.assertReviewed(result.document);
+      await VASAgentHandoffWeb.assertProjectPrompt(result.projectPromptSnapshot);
+      ensureCurrent(result);
       await VASAgentHandoffWeb.copy(currentPrompt());
       document.getElementById('resultMessage').textContent = providerLabel() + '용 프롬프트를 복사했습니다. ' +
         (folderLocation() ? '지정한 원본 폴더에서 사용하세요.' : '지금 연 프로젝트 폴더에서 사용하세요.');

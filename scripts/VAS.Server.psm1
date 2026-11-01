@@ -261,6 +261,7 @@ function Invoke-VASApiRequest {
             Write-VASError $Context 409 '지금 연 폴더가 이미 앱 프로젝트입니다. 채팅에서 이 폴더의 src/를 사용하세요.' 'project_root_layout'; return
         }
     }
+    if ($path -eq '/api/project-prompt') { Invoke-VASProjectPromptHttpRoute $Context $State; return }
     if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
     $body = $null
     if ($method -in @('POST', 'PUT', 'PATCH') -and $request.HasEntityBody) {

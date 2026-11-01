@@ -9,6 +9,7 @@
     VASRuntime.request('/api/status').then(function (status) {
       if (status.layout !== 'project') return;
       document.querySelector('.hero-copy p').textContent = '지금 연 폴더가 프로젝트입니다. 앱은 최상위 src/에 만들고, VAS 설정은 여기서 관리하세요.';
+      VASProjectPrompt.mount();
     }).catch(function () { /* The form and its original help also work offline. */ });
   }
 

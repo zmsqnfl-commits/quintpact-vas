@@ -55,6 +55,8 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 **Development preview — project-folder layout.** In a Windows ZIP built from this working tree, rename the extracted folder, open that folder as your project, and build your app in its top-level `src/`. The bundled VAS tools live in `.vas/`. This preview changes the Windows package layout; the published v2.10.0 release and GitHub's **Code → Download ZIP** use the earlier developer/tool layout. See [the project-folder guide](docs/PROJECT-ROOT.md).
 
+The local starter hub also lets you edit and save the project's working instructions. The screen and coding agent read the same portable `VAS-PROJECT-PROMPT.json` in the project root, even before a private chat session exists. Saved changes are read before the next task and delegation; saving does not wake or interrupt an AI. Concurrent edits require an explicit refresh or comparison, and missing session-store permissions are reported separately from reading the project instructions.
+
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
 1. Open the [v2.10.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.10.0) and download `VAS-2.10.0-windows.zip`.

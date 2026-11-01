@@ -56,6 +56,8 @@ def main():
             command.add_argument("--target", required=True, type=Path)
         if action == "checkpoint":
             command.add_argument("--expected-progress-revision", required=True, type=int)
+            command.add_argument("--expected-project-prompt-revision", type=int,
+                                 help="required when this starter has a saved project prompt")
         if action == "forget":
             command.add_argument("--expected-work-revision", type=int)
     work = commands.add_parser("work", help="local work receipts and explicit read-only file samples")
@@ -96,7 +98,8 @@ def main():
             result = manager.save(args.session, args.expected_revision, read_input())
         elif args.action == "checkpoint":
             result = manager.checkpoint(args.session, args.expected_revision,
-                                        args.expected_progress_revision, read_input())
+                                        args.expected_progress_revision, read_input(),
+                                        args.expected_project_prompt_revision)
         elif args.action == "clear-progress":
             result = manager.clear_progress(args.session, args.expected_revision)
         elif args.action == "rebind":

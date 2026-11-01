@@ -92,4 +92,20 @@ function Get-VASSessionError {
     return @{ status = $status; code = $Code; message = $message }
 }
 
-Export-ModuleMember -Function Invoke-VASSessionWeb, Get-VASSessionError
+function Invoke-VASProjectPromptProcess {
+    param([string]$Root, [ValidateSet('get', 'save')][string]$Operation, [string]$InputText = '')
+    $script = Join-Path $PSScriptRoot 'vas-project-prompt.py'
+    $python = Find-VASSessionPython
+    $arguments = @($python.prefix) + @('-B', $script, '--vas-root', $Root, $Operation)
+    $execution = Invoke-VASSessionProcess $python.file $arguments $InputText
+    try { $result = $execution.Output | ConvertFrom-Json -ErrorAction Stop }
+    catch { throw 'project_prompt_unavailable' }
+    if ($execution.ExitCode -ne 0) { throw ([string]$result.code) }
+    if ($null -eq $result -or $result.prompt -isnot [string] -or
+        ($result.revision -isnot [int] -and $result.revision -isnot [long]) -or $result.revision -lt 0) {
+        throw 'project_prompt_unavailable'
+    }
+    return [ordered]@{ revision = $result.revision; prompt = $result.prompt }
+}
+
+Export-ModuleMember -Function Invoke-VASSessionWeb, Get-VASSessionError, Invoke-VASProjectPromptProcess

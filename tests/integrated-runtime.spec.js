@@ -35,12 +35,14 @@ test.beforeEach(async ({ page }) => {
 async function open(page, name = 'project-import.html') { await page.goto(base + '/src/' + name + '?vasToken=' + token); }
 test('a project starter can prepare an existing-app prompt without re-entering its folder', async ({ page }) => {
   await page.route('**/api/status', route => route.fulfill({ json: { layout: 'project' } }));
+  await page.route('**/api/project-prompt', route => route.fulfill({ json: { revision: 2, prompt: '로그인 없이 재고 합계만 표시하세요.' } }));
   await open(page);
   await expect(page.locator('#folderPath')).not.toHaveAttribute('required', '');
   await page.locator('#projectName').fill('재고관리');
   await page.locator('#taskRequest').fill('재고 합계를 표시하세요.');
   await page.locator('#continueSettings').click();
   await expect(page.locator('#previewContent')).toContainText('재고 합계');
+  await expect(page.locator('#previewContent')).toContainText('로그인 없이 재고 합계만 표시하세요.');
   await expect(page.locator('#previewContent')).not.toContainText('작업 폴더 위치:');
 });
 async function downloaded(page, button) {

@@ -40,6 +40,7 @@ BLOCKED_NAMES = {
     name.casefold() for name in (
         ".env", ".env.local", ".env.production",
         "credentials.json", "secrets.json", "service-account.json", "vas-session-store.json",
+        "VAS-PROJECT-PROMPT.json", ".VAS-PROJECT-PROMPT.tmp",
     )
 } | INTERNAL_DOCUMENT_NAMES
 SECRET_SUFFIXES = {".key", ".p12", ".pem", ".pfx"}

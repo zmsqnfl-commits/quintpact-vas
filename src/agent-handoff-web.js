@@ -7,6 +7,30 @@
 
   function redactionCount(value) { return String(value || '') === clean(value, 100000) ? 0 : 1; }
 
+  async function projectPrompt() {
+    if (!global.VASRuntime || !VASRuntime.isAvailable()) return null;
+    const status = await VASRuntime.request('/api/status');
+    if (status.layout !== 'project') return null;
+    return validateProjectPrompt(await VASRuntime.request('/api/project-prompt'));
+  }
+
+  function validateProjectPrompt(value) {
+    if (!value || Object.keys(value).sort().join(',') !== 'prompt,revision' ||
+        !Number.isSafeInteger(value.revision) || value.revision < 0 || typeof value.prompt !== 'string' ||
+        Array.from(value.prompt).length > 4000 || clean(value.prompt, 12000) !== value.prompt) {
+      throw new Error('프로젝트 지시를 확인하지 못했습니다. VAS 시작 화면에서 저장 내용을 확인하세요.');
+    }
+    return { revision: value.revision, prompt: value.prompt };
+  }
+
+  async function assertProjectPrompt(snapshot) {
+    if (snapshot === null || snapshot === undefined) return;
+    const latest = validateProjectPrompt(await VASRuntime.request('/api/project-prompt'));
+    if (latest.revision !== snapshot.revision || latest.prompt !== snapshot.prompt) {
+      throw new Error('프로젝트 지시가 변경됐습니다. 최신 내용으로 다시 준비하세요.');
+    }
+  }
+
   function sanitize(value, depth) {
     if ((depth || 0) > 8) return null;
     if (typeof value === 'string') return clean(value, 12000);
@@ -73,6 +97,10 @@
     document.context.rag = global.VASAgentContract ? VASAgentContract.approvedRag(suppliedRag) : { included: false, items: [] };
     document.context.preferences = { included: false, items: [] };
     document.context.continuation = sanitize(continuation, 0);
+    if (settings.projectPrompt) {
+      const saved = validateProjectPrompt(settings.projectPrompt);
+      if (saved.revision > 0) document.context.projectPrompt = saved;
+    }
     VASTaskPolicy.apply(document, settings, changed);
     return global.VASDesignReference ? VASDesignReference.attach(document) : document;
   }
@@ -174,6 +202,8 @@
       (isNew ? '앱의 실제 루트를 확인하고 그 위치에서 구현하세요.' : '지정한 원본 프로젝트에서 구현하세요. VAS 프로젝트 ZIP의 .vas/는 앱 수정 대상이 아닙니다.') + '\n' +
       '프로젝트: ' + clean(project.name, 80) + '\n\n' +
       '요청:\n' + clean(task.request, 4000) + '\n\n' +
+      (document.context.projectPrompt ? '저장된 프로젝트 지시 (revision ' + document.context.projectPrompt.revision + '):\n' +
+        document.context.projectPrompt.prompt + '\n프로젝트 루트의 VAS-PROJECT-PROMPT.json을 구현·위임 전에 다시 읽으세요. 최신 대화의 명시적 변경을 우선하고 충돌만 확인하세요.\n\n' : '') +
       '제약사항:\n' + listText(task.constraints) + '\n\n' +
       '완료 기준:\n' + listText(task.acceptanceCriteria) + '\n\n' +
       '공통 확인 안내 (작업별 완료조건이나 확인 근거가 아님):\n' + listText(task.validationGuidance) + '\n\n' +
@@ -200,9 +230,11 @@
     if (document.inputReview && document.inputReview.required && !document.inputReview.acknowledged) throw new Error('정제로 변경된 최종 내용을 확인한 뒤 복사·저장하세요.');
   }
 
-  async function save(document, fileName) {
+  async function save(document, fileName, projectPromptSnapshot, assertCurrent) {
     await refreshIntegrity(document);
     assertReviewed(document);
+    await assertProjectPrompt(projectPromptSnapshot);
+    if (assertCurrent) assertCurrent();
     const blob = new Blob([JSON.stringify(document, null, 2) + '\n'], { type: 'application/json' });
     const link = documentElement('a');
     link.href = URL.createObjectURL(blob);
@@ -226,6 +258,7 @@
 
   global.VASAgentHandoffWeb = Object.freeze({
     build: build, buildExisting: buildExisting, buildNew: buildNew,
-    refreshIntegrity: refreshIntegrity, prompt: prompt, save: save, copy: copy, assertReviewed: assertReviewed
+    refreshIntegrity: refreshIntegrity, prompt: prompt, save: save, copy: copy, assertReviewed: assertReviewed,
+    projectPrompt: projectPrompt, assertProjectPrompt: assertProjectPrompt
   });
 })(window);

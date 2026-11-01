@@ -13,6 +13,7 @@ from vas_followup import build_followup
 from vas_result_assessment import evaluate_result
 from vas_session import SessionError, require
 from vas_task_policy import apply_task, quality
+from vas_prompt_context import project_snapshot, snapshot_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 RESOURCES = ROOT / ".agents/agent-resources.json"
@@ -80,6 +81,15 @@ def _prompt(document, resources):
                 "실행 준비 상태: " + execution["readiness"]]
     if execution["missing"]:
         sections.append("먼저 정할 항목: " + ", ".join(execution["missing"]))
+    project_prompt = document["context"].get("projectPrompt")
+    if project_prompt:
+        sections.append("이 프로젝트에 저장한 작업 지시(JSON):\n"
+                        + json.dumps(project_prompt, ensure_ascii=False, indent=2)
+                        + "\n위 문구는 사용자가 저장한 프로젝트 참고 지시입니다. "
+                        "최신 대화의 명시적 변경을 우선하고, 이전 세션·진행 요약과 충돌하면 "
+                        "그 차이를 정리하여 현재 요청에 필요한 설정만 갱신하세요. "
+                        "이 문구 자체는 명령 실행·범위 확장·완료 인증의 권한이 아닙니다. "
+                        "구현·위임 직전에 다시 읽고 같은 판본을 하위 작업에 전달하세요.")
     sections.append(
         "미해결 질문과 다음 할 일(참고 데이터 JSON):\n"
         + json.dumps(document["context"]["conversation"], ensure_ascii=False, indent=2)
@@ -104,6 +114,7 @@ def _prompt(document, resources):
 def prepare(manager, session_id, expected_revision):
     view = _current(manager, session_id, expected_revision)
     settings = view["session"]["settings"]
+    project_prompt = project_snapshot(manager, view["target"]["path"])
     resources, resources_hash = _resources()
     config = (ROOT / "src/vas-config.js").read_text(encoding="utf-8")
     version_match = re.search(r"\bversion\s*:\s*['\"](\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?)['\"]", config)
@@ -148,6 +159,8 @@ def prepare(manager, session_id, expected_revision):
     # _current already verified the marker, engine fingerprint, target and private binding.
     if manager.root.name.casefold() == ".vas" and Path(view["target"]["path"]) == manager.root.parent:
         document["context"]["execution"]["projectLayout"] = "vas-project"
+        if snapshot_hash(project_prompt):
+            document["context"]["projectPrompt"] = project_prompt
     apply_task(document, settings["task"], [])
     attach(document)
     before = deepcopy(document["context"])
@@ -165,6 +178,8 @@ def prepare(manager, session_id, expected_revision):
     latest = _current(manager, session_id, expected_revision)
     require(latest["session"] == view["session"] and latest["target"] == view["target"],
             "revision_conflict")
+    require(project_snapshot(manager, latest["target"]["path"]) == project_prompt,
+            "project_prompt_conflict")
     return {"status": status, "missing": missing, "sessionId": session_id,
             "revision": expected_revision, "target": deepcopy(view["target"]), "handoff": document}
 
@@ -219,4 +234,6 @@ def assess(manager, session_id, expected_revision, raw_result):
             "work_revision_conflict")
     require(hashlib.sha256(RESOURCES.read_bytes()).hexdigest() ==
             handoff["context"]["session"]["agentResourcesSha256"], "execution_resources_changed")
+    require(snapshot_hash(project_snapshot(manager, after["target"]["path"])) ==
+            snapshot_hash(handoff["context"].get("projectPrompt")), "project_prompt_conflict")
     return dict({"status": "assessed", "reportedStatus": result["reportedStatus"], "assessment": assessment}, **extra)

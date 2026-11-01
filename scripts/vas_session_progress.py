@@ -9,6 +9,7 @@ import re
 from vas_ai_contract import canonical, safe_relative, sensitive_key
 from vas_session import LOCAL_POSIX, SessionError, require, valid_document
 from vas_task_policy import safe_text
+from vas_prompt_context import project_snapshot, snapshot_hash, stale_reason
 
 MAX_RECORD_BYTES = 16 * 1024
 PHASES = {"planning", "implementing", "testing", "reviewing", "paused", "blocked", "awaiting-request"}
@@ -116,10 +117,14 @@ def _hash(settings):
 
 
 def _context(value):
-    _fields(value, {"sessionRevision", "settingsSha256"})
+    _fields(value, {"sessionRevision", "settingsSha256", "projectPromptSha256"},
+            {"sessionRevision", "settingsSha256"})
     require(type(value["sessionRevision"]) is int and value["sessionRevision"] >= 1, "progress_invalid")
     require(isinstance(value["settingsSha256"], str) and
             HASH.fullmatch(value["settingsSha256"]), "progress_invalid")
+    if "projectPromptSha256" in value:
+        require(isinstance(value["projectPromptSha256"], str) and
+                HASH.fullmatch(value["projectPromptSha256"]), "progress_invalid")
 
 
 def _bounded(record):
@@ -145,6 +150,8 @@ def validate_record(record):
         _context(record["savedFor"])
         require(record["savedFor"]["sessionRevision"] == record["basedOn"]["sessionRevision"] + 1,
                 "progress_invalid")
+        require(record["savedFor"].get("projectPromptSha256") ==
+                record["basedOn"].get("projectPromptSha256"), "progress_invalid")
         normalized, changes = normalize_progress(record["summary"])
         require(normalized == record["summary"] and not changes, "progress_invalid")
         _bounded(record)
@@ -153,7 +160,7 @@ def validate_record(record):
         raise SessionError("progress_invalid") from None
 
 
-def progress_view(record, document):
+def progress_view(record, document, project_prompt_hash=None):
     view = {"status": "invalid", "revision": None, "referenceOnly": True,
             "filesVerified": False, "staleReasons": []}
     try:
@@ -165,11 +172,15 @@ def progress_view(record, document):
         reasons.append("session-revision-changed")
     if safe["savedFor"]["settingsSha256"] != _hash(document["settings"]):
         reasons.append("settings-changed")
+    prompt_reason = stale_reason(safe["savedFor"].get("projectPromptSha256"), project_prompt_hash)
+    if prompt_reason:
+        reasons.append(prompt_reason)
     return dict(view, status="stale" if reasons else "available", revision=safe["revision"],
                 record=safe, staleReasons=reasons)
 
 
-def checkpoint(manager, session_id, expected_revision, expected_progress_revision, raw):
+def checkpoint(manager, session_id, expected_revision, expected_progress_revision, raw,
+               expected_project_prompt_revision=None):
     """Atomically pair the latest canonical settings next step and a single summary."""
     def update(data):
         record = manager._record(manager._records(data), session_id)
@@ -181,6 +192,12 @@ def checkpoint(manager, session_id, expected_revision, expected_progress_revisio
         document, changes = valid_document(record["document"])
         require(not changes, "session_review_required")
         require(manager._view(record)["status"] == "resumed", "target_unavailable")
+        prompt = project_snapshot(manager, record["binding"]["path"])
+        number = prompt["revision"] if prompt else 0
+        if number or expected_project_prompt_revision is not None:
+            require(type(expected_project_prompt_revision) is int and
+                    expected_project_prompt_revision == number, "project_prompt_conflict")
+        prompt_hash = snapshot_hash(prompt)
         normalized, review = normalize_progress(raw)
         based_on = {"sessionRevision": document["revision"], "settingsSha256": _hash(document["settings"])}
         document["settings"]["nextStep"] = normalized["nextStep"]
@@ -190,10 +207,15 @@ def checkpoint(manager, session_id, expected_revision, expected_progress_revisio
                     "recordedAt": document["updatedAt"], "basedOn": based_on,
                     "savedFor": {"sessionRevision": document["revision"],
                                  "settingsSha256": _hash(document["settings"])}, "summary": normalized}
+        if prompt_hash:
+            for context in ("basedOn", "savedFor"):
+                progress[context]["projectPromptSha256"] = prompt_hash
         _bounded(progress)
         validate_record(progress)
         record.update(document=document, progress=progress)
         view = manager._view(record)
+        require(project_snapshot(manager, record["binding"]["path"]) == prompt,
+                "project_prompt_conflict")
         if review:
             view["progressReviewFields"] = review
         return view

@@ -31,11 +31,15 @@
     const request = ++preparation;
     const signature = JSON.stringify([values, design]);
     prepared = null;
+    const savedPrompt = await VASAgentHandoffWeb.projectPrompt();
     const result = await VASAgentHandoffWeb.buildNew(values, design, {
+      projectPrompt: savedPrompt,
       completionCriteria: criteria,
       rag: { included: false, items: [] }, ragReviewed: false,
       continuation: { included: false }
     });
+    await VASAgentHandoffWeb.assertProjectPrompt(savedPrompt);
+    result.projectPromptSnapshot = savedPrompt;
     if (revision !== inputRevision || request !== preparation || signature !== currentSignature()) {
       throw new Error('준비 중 내용이 변경되었습니다. 최신 입력으로 다시 준비해 주세요.');
     }
@@ -75,7 +79,7 @@
       const result = await prepare();
       VASTaskInputs.confirm(result.document, 'handoffInputReview');
       ensureCurrent(result);
-      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json');
+      await VASAgentHandoffWeb.save(result.document, 'VAS-AI-HANDOFF.json', result.projectPromptSnapshot, function () { ensureCurrent(result); });
       const draftFailed = global.VASClientDraft && VASClientDraft.clear() === false;
       let message = 'JSON을 저장했습니다. 필요하면 프롬프트와 함께 코딩 도구에 전달하세요.';
       if (draftFailed) message += ' 브라우저 초안은 삭제하지 못했습니다.';
@@ -93,6 +97,8 @@
       await VASAgentHandoffWeb.refreshIntegrity(result.document);
       ensureCurrent(result);
       VASAgentHandoffWeb.assertReviewed(result.document);
+      await VASAgentHandoffWeb.assertProjectPrompt(result.projectPromptSnapshot);
+      ensureCurrent(result);
       await VASAgentHandoffWeb.copy(VASAgentHandoffWeb.prompt(result.document, 'universal'));
       showStatus('프롬프트를 복사했습니다. 코딩 도구에 붙여넣은 뒤 VAS는 닫아도 됩니다.');
       try { await VASSetupDesign.confirm(); } catch (error) { showStatus('프롬프트를 복사했습니다. 작업 기억은 저장하지 못했습니다.'); }

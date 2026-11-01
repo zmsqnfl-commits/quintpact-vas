@@ -164,12 +164,14 @@ def normalize_finish(raw, unit):
 
 
 def _validate_context(value):
-    _fields(value, CONTEXT_FIELDS)
+    _fields(value, CONTEXT_FIELDS | ({"projectPromptSha256"} if "projectPromptSha256" in value else set()))
     _check(_matches(value["sessionId"], ID) and type(value["sessionRevision"]) is int
            and value["sessionRevision"] >= 1)
     _check(_matches(value["handoffId"], re.compile(r"h_[a-f0-9]{32}")))
     for key in CONTEXT_FIELDS - {"sessionId", "sessionRevision", "handoffId"}:
         _check(_matches(value[key], HASH))
+    if "projectPromptSha256" in value:
+        _check(_matches(value["projectPromptSha256"], HASH))
 
 
 def _validate_unit(unit, partial, created, updated):

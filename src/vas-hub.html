@@ -29,6 +29,22 @@
 
       <h2 id="startTitle" class="sr-only">시작 방식 선택</h2>
       <div class="start-grid" aria-labelledby="startTitle">
+        <section class="prompt-panel" id="projectPromptPanel" aria-labelledby="projectPromptTitle" hidden>
+          <h2 id="projectPromptTitle"><label for="projectPromptText">프로젝트 작업 지시</label></h2>
+          <p id="projectPromptHint">이 프로젝트에서 만들거나 바꿀 내용과 지켜야 할 조건을 적으세요. 저장하면 AI가 다음 요청이나 위임 때 읽습니다. 실행 중인 작업은 자동으로 바뀌지 않습니다.</p>
+          <textarea id="projectPromptText" rows="4" aria-describedby="projectPromptHint projectPromptFile" placeholder="예: 금액은 원 단위로 표시하고, 기존 데이터는 그대로 유지하세요." disabled></textarea>
+          <p class="prompt-file" id="projectPromptFile">프로젝트의 <code>VAS-PROJECT-PROMPT.json</code>에 저장됩니다. 비밀값이나 개인 경로는 적지 마세요.</p>
+          <div class="prompt-actions">
+            <button class="prompt-primary" id="projectPromptSave" type="button" disabled>지시 저장</button>
+            <button id="projectPromptReload" type="button">저장본 불러오기</button>
+            <button id="projectPromptRebase" type="button" hidden>초안을 유지하고 최신 저장본 기준으로 편집</button>
+          </div>
+          <p id="projectPromptStatus" role="status" aria-live="polite"></p>
+          <details id="projectPromptPreview">
+            <summary>에이전트가 읽을 저장본</summary>
+            <pre id="projectPromptSaved"></pre>
+          </details>
+        </section>
         <a class="start-card" href="client-application.html" data-vas-link data-memory-start data-track="project.new">
           <span class="action-index" aria-hidden="true">01</span>
           <span class="start-copy"><strong>새 프로젝트 만들기</strong><small>요구사항과 디자인을 정해 코딩 AI용 프롬프트를 만듭니다.</small></span>
@@ -50,6 +66,7 @@
   <script src="editorial-theme.js"></script>
   <script src="memory-identity.js"></script><script src="memory-browser-adapter.js"></script><script src="personalization-store.js"></script>
   <script src="setup-tools.js"></script>
+  <script src="project-prompt.js"></script>
   <script src="vas-hub.js"></script>
 </body>
 </html>

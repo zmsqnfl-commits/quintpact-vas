@@ -7,6 +7,7 @@ import uuid
 
 from vas_ai_contract import canonical
 from vas_session import SessionError, identity, require, valid_document
+from vas_prompt_context import snapshot_hash, stale_reason
 
 
 def digest(value):
@@ -57,6 +58,9 @@ def prepared_context(manager, session_id, number, binding):
                "targetBindingSha256": digest(binding)}
     criteria = [{"id": item["id"], "method": item["method"], "required": item["required"],
                  "sha256": digest(item)} for item in handoff["task"]["completionCriteria"]]
+    prompt_hash = snapshot_hash(handoff["context"].get("projectPrompt"))
+    if prompt_hash:
+        context["projectPromptSha256"] = prompt_hash
     return context, criteria
 
 
@@ -67,7 +71,7 @@ def capture_target(manager, binding, paths):
     return capture(selected, binding["identity"], paths, in_project)
 
 
-def work_view(raw, document, binding):
+def work_view(raw, document, binding, project_prompt_hash=None):
     """Only metadata freshness: this deliberately never prepares or reads app files."""
     from vas_work_contract import validate_work
     view = {"status": "invalid", "revision": None, "hostReportsVerified": False,
@@ -90,6 +94,9 @@ def work_view(raw, document, binding):
             reasons.append("agent-resources-changed")
     except OSError:
         reasons.append("agent-resources-unavailable")
+    prompt_reason = stale_reason(context.get("projectPromptSha256"), project_prompt_hash)
+    if prompt_reason:
+        reasons.append(prompt_reason)
     return dict(view, status="stale" if reasons else "available", revision=work["revision"],
                 record=work, staleReasons=reasons)
 
