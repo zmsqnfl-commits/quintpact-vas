@@ -12,6 +12,35 @@
     const phases = { planning: '계획', implementing: '구현', testing: '검사', reviewing: '검토',
       paused: '일시 중단', blocked: '진행 막힘', 'awaiting-request': '다음 요청 대기' };
     let generation = 0;
+    function showDetails(note) {
+      const details = element('Details');
+      details.replaceChildren();
+      function add(label, value) {
+        if (!value) return;
+        const title = document.createElement('dt'), text = document.createElement('dd');
+        title.textContent = label;
+        text.textContent = value;
+        details.append(title, text);
+      }
+      function list(items) {
+        if (items == null) return '';
+        if (!Array.isArray(items) || !items.every(item => typeof item === 'string')) throw new Error('invalid progress');
+        return items.join('\n');
+      }
+      if (note.scope != null) {
+        if (typeof note.scope.objective !== 'string') throw new Error('invalid progress');
+        add('합의한 목표', note.scope.objective);
+        add('완료조건', list(note.scope.criteria));
+      }
+      add('결정 사항', list(note.decisions));
+      add('남은 일', list(note.remaining));
+      if (note.markdownPath != null) {
+        const path = 'vas-state/progress/' + String(note.revision).padStart(6, '0') + '.md';
+        if (note.markdownPath !== path) throw new Error('invalid progress');
+        add('읽을 수 있는 파일', path);
+      }
+      details.hidden = !details.childElementCount;
+    }
     async function load() {
       const request = ++generation;
       body.hidden = true;
@@ -30,6 +59,7 @@
               Object.hasOwn(labels, check.status))) throw new Error('invalid progress');
         element('Summary').textContent = note.summary;
         element('Next').textContent = note.nextStep;
+        showDetails(note);
         checks.replaceChildren();
         for (const check of note.checks) {
           const item = document.createElement('li');

@@ -35,7 +35,7 @@ def test_revisions_redaction_no_raw_data_and_optimistic_conflicts(project):
     first = journal.append_shared_progress(project, 0, note("Sent a note to canary@example.com"))
     assert first["revision"] == 1 and "canary@example" not in first["summary"]
     assert first["checks"] == [{"name": "Menu view", "status": "passed"}]
-    assert set(first) == {"revision", "summary", "nextStep", "phase", "checks"}
+    assert set(first) == {"revision", "summary", "nextStep", "phase", "checks", "markdownPath"}
     assert journal.append_shared_progress(project, 0, note("Sent a note to canary@example.com")) == first
     with pytest.raises(journal.SharedProgressError, match="conflict"):
         journal.append_shared_progress(project, 0, note("Stale update"))
@@ -100,3 +100,25 @@ def test_reader_rejects_duplicate_fields_and_unredacted_nonstandard_absolute_pat
     path.write_bytes(raw)
     with pytest.raises(journal.SharedProgressError, match="invalid"):
         journal.read_shared_progress(project)
+
+def test_markdown_is_a_verified_readable_view_of_one_revision(project):
+    data = {**note(), "scope": {"objective": "메뉴를 표시한다", "criteria": ["가격이 보인다"]},
+            "decisions": ["기존 화면 유지"], "remaining": ["모바일 확인"]}
+    record = journal.append_shared_progress(project, 0, data)
+    view = project / record["markdownPath"]
+    md = view.read_text(encoding="utf-8")
+    for value in ("메뉴를 표시한다", "가격이 보인다", "기존 화면 유지", "모바일 확인", "Menu view · 통과"):
+        assert value in md
+    assert journal.append_shared_progress(project, 0, data) == record
+    view.write_text("forged summary", encoding="utf-8")
+    with pytest.raises(journal.SharedProgressError, match="invalid"):
+        journal.read_shared_progress(project)
+
+
+def test_legacy_record_without_markdown_remains_readable(project):
+    data = journal.append_shared_progress(project, 0, note())
+    md = project / data.pop("markdownPath")
+    md.unlink()
+    digest = journal.hashlib.sha256(journal.canonical(data)).hexdigest()
+    (project / "vas-state/progress/000001.json").write_bytes(journal.canonical({"record": data, "sha256": digest}))
+    assert journal.read_shared_progress(project) == data

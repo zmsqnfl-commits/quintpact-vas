@@ -1,5 +1,5 @@
 {
-  "name": "quintpact-vas",
+  "name": "vas-tools",
   "description": "Development tools for VAS. Build and run the user application in src/.",
   "version": "2.13.0",
   "private": true,

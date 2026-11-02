@@ -72,6 +72,27 @@ def _resume_action(view, prompt_revision, shared_revision):
     return session, action
 
 
+def shared_brief(record):
+    if record is None:
+        return None
+    result = dict(record)
+    result["summary"] = _brief(record["summary"], 240)
+    result["nextStep"] = _brief(record["nextStep"], 240)
+    result["checks"] = record["checks"][:4]
+    for key in ("decisions", "remaining"):
+        if key in record:
+            result[key] = [_brief(item, 120) for item in record[key][:2]]
+    if "scope" in record:
+        scope = record["scope"]
+        result["scope"] = {"objective": _brief(scope["objective"], 240),
+                           "criteria": [_brief(item, 120) for item in scope["criteria"][:3]]}
+    if result != record:
+        result["truncated"] = True
+        if "markdownPath" not in result:
+            result["readCommand"] = "python -B scripts/vas-project-prompt.py progress"
+    return result
+
+
 def start(root, state_home=None):
     root = Path(root)
     require(".." not in root.parts, "vas_root_invalid")
@@ -85,7 +106,7 @@ def start(root, state_home=None):
                             readCommand="python -B scripts/vas-project-prompt.py get")
     result = {"status": "ok", "app": {"directory": "src", "state": state,
                                        "interpretation": "새 앱 자리" if state == "empty" else "기존 항목을 확인하세요"},
-              "projectPrompt": prompt_brief, "sharedProgress": shared}
+              "projectPrompt": prompt_brief, "sharedProgress": shared_brief(shared)}
     try:
         manager = SessionManager(root, state_home)
         require(manager.root == manager.project_root, "vas_root_invalid")

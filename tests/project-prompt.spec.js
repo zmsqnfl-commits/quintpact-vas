@@ -143,7 +143,24 @@ test('project progress readback distinguishes missing, saved checks and unreadab
   await page.locator('#projectProgressPanel summary').click();
   await expect(page.locator('#projectProgressChecks')).toContainText('메뉴 표시 · 통과');
   await expect(page.locator('#projectProgressChecks')).toContainText('배포 확인 · 미실행');
+  const details = page.locator('#projectProgressDetails');
+  await expect(details).toBeHidden();
+  const legacy = entry;
+  entry = { ...entry, revision: 2,
+    scope: { objective: '<img src=x onerror=alert(1)>', criteria: ['제목 확인', '다시 열어 수량 확인'] },
+    decisions: ['앱 데이터는 로컬 저장'], remaining: ['실제 기기 확인'], markdownPath: 'vas-state/progress/000002.md' };
+  await page.locator('#projectProgressReload').click();
+  await expect(details).toBeVisible();
+  await expect(details.locator('dt')).toHaveText(['합의한 목표', '완료조건', '결정 사항', '남은 일', '읽을 수 있는 파일']);
+  await expect(details.locator('dd')).toHaveText([entry.scope.objective, entry.scope.criteria.join('\n'),
+    entry.decisions[0], entry.remaining[0], entry.markdownPath]);
+  await expect(details.locator('img, a')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  entry = legacy;
+  await page.locator('#projectProgressReload').click();
+  await expect(status).toContainText('판본 1');
+  await expect(details).toBeHidden();
+  await expect(details.locator('dd')).toHaveCount(0);
   fail = true;
   await page.locator('#projectProgressReload').click();
   await expect(status).toContainText('읽지 못했습니다');

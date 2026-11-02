@@ -1,6 +1,7 @@
 """A bounded, append-only project summary shared by hosts. All records are reference data."""
 from contextlib import ExitStack, contextmanager
 import hashlib
+import html
 import json
 import os
 import re
@@ -13,9 +14,10 @@ from vas_project_prompt import ProjectPromptError, _Project, _pin, _regular
 from vas_session_progress import CHECK_STATUSES, PHASES, _text as progress_text
 
 MAX_SLOTS = 2048
-MAX_BYTES = 16 * 1024
+MAX_BYTES = 32 * 1024
+MAX_MARKDOWN_BYTES = 64 * 1024
 THREAD_WRITER = threading.Lock()
-ENTRY = re.compile(r"([0-9]{6})\.(json|ok)$")
+ENTRY = re.compile(r"([0-9]{6})\.(json|md|ok)$")
 
 
 class SharedProgressError(ValueError):
@@ -46,8 +48,48 @@ def shared_summary(raw):
     for check in checks:
         require(isinstance(check, dict) and check.get("status") in CHECK_STATUSES, "invalid")
         result.append({"name": _text(check.get("name"), 120), "status": check["status"]})
-    return {"phase": raw["phase"], "summary": _text(raw.get("summary"), 1000),
+    data = {"phase": raw["phase"], "summary": _text(raw.get("summary"), 1000),
             "nextStep": _text(raw.get("nextStep"), 1000), "checks": result}
+    if "scope" in raw:
+        scope = raw["scope"]
+        require(isinstance(scope, dict) and set(scope) == {"objective", "criteria"}, "invalid")
+        data["scope"] = {"objective": _text(scope["objective"], 1000),
+                         "criteria": _texts(scope["criteria"], 20)}
+    for key, limit in (("decisions", 8), ("remaining", 10)):
+        if key in raw:
+            data[key] = _texts(raw[key], limit)
+    return data
+
+
+def _texts(values, limit):
+    require(isinstance(values, list) and len(values) <= limit, "invalid")
+    return [_text(value, 300) for value in values]
+
+
+def _markdown(record):
+    # Literalize user-provided text so reading a note never embeds a remote image or HTML.
+    def literal(value):
+        value = " ".join(value.splitlines())
+        return re.sub(r"([\\\`*_{\[\]()<>#~!|}])", r"\\\1", html.escape(value, quote=False))
+
+    def items(values):
+        return ["- " + literal(value) for value in values] or ["- 기록 없음"]
+
+    lines = [f"# VAS 프로젝트 인계 · {record['revision']}회",
+             "", "확인한 프로젝트 기록입니다. 현재 파일과 대화에서 정한 범위를 대조하세요.",
+             "", "## 마지막으로 합의한 목표와 완료조건"]
+    scope = record.get("scope")
+    if scope:
+        lines += [literal(scope["objective"]), "", *items(scope["criteria"])]
+    else:
+        lines.append("저장된 합의 없음")
+    labels = {"passed": "통과", "failed": "실패", "skipped": "건너뜀", "not-run": "미실행"}
+    lines += ["", "## 결정 사항", *items(record.get("decisions", [])),
+              "", "## 작업 요약", literal(record["summary"]), "", "## 보고된 검사",
+              *items([f"{check['name']} · {labels[check['status']]}" for check in record["checks"]]),
+              "", "## 남은 일", *items(record.get("remaining", [])),
+              "", "## 다음 행동", literal(record["nextStep"])]
+    return ("\n".join(lines) + "\n").encode("utf-8")
 
 
 @contextmanager
@@ -108,7 +150,7 @@ class _Journal:
         last_slot = last_commit = 0
         with os.scandir(self.fd if self.fd is not None else self.path) as entries:
             for count, entry in enumerate(entries, 1):
-                require(count <= 2 * MAX_SLOTS + 1, "full")
+                require(count <= 3 * MAX_SLOTS + 1, "full")
                 if entry.name == "writer.lock":
                     continue
                 match = ENTRY.fullmatch(entry.name)
@@ -134,21 +176,32 @@ class _Journal:
             record = envelope["record"]
             require(envelope == {"record": record, "sha256": hashlib.sha256(canonical(record)).hexdigest()}, "invalid")
             require(type(record.get("revision")) is int and record["revision"] == revision, "invalid")
-            require(record == {"revision": revision, **shared_summary(record)}, "invalid")
+            normalized = {"revision": revision, **shared_summary(record)}
+            if "markdownPath" in record:
+                normalized["markdownPath"] = f"vas-state/progress/{revision:06d}.md"
+                expected = _markdown(normalized)
+                with self.file(f"{revision:06d}.md", os.O_RDONLY) as fd:
+                    require(os.fstat(fd).st_size == len(expected) and len(expected) <= MAX_MARKDOWN_BYTES,
+                            "invalid")
+                    require(os.read(fd, len(expected) + 1) == expected, "invalid")
+            require(record == normalized, "invalid")
             return record
         except (KeyError, AttributeError, TypeError, UnicodeError, ValueError, RecursionError):
             raise SharedProgressError("shared_progress_invalid") from None
 
     def write(self, revision, data):
-        record = {"revision": revision, **data}
+        record = {"revision": revision, **data, "markdownPath": f"vas-state/progress/{revision:06d}.md"}
         raw = canonical({"record": record, "sha256": hashlib.sha256(canonical(record)).hexdigest()})
         require(len(raw) <= MAX_BYTES, "full")
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        with self.file(f"{revision:06d}.json", flags) as fd:
-            with os.fdopen(fd, "wb", closefd=False) as out:
-                out.write(raw)
-                out.flush()
-                os.fsync(fd)
+        markdown = _markdown(record)
+        require(len(markdown) <= MAX_MARKDOWN_BYTES, "full")
+        for suffix, content in (("json", raw), ("md", markdown)):
+            with self.file(f"{revision:06d}.{suffix}", flags) as fd:
+                with os.fdopen(fd, "wb", closefd=False) as out:
+                    out.write(content)
+                    out.flush()
+                    os.fsync(fd)
         # Readers only consume slots with a complete publication marker.
         with self.file(f"{revision:06d}.ok", flags):
             pass
@@ -159,10 +212,12 @@ class _Journal:
         with ExitStack() as stack:
             require(THREAD_WRITER.acquire(timeout=2), "busy")
             stack.callback(THREAD_WRITER.release)
+            # Windows can byte-lock a read-only handle; POSIX lockf needs write access.
+            access = os.O_RDONLY if os.name == "nt" else os.O_RDWR
             try:
-                fd = stack.enter_context(self.file("writer.lock", os.O_RDWR | os.O_CREAT | os.O_EXCL))
+                fd = stack.enter_context(self.file("writer.lock", access | os.O_CREAT | os.O_EXCL))
             except FileExistsError:
-                fd = stack.enter_context(self.file("writer.lock", os.O_RDWR))
+                fd = stack.enter_context(self.file("writer.lock", access))
             deadline = time.monotonic() + 2
             if os.name == "nt":
                 import msvcrt
@@ -198,7 +253,7 @@ def append_shared_progress(root, expected_revision, summary):
         with _directory(root, create=True) as journal, journal.writer():
             last_slot, current = journal.bounds()
             latest = journal.read(current)
-            if latest and latest == {"revision": current, **data}:
+            if latest and shared_summary(latest) == data:
                 return latest
             require(current == (expected_revision or 0), "conflict")
             require(last_slot < MAX_SLOTS, "full")

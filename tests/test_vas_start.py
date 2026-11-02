@@ -239,3 +239,14 @@ def test_shared_snapshot_is_never_silently_treated_as_missing_on_invalid_data(ki
     code, data = cli(kit)
     assert code == 1 and data["status"] == "error" and data["code"].startswith("shared_progress_")
     assert file.read_bytes() == b"not-json" and not state.exists()
+
+def test_large_shared_scope_is_a_short_preview_with_a_readable_full_note():
+    from vas_start import shared_brief
+    record = {"revision": 2, "phase": "paused", "summary": "A" * 600, "nextStep": "Continue",
+              "checks": [], "markdownPath": "vas-state/progress/000002.md",
+              "scope": {"objective": "Show the price", "criteria": [f"Condition {i}" for i in range(10)]},
+              "remaining": ["first", "second", "third"]}
+    preview = shared_brief(record)
+    assert preview["truncated"] and len(preview["scope"]["criteria"]) == 3
+    assert preview["remaining"] == ["first", "second"] and preview["markdownPath"] == record["markdownPath"]
+    assert len(record["scope"]["criteria"]) == 10 and len(preview["summary"]) <= 240

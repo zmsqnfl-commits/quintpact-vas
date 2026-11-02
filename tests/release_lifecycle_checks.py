@@ -77,6 +77,11 @@ def verify_chat_lifecycle(app: Path, scratch: Path):
     closed = invoke("vas.py", "finish", *sel, "--expected-progress-revision", "0",
                     "--expected-project-prompt-revision", str(prompt["revision"]), data=payload)
     assert closed["status"] == "checkpointed"
+    shared = closed["sharedProgress"]
+    assert shared["scope"]["objective"] == settings["task"]["request"]
+    assert shared["scope"]["criteria"] == ["The menu prints the agreed price."]
+    markdown = (app / shared["markdownPath"]).read_text(encoding="utf-8")
+    assert "The menu prints the agreed price." in markdown
     after = invoke("vas.py", "start")
     assert after["session"]["status"] == "resumed" and after["app"]["state"] == "nonempty"
     resumed = invoke("vas-session.py", "resume", "--target", ".")

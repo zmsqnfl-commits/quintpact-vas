@@ -38,6 +38,8 @@ def main(operation, exchange):
             assert result["session"]["status"] == "none", result
             shared = result["sharedProgress"]
             assert shared["revision"] == 1 and shared["summary"] == "메뉴 표시 확인"
+            markdown = (project / shared["markdownPath"]).read_text(encoding="utf-8")
+            assert "메뉴 표시 확인" in markdown and "메뉴 · 통과" in markdown
             assert shared["checks"] == [{"name": "메뉴", "status": "passed"}]
             assert shared["nextStep"] == "관리 화면 확인"
             updated = invoke("finish", "--summary", "관리 화면 점검 중", "--check", "권한: 미실행",

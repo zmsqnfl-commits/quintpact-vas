@@ -227,3 +227,65 @@ def test_many_submitted_tests_preserve_failed_and_skipped_outcomes_in_shared_not
     assert [(item["status"], item["summary"]) for item in checks] == [
         ("failed", "1 failed"), ("skipped", "1 skipped"), ("passed", "11 passed")]
     assert [item["status"] for item in view["sharedProgress"]["checks"]] == ["failed", "skipped", "passed"]
+
+
+def test_file_only_host_keeps_confirmed_scope_and_open_work_across_a_quick_note(kit):
+    manager, sid, app, root, state = kit
+    report_data = report(prepared(kit))
+    report_data["tests"][0].update(status="failed", command="python secret-internal-command.py")
+    report_data["remaining"] = [{"severity": "blocker", "summary": "Fix sum"}]
+    partial = {"summary": "Stock sum failed", "decisions": [
+        {"decision": "Retain old stock data", "reason": "Internal reason only"}]}
+    code, full = close(kit, {"result": report_data, "progress": partial})
+    assert code == 0
+    note = full["sharedProgress"]
+    expected_scope = {"objective": SETTINGS["task"]["request"],
+                      "criteria": [c["description"] for c in SETTINGS["task"]["completionCriteria"]]}
+    assert note["scope"] == expected_scope and note["decisions"] == ["Retain old stock data"]
+    assert "Fix sum" in note["remaining"] and note["checks"][0]["status"] == "failed"
+    private_bytes = manager.store.path.read_bytes()
+
+    other = (None, None, app, root, state.parent / "file-only")
+    code, result = quick(other, "--summary", "Changed title", "--check", "Title: 통과",
+                         "--expected-shared-revision", "1")
+    assert code == 0 and result["privateSession"] == "none"
+    latest = result["sharedProgress"]
+    assert latest["revision"] == 2 and latest["scope"] == expected_scope
+    assert latest["decisions"] == note["decisions"] and latest["remaining"] == note["remaining"]
+    assert latest["nextStep"] == note["nextStep"] and latest["phase"] == "blocked"
+    assert latest["checks"] == note["checks"] + [{"name": "Title", "status": "passed"}]
+    assert manager.store.path.read_bytes() == private_bytes and not other[-1].exists()
+    cmd = Path(__file__).resolve().parents[1] / "scripts/vas.py"
+    new_host = subprocess.run([sys.executable, "-B", str(cmd), "--vas-root", str(root),
+                               "--state-home", str(other[-1]), "start"], capture_output=True, check=True)
+    brief = json.loads(new_host.stdout)["sharedProgress"]
+    assert brief["scope"] == expected_scope and brief["decisions"] == latest["decisions"]
+    assert len(latest["remaining"]) > 2 and brief["truncated"] is True
+    assert brief["remaining"] == latest["remaining"][:2] and brief["markdownPath"] == latest["markdownPath"]
+    durable = json.loads((root / "vas-state/progress/000002.json").read_text(encoding="utf-8"))["record"]
+    assert durable["scope"] == expected_scope and durable["remaining"] == latest["remaining"]
+    markdown = (root / "vas-state/progress/000002.md").read_text(encoding="utf-8")
+    assert expected_scope["objective"] in markdown and "Fix sum" in markdown
+    assert all(item in markdown for item in latest["remaining"])
+    assert all(term not in markdown for term in (sid, str(state), "Internal reason only", "secret-internal-command"))
+
+
+def test_conflicting_private_scope_requires_full_reconciliation(kit):
+    manager, sid, _, root, _ = kit
+    raw = {"result": None, "progress": {"phase": "paused", "summary": "Initial task",
+           "nextStep": "Continue counting", "remaining": ["Old issue"]}}
+    assert close(kit, raw)[0] == 0
+    settings = manager.resume(session_id=sid)["session"]["settings"]
+    settings["task"].update(request="Show menu labels", completionCriteria=[
+        {"description": "Menu visible", "method": "automatic", "required": True}])
+    manager.save(sid, 2, settings)
+    before = manager.store.path.read_bytes()
+    code, conflict = quick(kit, "--summary", "Labels updated", "--expected-shared-revision", "1")
+    assert code == 1 and conflict["sharedError"] == "shared_progress_scope_conflict"
+    assert manager.store.path.read_bytes() == before
+
+    saved = vas_finish.finish(manager, sid, 3, 1, {"result": None, "progress": {
+        "phase": "paused", "summary": "Menu project confirmed", "nextStep": "Check menu labels"}},
+        expected_shared_revision=1)
+    assert saved["sharedProgress"]["scope"] == {"objective": "Show menu labels", "criteria": ["Menu visible"]}
+    assert not saved["sharedProgress"].get("remaining") and not saved["sharedProgress"].get("decisions")

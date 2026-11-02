@@ -3,11 +3,12 @@ import hashlib
 from pathlib import Path
 
 from vas_ai_contract import canonical, validate_result
+from vas_portable_progress import SharedProgressError, append_shared_progress, read_shared_progress
 from vas_project_layout import is_project_engine, project_directory
 from vas_project_prompt import read_project_prompt
 from vas_session import SessionError, SessionManager, require
 from vas_session_execution import assess_with_result
-from vas_session_progress import checkpoint, normalize_progress
+from vas_session_progress import checkpoint, normalize_progress, _text as progress_text
 from vas_session_store import SessionStoreError
 
 
@@ -64,13 +65,73 @@ def _input_hash(progress, report):
     return hashlib.sha256(canonical([sorted(progress), normalized, report])).hexdigest()
 
 
-def _write_shared(output, root, cursor, progress):
-    from vas_portable_progress import append_shared_progress, SharedProgressError
+def _excerpt(value, limit):
+    """Redact the complete string before clipping; keep public protocol limits in UTF-16."""
     try:
-        output["sharedProgress"] = append_shared_progress(root, cursor, progress)
+        cleaned = progress_text(value, len(value.encode("utf-16-le")) // 2, "shared", [])
+        encoded = cleaned.encode("utf-16-le")
+    except (ValueError, TypeError, UnicodeError):
+        raise SharedProgressError("shared_progress_invalid") from None
+    if len(encoded) <= 2 * limit:
+        return cleaned
+    return encoded[:(limit - 1) * 2].decode("utf-16-le", errors="ignore").rstrip() + "…"
+
+
+def _scope(task):
+    if not task or not task["request"].strip():
+        return None
+    return {"objective": _excerpt(task["request"], 1000),
+            "criteria": [_excerpt(row["description"], 300) for row in task["completionCriteria"]]}
+
+
+def _quick_context(progress, previous, task, keep_next):
+    if not previous:
+        return progress
+    latest = previous.get("scope")
+    local = _scope(task)
+    if latest and local and local != latest:
+        raise SharedProgressError("shared_progress_scope_conflict")
+    record = dict(progress)
+    for key in ("scope", "decisions", "remaining"):
+        if key in previous:
+            record[key] = previous[key]
+    if keep_next:
+        record["nextStep"] = previous["nextStep"]
+    # A short note about another change must not erase an earlier failed or skipped check.
+    seen = {check["name"] for check in record["checks"]}
+    pending = [check for check in previous["checks"] if check["status"] != "passed" and check["name"] not in seen]
+    if len(pending) + len(record["checks"]) > 10:
+        raise SharedProgressError("shared_progress_checks_limit")
+    record["checks"] = pending + record["checks"]
+    if previous["phase"] == "blocked" and previous.get("remaining"):
+        record["phase"] = "blocked"
+    elif pending:
+        record["phase"] = "testing"
+    return record
+
+
+def _write_shared(output, root, cursor, progress, task, *, quick=False, keep_next=False):
+    try:
+        if quick:
+            previous = read_shared_progress(root)
+            if cursor is not None and cursor > (previous["revision"] if previous else 0):
+                raise SharedProgressError("shared_progress_conflict")
+            record = _quick_context(progress, previous, task, keep_next)
+        else:
+            record = dict(progress)
+            scope = _scope(task)
+            if scope:
+                record["scope"] = scope
+            record["decisions"] = [_excerpt(item["decision"], 300) for item in progress["decisions"]
+                                   if item["decision"].strip()]
+            record["remaining"] = [_excerpt(item, 300) for item in progress["remaining"] if item.strip()]
+        output["sharedProgress"] = append_shared_progress(root, cursor, record)
+        output["nextStep"] = output["sharedProgress"]["nextStep"]
     except (SharedProgressError, OSError) as error:
         output.update(status="partial" if output["privateCheckpoint"] == "confirmed" else "not-recorded",
                       sharedProgress=None, sharedError=getattr(error, "code", "shared_progress_unavailable"))
+        if output["sharedError"] == "shared_progress_scope_conflict":
+            output["nextAction"] = "프로젝트의 공유 범위와 이 PC의 작업 범위를 비교한 뒤 합의한 세션으로 finish 하세요."
     return output
 
 
@@ -144,7 +205,8 @@ def finish(manager, session_id, expected_revision, expected_progress_revision, r
                   nextStep=summary["nextStep"], assessment=decision["assessment"] if decision else None,
                   assessmentStatus=receipt["assessmentStatus"], reportedStatus=receipt["reportedStatus"],
                   followUp=decision["followUp"] if decision else None, reviewFields=saved.get("progressReviewFields", []))
-    return _write_shared(output, manager.root, expected_shared_revision, summary)
+    return _write_shared(output, manager.root, expected_shared_revision, summary,
+                         resumed["session"]["settings"]["task"])
 
 
 def quick_finish(root, state_home, summary, checks, next_step, expected_shared_revision=None):
@@ -153,10 +215,13 @@ def quick_finish(root, state_home, summary, checks, next_step, expected_shared_r
     require(project_directory(root) == root and is_project_engine(root), "vas_root_invalid")
     output = {"status": "not-recorded", "privateCheckpoint": "not-written", "assessment": None,
               "sharedProgress": None, "complete": False, "userAcceptance": "not-recorded"}
+    task = None
     try:
         manager = SessionManager(root, state_home)
         current = manager.resume(target=root, allow_empty=True)
         output["privateSession"] = {"resumed": "available", "empty": "none"}.get(current["status"], "unavailable")
+        if current["status"] == "resumed" and not current.get("reviewFields"):
+            task = current["session"]["settings"]["task"]
         if current["status"] == "target_unavailable":
             output["privateError"] = "target_unavailable"
     except (SessionError, SessionStoreError, OSError) as error:
@@ -179,4 +244,5 @@ def quick_finish(root, state_home, summary, checks, next_step, expected_shared_r
              "nextStep": "다음 행동 미지정" if next_step is None else next_step}
     progress, review = normalize_progress(draft)
     output.update(status="recorded", nextStep=progress["nextStep"], reviewFields=review)
-    return _write_shared(output, root, expected_shared_revision, progress)
+    return _write_shared(output, root, expected_shared_revision, progress, task,
+                         quick=True, keep_next=next_step is None)
