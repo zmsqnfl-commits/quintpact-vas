@@ -103,7 +103,7 @@ def runtime(tmp_path_factory):
     (root / "src/assets").mkdir(parents=True)
     (root / "docs").mkdir()
     (root / "src/vas-hub.html").write_text("<!doctype html><title>Fixture</title>", encoding="utf-8")
-    font = ROOT / "src/proof-app/assets/BricolageGrotesque.ttf"
+    font = ROOT / "ui/proof-app/assets/BricolageGrotesque.ttf"
     shutil.copy2(font, root / "src/assets/font.ttf")
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
@@ -253,7 +253,7 @@ const fs = require('fs'); require(process.argv[1]);
  console.log((await VASPersonalization.list()).length);
 })().catch(error => { console.error(error); process.exit(1); });
 '''
-    result = subprocess.run(['node', '-e', code, str(ROOT / 'src/personalization-store.js')], input=json.dumps([data, exported]), text=True, capture_output=True)
+    result = subprocess.run(['node', '-e', code, str(ROOT / 'ui/personalization-store.js')], input=json.dumps([data, exported]), text=True, capture_output=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == '2'
     # A seeded historical key receives the same filtering at the export boundary.

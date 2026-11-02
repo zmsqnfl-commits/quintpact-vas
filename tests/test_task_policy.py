@@ -71,7 +71,7 @@ def test_browser_and_python_reject_coerced_scope_and_method_types(tmp_path, case
     script = """
 global.window=globalThis;
 const path=require('path');
-for(const name of ['agent-contract.js','task-policy.js','agent-handoff-web.js']) require(path.join(process.argv[1],'src',name));
+for(const name of ['agent-contract.js','task-policy.js','agent-handoff-web.js']) require(path.join(process.argv[1],'ui',name));
 const options=JSON.parse(require('fs').readFileSync(0,'utf8'));
 VASAgentHandoffWeb.buildExisting('synthetic','Header',{design:{included:true,direction:'REPLACE ALL COLORS'}},options)
   .then(()=>process.stdout.write('accepted'),()=>process.stdout.write('rejected'));

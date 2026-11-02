@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 
 test('all presets carry exact tokens, requirements and complete selected skill', async ({ page }) => {
   await page.goto(source('client-application.html'));

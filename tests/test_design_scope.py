@@ -167,7 +167,7 @@ def test_python_browser_fixed_policy_and_prompt_parity():
 require(process.argv[1]);
 const d=JSON.parse(require('fs').readFileSync(0,'utf8'));
 console.log(JSON.stringify({policy:VASDesignReference.attach(d).context.design.referenceUsage,prompt:VASDesignReference.prompt(d)}));"""
-    result = subprocess.run([node, "-e", script, str(ROOT / "src/design-reference.js")],
+    result = subprocess.run([node, "-e", script, str(ROOT / "ui/design-reference.js")],
                             input=json.dumps(document), encoding="utf-8", capture_output=True, check=True)
     browser = json.loads(result.stdout)
     assert browser["policy"] == usage()

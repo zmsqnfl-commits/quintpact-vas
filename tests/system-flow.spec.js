@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 const hubUrl = source('vas-hub.html');
 const clientUrl = source('client-application.html');
 const designUrl = source('design-controller.html');

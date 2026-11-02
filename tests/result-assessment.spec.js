@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const root = path.join(__dirname, '..', 'src');
+const root = path.join(__dirname, '..', 'ui');
 const url = pathToFileURL(path.join(root, 'project-import.html')).href;
 const criterion = { id: 'C1', description: 'CSV 한글과 합계 일치', method: 'manual', required: true };
 

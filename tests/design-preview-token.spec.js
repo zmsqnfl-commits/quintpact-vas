@@ -2,12 +2,12 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const appUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'design-controller.html')).href;
-const hubUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'vas-hub.html')).href;
-const clientUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href;
-const importUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href;
-const searchUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'knowledge-search.html')).href;
-const memoryUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'memory-center.html')).href;
+const appUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'design-controller.html')).href;
+const hubUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'vas-hub.html')).href;
+const clientUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'client-application.html')).href;
+const importUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'project-import.html')).href;
+const searchUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'knowledge-search.html')).href;
+const memoryUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'memory-center.html')).href;
 const requiredSections = [
   '[BASELINE RULES]',
   '[TASTE PROFILE RULES]',

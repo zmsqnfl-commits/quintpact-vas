@@ -13,7 +13,7 @@ function context(prompt) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('about:blank');
-  await page.addScriptTag({ path: path.join(__dirname, '../src/rag-lite.js') });
+  await page.addScriptTag({ path: path.join(__dirname, '../ui/rag-lite.js') });
 });
 
 test('RAG normalizes disguised roles and boundaries in content and provenance', async ({ page }) => {

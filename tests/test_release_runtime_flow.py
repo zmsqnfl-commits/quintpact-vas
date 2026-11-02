@@ -13,10 +13,11 @@ import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
+from runtime_install import install_runtime
 
 
 BASE = Path(__file__).resolve().parents[1]
-ARCHIVE = BASE / "dist" / "VAS-2.11.1-windows.zip"
+ARCHIVE = BASE / "dist" / "VAS-2.12.0-windows.zip"
 POWERSHELL = shutil.which("powershell.exe")
 
 
@@ -59,7 +60,7 @@ def start_release(root, state, *, launcher=None):
         raise AssertionError(f"release launcher failed: {output}")
     deadline = time.time() + 10
     while time.time() < deadline:
-        for path in state.glob("runtime-2.11.1-*.json"):
+        for path in state.glob("runtime-2.12.0-*.json"):
             try:
                 return json.loads(path.read_text(encoding="utf-8-sig"))
             except (OSError, ValueError):
@@ -70,6 +71,19 @@ def start_release(root, state, *, launcher=None):
 
 @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
 class ReleaseRuntimeFlowTests(unittest.TestCase):
+    def test_checkout_launcher_serves_the_same_project_screen_as_the_archive(self):
+        with tempfile.TemporaryDirectory(prefix="vas-source-runtime-") as temporary:
+            runtime = start_release(BASE, Path(temporary) / "private-state")
+            client = RuntimeClient(runtime)
+            try:
+                self.assertTrue(Path(runtime["rootPath"]).samefile(BASE))
+                self.assertEqual(client.request("/api/status")[1]["layout"], "project")
+                self.assertEqual(client.request("/src/vas-hub.html")[1], (BASE / "ui/vas-hub.html").read_bytes())
+                self.assertEqual(client.request("/api/chat/sessions")[0], 200)
+            finally:
+                client.request("/api/shutdown", "POST", {})
+                time.sleep(.5)
+
     def test_renamed_project_serves_only_engine_and_refuses_legacy_workspace(self):
         self.assertTrue(ARCHIVE.is_file(), "run the release builder first")
         with tempfile.TemporaryDirectory(prefix="vas-release-flow-") as temporary:
@@ -77,19 +91,23 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             with zipfile.ZipFile(ARCHIVE) as bundle:
                 bundle.extractall(base)
             project = base / "우리 앱 & 재고"
-            (base / "VAS-2.11.1-windows").rename(project)
-            engine = project / ".vas"
+            (base / "VAS-2.12.0-windows").rename(project)
+            self.assertFalse((project / ".vas").exists())
             state = base / "pc-state"
             sentinel = project / "src" / "inventory.txt"
             sentinel.write_bytes(b"private-sample-app-data")
-            runtime = start_release(engine, state)
+            (project / "src/vas-hub.html").write_bytes(b"private app homepage")
+            runtime = start_release(project, state)
             client = RuntimeClient(runtime)
             try:
                 # Windows runners may expose TEMP through its equivalent 8.3 alias.
-                self.assertTrue(Path(runtime["rootPath"]).samefile(engine))
-                self.assertEqual(client.request("/src/vas-hub.html")[1], (engine / "src/vas-hub.html").read_bytes())
+                self.assertTrue(Path(runtime["rootPath"]).samefile(project))
+                hub = (project / "ui/vas-hub.html").read_bytes()
+                self.assertEqual(client.request("/")[1], hub)
+                self.assertEqual(client.request("/src/vas-hub.html")[1], hub)
+                self.assertEqual(client.request("/api/files/read?scope=src&path=vas-hub.html")[1]["content"], hub.decode("utf-8-sig"))
                 for url in ["/src/inventory.txt", "/api/files/read?scope=src&path=inventory.txt",
-                            "/.vas/scripts/Start-VAS.ps1"]:
+                            "/scripts/Start-VAS.ps1", "/src/..%2fsrc%2finventory.txt"]:
                     with self.subTest(url=url), self.assertRaises(urllib.error.HTTPError) as refused:
                         client.request(url)
                     self.assertEqual(refused.exception.code, 404)
@@ -109,24 +127,28 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
                     with refused.exception as response:
                         self.assertEqual(json.load(response)["code"], "project_root_layout")
                 self.assertEqual(sentinel.read_bytes(), b"private-sample-app-data")
-                self.assertFalse((engine / "workspace").exists())
                 self.assertFalse((project / "workspace").exists())
             finally:
                 client.request("/api/shutdown", "POST", {})
                 time.sleep(0.5)
             # Never bind HTTP to app/src or create private state inside the app.
             for wrong_root, wrong_state, reason in [
-                (project, base / "wrong-root-state", b"Check the extracted project folder"),
-                (engine, project / "state", b"Private local state is unavailable"),
+                (project / "src", base / "wrong-root-state", b"Check the extracted project folder"),
+                (project, project / "state", b"Private local state is unavailable"),
             ]:
                 failed = subprocess.run([POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-                                         str(engine / "scripts/Start-VAS.ps1"), "-Server", "-NoBrowser",
+                                         str(project / "scripts/Start-VAS.ps1"), "-Server", "-NoBrowser",
                                          "-RootPath", str(wrong_root), "-StateRoot", str(wrong_state),
                                          "-Port", str(free_port()), "-IdleTimeoutSeconds", "2"],
                                         capture_output=True, timeout=8)
                 self.assertNotEqual(failed.returncode, 0)
                 self.assertIn(reason, failed.stderr)
                 self.assertFalse(wrong_state.exists())
+            # Damaged metadata cannot turn the app's same-named src/ page into VAS UI.
+            (project / "project-layout.json").unlink()
+            with self.assertRaisesRegex(AssertionError, "Check the extracted project folder"):
+                start_release(project, base / "invalid-layout-state")
+            self.assertFalse((base / "invalid-layout-state").exists())
 
     def test_legacy_tool_import_index_and_rollback_still_work(self):
         with tempfile.TemporaryDirectory(prefix="vas-release-legacy-") as temporary:
@@ -144,7 +166,7 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
                 "function payOrder() { return 'payment-ready'; }\n", encoding="utf-8"
             )
             (source / ".env").write_text("API_KEY=release-secret-value\n", encoding="utf-8")
-            runtime = start_release(root, state, launcher=BASE / "scripts" / "Start-VAS.ps1")
+            runtime = start_release(root, state, launcher=install_runtime(root))
             client = RuntimeClient(runtime)
             try:
                 self.assertEqual(client.request("/api/status")[1]["layout"], "tool")

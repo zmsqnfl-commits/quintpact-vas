@@ -42,7 +42,7 @@ const rows = JSON.parse(require('fs').readFileSync(0, 'utf8'));
 process.stdout.write(JSON.stringify(rows.map(row => VASResultAssessment.evaluate(row.result, row.context))));
 """
     rows = cases()
-    run = subprocess.run([node, "-e", script, str(ROOT / "src/result-assessment.js")],
+    run = subprocess.run([node, "-e", script, str(ROOT / "ui/result-assessment.js")],
                          input=json.dumps(rows, ensure_ascii=False), text=True, encoding="utf-8",
                          capture_output=True, check=True)
     javascript = json.loads(run.stdout)

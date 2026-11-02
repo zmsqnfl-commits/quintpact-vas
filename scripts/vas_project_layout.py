@@ -22,14 +22,21 @@ def _unique(items):
     return dict(items)
 
 
+def ui_directory(root: Path) -> Path:
+    return root / ("src" if root.name.casefold() == ".vas" else "ui")
+
+
+def project_directory(engine: Path) -> Path:
+    return engine.parent if engine.name.casefold() == ".vas" else engine
+
+
 def reserves_engine(root: Path) -> bool:
     """A marker or engine fingerprint reserves this tree even when layout validation fails."""
-    if root.name.casefold() != ".vas":
-        return False
+    legacy = root.name.casefold() == ".vas"
     try:
         info = root.lstat()
         if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
-            return True
+            return legacy
         if not stat.S_ISDIR(info.st_mode):
             return False
         try:
@@ -39,9 +46,10 @@ def reserves_engine(root: Path) -> bool:
             pass
         # Recognize an engine with a deleted marker. Never follow a linked src/.
         (root / "Run-VAS-System.bat").lstat()
-        if not _real((root / "src").lstat(), directory=True):
+        ui = ui_directory(root)
+        if not _real(ui.lstat(), directory=True):
             return True
-        (root / "src/vas-hub.html").lstat()
+        (ui / "vas-hub.html").lstat()
         return True
     except (FileNotFoundError, NotADirectoryError):
         return False
@@ -51,12 +59,11 @@ def reserves_engine(root: Path) -> bool:
 
 def is_project_engine(root: Path) -> bool:
     """Check original components, known engine files and the bounded regular marker."""
-    if root.name.casefold() != ".vas":
-        return False
+    ui = ui_directory(root)
     try:
-        if not all(_real(p.lstat(), directory=True) for p in (*root.parents, root, root / "src")):
+        if not all(_real(p.lstat(), directory=True) for p in (*root.parents, root, ui)):
             return False
-        if not all(_real(p.lstat()) for p in (root / "Run-VAS-System.bat", root / "src/vas-hub.html")):
+        if not all(_real(p.lstat()) for p in (root / "Run-VAS-System.bat", ui / "vas-hub.html")):
             return False
         marker = root / MARKER
         original = marker.lstat()
@@ -74,6 +81,6 @@ def is_project_engine(root: Path) -> bool:
         data = json.loads(payload.decode("utf-8"), object_pairs_hook=_unique)
         return (type(data) is dict and set(data) == {"layout", "version"}
                 and data["layout"] == "vas-project" and type(data["version"]) is int
-                and data["version"] == 1)
+                and data["version"] == (1 if root.name.casefold() == ".vas" else 2))
     except (OSError, ValueError, RecursionError):
         return False

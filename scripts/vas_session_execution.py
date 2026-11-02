@@ -116,7 +116,7 @@ def prepare(manager, session_id, expected_revision):
     settings = view["session"]["settings"]
     project_prompt = project_snapshot(manager, view["target"]["path"])
     resources, resources_hash = _resources()
-    config = (ROOT / "src/vas-config.js").read_text(encoding="utf-8")
+    config = (ROOT / "ui/vas-config.js").read_text(encoding="utf-8")
     version_match = re.search(r"\bversion\s*:\s*['\"](\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?)['\"]", config)
     require(version_match is not None, "execution_resources_invalid")
     version = version_match.group(1)
@@ -157,7 +157,7 @@ def prepare(manager, session_id, expected_revision):
         "integrity": {"algorithm": "SHA-256", "payloadSha256": "", "sourcePackSha256": None},
     }
     # _current already verified the marker, engine fingerprint, target and private binding.
-    if manager.root.name.casefold() == ".vas" and Path(view["target"]["path"]) == manager.root.parent:
+    if Path(view["target"]["path"]) == manager.project_root:
         document["context"]["execution"]["projectLayout"] = "vas-project"
         if snapshot_hash(project_prompt):
             document["context"]["projectPrompt"] = project_prompt

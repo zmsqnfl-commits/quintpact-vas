@@ -2,22 +2,15 @@
 from __future__ import annotations
 
 import datetime as dt
-import shutil
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
+
+from build_release import is_link, starter_files
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKUPS = ROOT / ".vas_backups"
-EXCLUDED = {
-    ".git", ".vas_backups", ".temp data", "workspace", "dist", "final",
-    "node_modules", "__pycache__", ".pytest_cache", "test-results",
-    "playwright-report", ".vscode", ".idea", ".vas-session", "vas-session-store.json",
-}
-
-
-def ignore(_path: str, names: list[str]) -> set[str]:
-    return {name for name in names if name.casefold() in EXCLUDED}
 
 
 def prune(limit: int = 10) -> None:
@@ -29,15 +22,22 @@ def prune(limit: int = 10) -> None:
 
 def create_backup() -> Path:
     BACKUPS.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    if is_link(BACKUPS):
+        raise ValueError("Linked VAS backup directory")
+    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     output = BACKUPS / f"checkpoint_{stamp}.zip"
-    with tempfile.TemporaryDirectory(prefix="vas-checkpoint-") as temporary:
-        staged = Path(temporary) / ROOT.name
-        shutil.copytree(ROOT, staged, ignore=ignore)
-        archive = Path(shutil.make_archive(str(output.with_suffix("")), "zip", staged))
+    with tempfile.NamedTemporaryFile(dir=BACKUPS, prefix="checkpoint-", suffix=".tmp", delete=False) as file:
+        temporary = Path(file.name)
+    try:
+        with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as archive:
+            for relative, source in starter_files():
+                archive.write(source, relative.as_posix())
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
     prune()
-    print(f"VAS checkpoint saved: {archive}")
-    return archive
+    print(f"VAS checkpoint saved: {output}")
+    return output
 
 
 if __name__ == "__main__":

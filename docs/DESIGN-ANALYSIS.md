@@ -1,6 +1,6 @@
 # 참고 이미지로 디자인 분석·적용하기
 
-VAS 2.11.1 프로젝트 배포본에는 `design-analysis` 스킬이 기본 포함됩니다. 별도 설치·Obsidian 연결·API 키 없이 코딩 AI의 이미지 보기와 구현 도구를 사용합니다. VAS 자체가 이미지를 인식하거나 AI로 자동 전송하는 기능은 아닙니다.
+VAS 2.12.0 프로젝트 배포본에는 `design-analysis` 스킬이 기본 포함됩니다. 별도 설치·Obsidian 연결·API 키 없이 코딩 AI의 이미지 보기와 구현 도구를 사용합니다. VAS 자체가 이미지를 인식하거나 AI로 자동 전송하는 기능은 아닙니다.
 
 ## 사용
 
@@ -21,7 +21,7 @@ AI는 실제 이미지의 글꼴·색상·배치·이미지 표현·여백을 �
 
 ## 기본 탑재 경로
 
-- Windows 프로젝트 ZIP: 루트 `.agents/skills/design-analysis/SKILL.md`, Claude용 `.claude/skills/design-analysis/SKILL.md`. 도구 정본은 `.vas/.agents/skills/design-analysis/SKILL.md`이며 같은 내용입니다.
+- GitHub 소스와 Windows 프로젝트 ZIP의 정본은 `.agents/skills/design-analysis/SKILL.md`이며 Claude용 사본은 `.claude/skills/design-analysis/SKILL.md`입니다.
 - 루트 시작 지침이 참고 이미지 작업에 스킬을 연결합니다. 호스트의 자동 스킬 탐색만 믿지 않습니다.
 - 브라우저 프롬프트·독립 폼·대화 `prepare`에는 활성 디자인의 분석 지침 본문을 함께 전달합니다. 외부 프로젝트에 복사해도 별도 스킬 파일을 먼저 설치할 필요가 없습니다.
 - 네이티브 Designer 지침도 같은 본문을 포함합니다. 실제 역할 호출 가능 여부는 코딩 호스트에 따릅니다.

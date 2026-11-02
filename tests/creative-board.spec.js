@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { pathToFileURL } = require('node:url');
 
 const root = path.resolve(__dirname, '..');
-const appUrl = pathToFileURL(path.join(root, 'src/proof-app/index.html')).href;
+const appUrl = pathToFileURL(path.join(root, 'ui/proof-app/index.html')).href;
 const storageKey = 'morrow.board.v1';
 const rows = page => page.locator('#task-list [data-task-id]');
 const rowNamed = (page, name) => rows(page).filter({ has: page.getByRole('button', { name, exact: true }) });

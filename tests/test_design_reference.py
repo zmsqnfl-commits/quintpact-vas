@@ -36,7 +36,7 @@ def test_known_sample_is_version_labelled_not_marked_inspected(tmp_path, preset)
     assert ref['status'] == 'unverified'
     assert ref['vasVersion'] == version
     assert ref['sourceRef'] == 'v' + version
-    assert f'/blob/v{version}/src/design-sample.html' in ref['versionedSourceUrl']
+    assert f'/blob/v{version}/ui/design-sample.html' in ref['versionedSourceUrl']
     assert ref['liveSampleUrl'].endswith('?preset=' + preset)
     assert ref['liveSampleVersion'] == 'not-verified'
     text = document['assistantGuide']['pasteText']
@@ -104,7 +104,7 @@ def test_browser_python_reference_parity_without_auto_network():
 require(process.argv[1]);
 const cases=JSON.parse(require('fs').readFileSync(0,'utf8'));
 console.log(JSON.stringify(cases.map(c=>VASDesignReference.reference(c.design,c.scope,c.version))));"""
-    result = subprocess.run([node, '-e', script, str(ROOT / 'src/design-reference.js')], input=json.dumps(cases, ensure_ascii=False),
+    result = subprocess.run([node, '-e', script, str(ROOT / 'ui/design-reference.js')], input=json.dumps(cases, ensure_ascii=False),
                             encoding='utf-8', capture_output=True, check=True)
     assert json.loads(result.stdout) == [reference(case['design'], case['scope'], case['version']) for case in cases]
 
@@ -116,3 +116,10 @@ def test_reference_metadata_reuse_does_not_trigger_sanitizer_review(tmp_path):
     second = build_preview(values)['document']
     assert second['context']['design'] == first['context']['design']
     assert second['inputReview']['required'] is False
+
+
+@pytest.mark.parametrize(("version", "directory"), [("2.11.1", "src"), ("2.12.0", "ui"), ("3.0.0-beta", "ui")])
+def test_versioned_reference_tracks_tag_layout_without_changing_live_pages(version, directory):
+    ref = reference({"included": True, "preset": "swiss"}, {"mode": "new"}, version)
+    assert ref["versionedSourceUrl"].endswith(f"/blob/v{version}/{directory}/design-sample.html")
+    assert "/src/design-sample.html?" in ref["liveSampleUrl"]

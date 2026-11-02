@@ -36,7 +36,7 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
         self.assertIn("*.bat -text", (BASE / ".gitattributes").read_text(encoding="utf-8"))
         launcher = launcher_bytes.decode("utf-8-sig")
         self.assertIn(":fallback", launcher)
-        self.assertIn("src\\vas-hub.html", launcher)
+        self.assertIn("ui\\vas-hub.html", launcher)
 
     def test_folder_picker_starts_from_this_pc_with_a_real_path(self):
         source = (BASE / "scripts" / "VAS.Migration.psm1").read_text(encoding="utf-8-sig")

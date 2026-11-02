@@ -32,8 +32,8 @@ def shell_root(root: Path) -> Path:
     return root
 WRITE_ROOTS = {
     "architect": {"docs"},
-    "designer": {"src", "docs"},
-    "implementer": {"src", "scripts", "tests", "docs"},
+    "designer": {"src", "ui", "docs"},
+    "implementer": {"src", "ui", "scripts", "tests", "docs"},
     "reviewer": set(),
     "tester": {"tests"},
     "security": {"docs"},
@@ -42,7 +42,7 @@ PROTECTED = {"workspace", "dist", "node_modules", ".git", ".vas", ".vas_backups"
 WRITE_TOOLS = {"write", "edit", "write_to_file", "replace_file_content", "multi_replace_file_content"}
 
 
-def check_write(root: Path, role: str, value: str) -> tuple[bool, str]:
+def check_write(root: Path, role: str, value: str, *, vas_development: bool = False) -> tuple[bool, str]:
     if role not in WRITE_ROOTS or not value:
         return False, "known role and explicit target path required"
     base = root.resolve()
@@ -54,6 +54,8 @@ def check_write(root: Path, role: str, value: str) -> tuple[bool, str]:
     parts = {part.casefold() for part in relative.parts}
     if not relative.parts or parts & PROTECTED:
         return False, "protected target"
+    if (base / "project-layout.json").exists() and not vas_development and relative.parts[0] != "src":
+        return False, "application work belongs in src/"
     if any(re.search(r"(?i)(^\.env(?:\.|$)|^(?:credentials?|secrets?|tokens?)(?:[._-]|$)|\.pem$|\.key$)", part) for part in relative.parts):
         return False, "sensitive target"
     if relative.parts[0] not in WRITE_ROOTS[role]:
@@ -61,8 +63,8 @@ def check_write(root: Path, role: str, value: str) -> tuple[bool, str]:
     return True, "file scope allowed; host permissions still apply"
 
 
-def check_after(root: Path, role: str, value: str) -> tuple[bool, str]:
-    allowed, reason = check_write(root, role, value)
+def check_after(root: Path, role: str, value: str, *, vas_development: bool = False) -> tuple[bool, str]:
+    allowed, reason = check_write(root, role, value, vas_development=vas_development)
     if not allowed:
         return allowed, reason
     path = (root / value).resolve()
@@ -125,13 +127,14 @@ def main() -> int:
     parser.add_argument("action", choices=["path", "after", "before", "tests", "security"])
     parser.add_argument("--role", default=os.environ.get("AGENT_ROLE", "implementer"))
     parser.add_argument("--path", default=os.environ.get("TARGET_PATH", ""))
+    parser.add_argument("--vas-development", action="store_true", help="Check a VAS maintainer change")
     args = parser.parse_args()
     if args.action in {"path", "before", "after"}:
         if args.action == "before" and os.environ.get("TOOL_NAME", "").lower() not in WRITE_TOOLS:
             print("Explicit file-write tool required; shell/tool permissions belong to the host", file=sys.stderr)
             return 1
         check = check_after if args.action == "after" else check_write
-        allowed, reason = check(ROOT, args.role, args.path)
+        allowed, reason = check(ROOT, args.role, args.path, vas_development=args.vas_development)
         print(reason)
         return 0 if allowed else 1
     if args.action == "tests":
@@ -156,36 +159,15 @@ def main() -> int:
     import json
     import zipfile
     import hashlib
-    from build_release import FULL_DIRS, ROOT_FILES, LEGAL_FILES, HOST_GUIDES, PROJECT_SKILLS, SKILL_HOSTS, allowed, native_project_role, version
-    source_files = {
-        path.relative_to(ROOT)
-        for directory in FULL_DIRS for path in (ROOT / directory).rglob("*")
-        if path.is_file() and allowed(path.relative_to(ROOT))
-    }
-    source_files.update(Path(name) for name in ROOT_FILES)
-    expected = {".vas/" + rel.as_posix(): hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
-                for rel in source_files}
-    expected[".vas/project-layout.json"] = hashlib.sha256(b'{ "layout": "vas-project", "version": 1 }\n').hexdigest()
-    for name in LEGAL_FILES:
-        expected[name] = expected[".vas/" + name]
-    for name in HOST_GUIDES:
-        expected[name] = expected[".vas/.agents/PROJECT-ROOT.md"]
-    for skill in PROJECT_SKILLS:
-        folder = Path(".agents/skills") / skill
-        for relative in source_files:
-            if relative.is_relative_to(folder):
-                for host in SKILL_HOSTS:
-                    copied = Path(host) / "skills" / skill / relative.relative_to(folder)
-                    expected[copied.as_posix()] = expected[".vas/" + relative.as_posix()]
-    for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
-        for role in ("implementer", "designer", "reviewer"):
-            relative = Path(host) / "agents" / ("vas_" + role + suffix)
-            expected[relative.as_posix()] = hashlib.sha256(native_project_role(relative)).hexdigest()
+    from build_release import starter_files, version
+    expected = {relative.as_posix(): hashlib.sha256(source.read_bytes()).hexdigest()
+                for relative, source in starter_files()}
+    expected["README.md"] = expected["00-처음-사용하기.txt"]
+    expected["src/.gitkeep"] = hashlib.sha256(b"").hexdigest()
     with zipfile.ZipFile(ROOT / f"dist/VAS-{version()}-windows.zip") as archive:
         manifest = json.loads(archive.read(f"VAS-{version()}-windows/manifest.json"))
-        generated = {"README.md", "00-처음-사용하기.txt", "Run-VAS-System.bat", "src/.gitkeep"}
         packaged = {item["path"]: item["sha256"] for item in manifest["files"]}
-        if set(packaged) != set(expected) | generated:
+        if set(packaged) != set(expected):
             print("Release file list is stale; rebuild the package", file=sys.stderr)
             return 1
         if any(packaged[name] != digest for name, digest in expected.items()):

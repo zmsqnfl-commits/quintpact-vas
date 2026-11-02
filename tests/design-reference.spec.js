@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 
 test('public presets hand off version-labelled source, live sample and unverified state without loading URLs', async ({ page }) => {
   const remoteRequests = [];
@@ -25,7 +25,7 @@ test('public presets hand off version-labelled source, live sample and unverifie
     expect(item.reference).toMatchObject({ status: 'unverified', sampleKind: 'base-preset', samplePreset: item.key,
       userModified: false, valueAuthority: 'confirmed-design-tokens', vasVersion: item.version,
       sourceRef: 'v' + item.version, liveSampleVersion: 'not-verified', applicationScope: { mode: 'new', scope: '' } });
-    expect(item.reference.versionedSourceUrl).toBe('https://github.com/zmsqnfl-commits/quintpact-vas/blob/v' + item.version + '/src/design-sample.html');
+    expect(item.reference.versionedSourceUrl).toBe('https://github.com/zmsqnfl-commits/quintpact-vas/blob/v' + item.version + '/ui/design-sample.html');
     expect(item.reference.liveSampleUrl).toBe('https://zmsqnfl-commits.github.io/quintpact-vas/src/design-sample.html?preset=' + item.key);
     expect(item.prompt).toContain(item.reference.liveSampleUrl);
     expect(item.prompt).toContain(item.tokens.fontFamily);

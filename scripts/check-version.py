@@ -10,22 +10,22 @@ VERSION = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["versi
 REQUIRED = {
     "00-처음-사용하기.txt": f"VAS {VERSION} — 처음에는 이것만 하세요",
     "package-lock.json": f'"version": "{VERSION}"',
-    "src/vas-config.js": f"version: '{VERSION}'",
+    "ui/vas-config.js": f"version: '{VERSION}'",
     "scripts/Start-VAS.ps1": f'"{VERSION}-$rootHash"',
     "scripts/VAS.Server.psm1": f"version = '{VERSION}'",
     "Run-VAS-System.bat": f"title VAS {VERSION}",
     "scripts/build_release.py": f"VAS {VERSION} 재현 가능한",
     "scripts/vas_agent_handoff.py": f'VAS_VERSION = "{VERSION}"',
     "scripts/VAS.Projects.psm1": f"vasVersion = '{VERSION}'",
-    "src/agent-handoff-web.js": f"VASConfig.version : '{VERSION}'",
-    "src/theme-state.js": f"global.VASConfig.version : '{VERSION}'",
+    "ui/agent-handoff-web.js": f"VASConfig.version : '{VERSION}'",
+    "ui/theme-state.js": f"global.VASConfig.version : '{VERSION}'",
     "README.md": f"# VAS {VERSION}",
     ".agents/CONTEXT.md": f"# VAS {VERSION}",
     "docs/INSTRUCTIONS.md": f"# VAS {VERSION}",
     f"docs/releases/{VERSION}.md": f"# VAS {VERSION}",
 }
 for page in ("vas-hub", "client-application", "project-import", "design-controller", "knowledge-search", "memory-center"):
-    REQUIRED[f"src/{page}.html"] = f"<title>VAS {VERSION}"
+    REQUIRED[f"ui/{page}.html"] = f"<title>VAS {VERSION}"
 
 
 def main() -> int:

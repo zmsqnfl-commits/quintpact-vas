@@ -3,7 +3,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 const cases = require('./fixtures/secret-redaction-cases.json');
 const privateKeys = require('./fixtures/private-memory-keys.json');
-const script = name => path.join(__dirname, '..', 'src', name);
+const script = name => path.join(__dirname, '..', 'ui', name);
 const source = name => pathToFileURL(script(name)).href;
 
 test('memory filters current and historical values before export and recommendation', async ({ page }) => {

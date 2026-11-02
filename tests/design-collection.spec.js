@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const studio = pathToFileURL(path.join(__dirname, '..', 'src', 'design-controller.html')).href;
+const studio = pathToFileURL(path.join(__dirname, '..', 'ui', 'design-controller.html')).href;
 const collection = ['bento', 'aurora', 'clay', 'noir', 'botanical', 'retro', 'swiss', 'cyber', 'kinetic', 'collage'];
 
 for (const width of [1440, 390, 320]) {

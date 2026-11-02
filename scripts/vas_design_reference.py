@@ -56,12 +56,14 @@ def reference(design, scope, version):
     known = isinstance(key, str) and key in SAMPLE_KEYS
     valid_version = isinstance(version, str) and bool(re.fullmatch(r"\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?", version))
     tag = "v" + version if valid_version else None
+    release = tuple(map(int, version.split("-", 1)[0].split("."))) if tag else ()
+    source_dir = "ui" if release >= (2, 12, 0) else "src"
     return {
         "status": "unverified", "sampleKind": "base-preset", "samplePreset": key if known else None,
         "userModified": design.get("preset") == "custom", "valueAuthority": "confirmed-design-tokens",
         "applicationScope": {"mode": scope.get("mode"), "scope": scope.get("scope") or ""},
         "vasVersion": version if valid_version else None, "sourceRef": tag,
-        "versionedSourceUrl": f"{REPOSITORY}/blob/{tag}/src/design-sample.html" if known and tag else None,
+        "versionedSourceUrl": f"{REPOSITORY}/blob/{tag}/{source_dir}/design-sample.html" if known and tag else None,
         "liveSampleUrl": f"{SAMPLES}?preset={key}" if known else None,
         "liveSampleVersion": "not-verified",
     }

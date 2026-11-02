@@ -32,8 +32,8 @@ def check_folder_intake(test, archive_path, root_name, fingerprints):
                     }), encoding="utf-8")
                 before = fingerprints(app)
                 for command, code, expected in (
-                    ("-B .vas/scripts/vas-project-prompt.py get", 0, brief),
-                    ("-B .vas/scripts/vas-session.py resume --target .", 1, {"status": "error", "code": "session_not_found"}),
+                    ("-B scripts/vas-project-prompt.py get", 0, brief),
+                    ("-B scripts/vas-session.py resume --target .", 1, {"status": "error", "code": "session_not_found"}),
                 ):
                     test.assertIn(f"`python {command}`", guide)
                     run = subprocess.run([sys.executable, *command.split()], cwd=app, env=env,

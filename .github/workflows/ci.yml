@@ -96,3 +96,5 @@ jobs:
           node-version: "22"
       - name: Build and verify release packages
         run: npm run test:package
+      - name: Open the GitHub source ZIP as a renamed project
+        run: python tests/release_starter_checks.py

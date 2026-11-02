@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
-const script = path.join(__dirname, '..', 'src', 'personalization-store.js');
+const script = path.join(__dirname, '..', 'ui', 'personalization-store.js');
 
 test('overlapping design confirmations share one write and can retry a failure', async ({ page }) => {
   const { pathToFileURL } = require('url');
-  await page.goto(pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href);
+  await page.goto(pathToFileURL(path.join(__dirname, '..', 'ui', 'project-import.html')).href);
   const result = await page.evaluate(async () => {
     let attempts = 0, release;
     const blocked = new Promise(resolve => { release = resolve; });
@@ -27,8 +27,8 @@ test('persistent mutation failures retain the adapter, consent and visible recor
     const fail = async () => { throw Error('synthetic disk failure'); };
     window.VASLocalMemoryAdapter = { init: async () => {}, list: async () => events, getMeta: async k => meta[k], setMeta: fail, put: fail, clear: fail, remove: fail, importData: fail };
   });
-  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-identity.js') });
-  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-browser-adapter.js') });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'ui', 'memory-identity.js') });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'ui', 'memory-browser-adapter.js') });
   await page.addScriptTag({ path: script });
   const result = await page.evaluate(async () => {
     const api = VASPersonalization, rejected = [];
@@ -52,8 +52,8 @@ test('IndexedDB request success followed by transaction abort is a failure', asy
     } };
     Object.defineProperty(window, 'indexedDB', { configurable: true, value: { open() { const r = { result: database }; setTimeout(() => r.onsuccess(), 0); return r; } } });
   });
-  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-identity.js') });
-  await page.addScriptTag({ path: path.join(__dirname, '..', 'src', 'memory-browser-adapter.js') });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'ui', 'memory-identity.js') });
+  await page.addScriptTag({ path: path.join(__dirname, '..', 'ui', 'memory-browser-adapter.js') });
   await page.addScriptTag({ path: script });
   const result = await page.evaluate(async () => {
     await VASPersonalization.init(); let rejected = false;

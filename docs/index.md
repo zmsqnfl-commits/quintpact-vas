@@ -1,4 +1,4 @@
-# VAS 2.11.1 시스템 지도
+# VAS 2.12.0 시스템 지도
 
 ## 사용자 흐름
 
@@ -16,11 +16,11 @@ Run-VAS-System.bat
   -> 코딩 도구에서 RBG 확인 후 실제 작업
 ```
 
-기존 웹 화면은 프롬프트와 선택 JSON을 만듭니다. 로컬 디자인 스튜디오는 저장된 채팅 작업을 선택해 디자인을 함께 사용할 수 있습니다. 앱 실행이나 배포를 관리하는 프로젝트 대시보드는 제공하지 않습니다. [2.11.1 릴리스 안내](releases/2.11.1.md)에는 새 채팅 설정과 실제 코딩 호스트 시험 결과가 있습니다. 이전 프로젝트 폴더·참고 디자인 검사는 [2.11.0 검증 기록](verification/2.11.0-project-workflow.md)에 있습니다.
+기존 웹 화면은 프롬프트와 선택 JSON을 만듭니다. 로컬 디자인 스튜디오에서는 저장한 채팅 작업을 선택해 디자인을 함께 사용할 수 있습니다. [2.12.0 릴리스 안내](releases/2.12.0.md)는 GitHub와 Windows 배포본의 앱 폴더 구조와 에이전트가 기록을 확인하는 시점을 설명합니다. 이전 디자인 검사는 [2.11.0 검증 기록](verification/2.11.0-project-workflow.md)에 있습니다.
 
-## 2.11.1 프로젝트와 작업 연결
+## 2.12.0 프로젝트와 작업 연결
 
-- [Windows 프로젝트 ZIP](PROJECT-ROOT.md)은 추출한 폴더가 앱이며 최상위 `src/`에 앱을 만들고 `.vas/`에 VAS 도구를 보관합니다. GitHub 소스 ZIP의 `src/`는 VAS 개발 소스입니다.
+- [프로젝트 폴더](PROJECT-ROOT.md)는 GitHub 소스 ZIP·복제본과 Windows ZIP에서 같은 방식으로 시작합니다. 최상위 `src/`는 사용자 앱, `ui/`는 VAS 화면, `scripts/`는 명령, `docs/`는 안내입니다.
 - “이 폴더를 프로젝트로 지정하고 색인해줘”라고 하면 같은 채팅에서 새 앱·기존 앱을 구분하고 작업에 필요한 질문을 합니다. 구조만 요청하면 조사한 내용을 답합니다.
 - 시작 화면의 프로젝트 지시는 루트 `VAS-PROJECT-PROMPT.json`에 저장합니다. 에이전트는 첫 요청·재개·구현·위임 전에 최신 파일을 읽습니다. 저장 자체가 AI를 실행하거나 과거 프롬프트를 갱신하지는 않습니다.
 - [샘플 참고 범위](DESIGN-REFERENCE-SCOPE.md)는 디자인 요소만 앱에 대응하며 기능은 실제 요청으로 정합니다. [기본 디자인 분석 스킬](DESIGN-ANALYSIS.md)은 가져온 이미지의 다섯 요소를 실제 앱 요소와 화면 확인으로 연결합니다.
@@ -52,27 +52,27 @@ Windows 작업 기억은 서버에서 동의를 확인하고 누적 10,000건·U
 
 ## 구성
 
-아래 경로는 개발 저장소 기준입니다. 프로젝트 ZIP의 도구 파일은 `.vas/` 아래 같은 경로에 있습니다. 최상위 `src/`는 사용자 앱입니다.
+아래 도구 경로는 프로젝트 루트 기준입니다. 최상위 `src/`는 사용자 앱 소스입니다.
 
 | 영역 | 역할 | 기준 파일 |
 |---|---|---|
-| 시작 | 두 가지 시작 방식 선택 | `src/vas-hub.html` |
-| 새 프로젝트 | 요구사항·디자인·프롬프트와 선택 JSON | `src/client-application.html` |
-| 기존 프로그램 | 폴더 위치·작업·디자인 프롬프트와 선택 JSON | `src/project-import.html` |
-| 공통 도움말·설정 | 작업 순서와 작업 기억 제어 | `src/setup-tools.js` |
-| 디자인 | 프리셋·토큰·에이전트 디자인 지침 | `src/design-controller.html` |
+| 시작 | 두 가지 시작 방식 선택 | `ui/vas-hub.html` |
+| 새 프로젝트 | 요구사항·디자인·프롬프트와 선택 JSON | `ui/client-application.html` |
+| 기존 프로그램 | 폴더 위치·작업·디자인 프롬프트와 선택 JSON | `ui/project-import.html` |
+| 공통 도움말·설정 | 작업 순서와 작업 기억 제어 | `ui/setup-tools.js` |
+| 디자인 | 프리셋·토큰·에이전트 디자인 지침 | `ui/design-controller.html` |
 | 채팅 설정 | PC 전용 연결 정보와 공유 설정의 저장·재개 | `scripts/vas-session.py`, `scripts/vas_session.py` |
-| 디자인 연결 | 명시된 세션의 화면 저장·최신 조회·충돌 처리 | `src/chat-design-sync.js`, `scripts/vas_session_web.py` |
+| 디자인 연결 | 명시된 세션의 화면 저장·최신 조회·충돌 처리 | `ui/chat-design-sync.js`, `scripts/vas_session_web.py` |
 | 대화 실행 인계 | 최신 설정·역할 자료에 연결된 준비와 결과 대조 | `scripts/vas_session_execution.py`, `.agents/EXECUTION.md` |
 | 진행 요약 | 최신 결정·변경 파일·검사·남은 문제와 다음 행동 저장 | `scripts/vas_session_progress.py`, `CHAT-PROGRESS.md` |
 | 실행 기록 | 실제 역할 반환·작업 범위와 선택 파일 지문 연결 | `scripts/vas_session_work.py`, `CHAT-WORK.md` |
 | 평가 후속 행동 | 원래 조건에 따른 보완·근거 대조·부분 재검사 안내 | `scripts/vas_followup.py`, `CHAT-FOLLOWUP.md` |
-| 디자인 샘플 | 선택한 토큰으로 실제 샘플 사이트 확인 | `src/design-sample.html` |
-| 검증 앱 | VAS 인계로 만든 별도 Morrow 작업 보드 | `src/proof-app/index.html`, `docs/verification/README.md` |
-| 범위·완료조건 | 디자인 변경 권한과 조건별 확인 방법 | `src/task-policy.js`, `src/task-inputs.js`, `scripts/vas_task_policy.py` |
-| 완료 평가 | 자기보고와 별도 사용자 관찰에 따른 평가 | `src/result-assessment.js`, `scripts/vas_result_assessment.py` |
-| 인계 계약 | 인계 v3 생성과 호환용 결과 v1 검증 | `src/agent-contract.js`, `src/handoff-workflow.js`, `scripts/vas_ai_contract.py` |
-| 호환 모듈 | 결과 JSON 검증·RAG 검토(기본 UI 미노출) | `src/ai-result-import.js`, `src/handoff-context-review.js` |
+| 디자인 샘플 | 선택한 토큰으로 실제 샘플 사이트 확인 | `ui/design-sample.html` |
+| 검증 앱 | VAS 인계로 만든 별도 Morrow 작업 보드 | `ui/proof-app/index.html`, `docs/verification/README.md` |
+| 범위·완료조건 | 디자인 변경 권한과 조건별 확인 방법 | `ui/task-policy.js`, `ui/task-inputs.js`, `scripts/vas_task_policy.py` |
+| 완료 평가 | 자기보고와 별도 사용자 관찰에 따른 평가 | `ui/result-assessment.js`, `scripts/vas_result_assessment.py` |
+| 인계 계약 | 인계 v3 생성과 호환용 결과 v1 검증 | `ui/agent-contract.js`, `ui/handoff-workflow.js`, `scripts/vas_ai_contract.py` |
+| 호환 모듈 | 결과 JSON 검증·RAG 검토(기본 UI 미노출) | `ui/ai-result-import.js`, `ui/handoff-context-review.js` |
 | 런타임 | 로컬 웹 실행과 호환 API | `scripts/Start-VAS.ps1` |
 | 배포 | Windows·독립 폼·Pages 생성 | `scripts/build_release.py` |
 

@@ -6,7 +6,7 @@ from vas_ai_contract import canonical
 
 
 def project_snapshot(manager, target_path, available=True):
-    if manager.root.name.casefold() != ".vas" or Path(target_path) != manager.root.parent:
+    if Path(target_path) != manager.project_root:
         return None
     if not available:
         raise ValueError("project_prompt_unavailable")

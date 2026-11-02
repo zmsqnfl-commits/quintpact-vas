@@ -10,7 +10,9 @@ import stat
 import tempfile
 from pathlib import Path
 from typing import Any
+
 from vas_ai_contract import redact_credentials
+from vas_project_layout import reserves_engine
 
 SCHEMA = 3
 MAX_FILE_BYTES = 256 * 1024
@@ -299,7 +301,7 @@ def _project_entries(project: dict[str, Any]) -> tuple[list[dict[str, Any]], int
 
 def build_index(root: Path) -> dict[str, Any]:
     root = root.resolve()
-    if root.name.casefold() == ".vas":
+    if root.name.casefold() == ".vas" or reserves_engine(root):
         raise KnowledgeError("프로젝트형 VAS에서는 등록 프로젝트 색인을 만들지 않습니다.")
     projects = registered_projects(root)
     generated: list[dict[str, Any]] = []

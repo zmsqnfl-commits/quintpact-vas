@@ -8,6 +8,8 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 # Also support importlib callers whose sys.path does not include scripts/.
@@ -15,6 +17,7 @@ SCRIPT_DIR = str(Path(__file__).resolve().parent)
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 from vas_ai_contract import redact_credentials
+from build_release import is_link
 
 SCHEMA = 1
 EXCLUDED_PARTS = {
@@ -67,6 +70,9 @@ def source_files(root: Path) -> list[Path]:
         files.extend((agents / "skills").glob("*/TASTE-RULES.md"))
         files.extend((agents / "skills/designer/references/profiles").glob("*.md"))
     files = [path for path in files if is_allowed(path, root)]
+    for path in files:
+        if any(is_link(part) for part in [path, *path.parents] if part.is_relative_to(root)):
+            raise ValueError("Linked knowledge source")
     return sorted(set(files), key=lambda path: path.relative_to(root).as_posix().lower())
 
 
@@ -226,19 +232,37 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     root = args.root.resolve()
-    output = args.output or root / "src" / "knowledge-index.js"
+    output = args.output or root / "ui" / "knowledge-index.js"
+    if args.output is None and (root / "ui").exists() and is_link(root / "ui"):
+        raise ValueError("Linked UI output directory")
     index = build_index(root)
     rendered = render_index(index)
-    if args.check:
-        if not output.exists() or output.read_text(encoding="utf-8") != rendered:
-            print(f"지식 인덱스가 최신이 아닙니다: {output}", file=sys.stderr)
-            return 1
+    if output.exists() and is_link(output):
+        raise ValueError("Linked knowledge index")
+    if output.is_file() and output.read_text(encoding="utf-8") == rendered:
         print(f"지식 인덱스 최신: {output}")
         return 0
+    if args.check:
+        print(f"지식 인덱스가 최신이 아닙니다: {output}", file=sys.stderr)
+        return 1
     output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = output.with_suffix(output.suffix + ".tmp")
-    temporary.write_text(rendered, encoding="utf-8", newline="\n")
-    temporary.replace(output)
+    file = tempfile.NamedTemporaryFile(dir=output.parent, prefix=".vas-knowledge-index-", suffix=".tmp",
+                                       mode="w", encoding="utf-8", newline="\n", delete=False)
+    temporary = Path(file.name)
+    try:
+        with file:
+            file.write(rendered)
+        # On Windows a concurrent reader may briefly hold the old index open.
+        for attempt in range(6):
+            try:
+                temporary.replace(output)
+                break
+            except PermissionError as error:
+                if getattr(error, "winerror", None) not in {5, 32} or attempt == 5:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+    finally:
+        temporary.unlink(missing_ok=True)
     print(f"지식 인덱스 생성: {len(index['entries'])}개 섹션")
     return 0
 

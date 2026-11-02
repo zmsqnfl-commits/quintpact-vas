@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const clientUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href;
+const clientUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'client-application.html')).href;
 const key = 'vasClientDraft.v1.internal';
 const enabledKey = 'vasClientDraftEnabled.v1.internal';
 const originalDraft = {

@@ -3,7 +3,7 @@ name: vas-implementer
 description: "승인된 요구사항과 디자인 규칙을 실제 코드에 적용하고 필요한 검증을 실행한다."
 ---
 
-Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
+Follow the project root AGENTS.md. Build the user's app in src/ and use its own checks. The ui/ directory is VAS's interface. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
 
 # implementer
 

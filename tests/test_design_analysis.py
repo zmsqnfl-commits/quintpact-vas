@@ -45,8 +45,8 @@ def test_generated_skill_body_is_available_without_changing_generic_role_activat
     assert current["designAnalysis"] == skill_body()
     assert current["designAnalysis"] not in current["workflow"]
     assert current["designAnalysis"] not in current["roles"]["designer"]
-    assert "designAnalysis" in outputs["src/agent-resources.js"]
-    for name in ("src/agent-resources.js", ".agents/agent-resources.json"):
+    assert "designAnalysis" in outputs["ui/agent-resources.js"]
+    for name in ("ui/agent-resources.js", ".agents/agent-resources.json"):
         assert len(outputs[name].splitlines()) <= 500
 
 
@@ -77,7 +77,7 @@ def test_renamed_project_bundles_discoverable_skill_and_resolvable_references(pa
     canonical = ROOT / SKILL
     source_files = {p.relative_to(canonical): p.read_bytes() for p in canonical.rglob("*") if p.is_file()}
     assert Path("SKILL.md") in source_files
-    for location in (packaged_project / ".vas" / SKILL, packaged_project / SKILL,
+    for location in (packaged_project / SKILL,
                      packaged_project / ".claude/skills/design-analysis"):
         copied = {p.relative_to(location): p.read_bytes() for p in location.rglob("*") if p.is_file()}
         assert copied == source_files
@@ -89,10 +89,10 @@ def test_renamed_project_bundles_discoverable_skill_and_resolvable_references(pa
                     assert resolved.is_relative_to(location.resolve())
                     assert resolved.is_file(), (path.name, target)
     assert list((packaged_project / "src").iterdir()) == [packaged_project / "src/.gitkeep"]
+    assert not (packaged_project / ".vas").exists()
     manifest = json.loads((packaged_project / "manifest.json").read_text(encoding="utf-8"))
     paths = {item["path"] for item in manifest["files"]}
-    for relative in (".agents/skills/design-analysis/SKILL.md", ".claude/skills/design-analysis/SKILL.md",
-                     ".vas/.agents/skills/design-analysis/SKILL.md"):
+    for relative in (".agents/skills/design-analysis/SKILL.md", ".claude/skills/design-analysis/SKILL.md"):
         assert relative in paths
 
 

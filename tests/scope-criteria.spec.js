@@ -2,8 +2,8 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const existing = pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href;
-const fresh = pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href;
+const existing = pathToFileURL(path.join(__dirname, '..', 'ui', 'project-import.html')).href;
+const fresh = pathToFileURL(path.join(__dirname, '..', 'ui', 'client-application.html')).href;
 
 async function start(page, request = 'CSV 내보내기를 추가하세요.') {
   await page.goto(existing);

@@ -106,10 +106,11 @@ function Get-VASContentType {
     return $null
 }
 function Resolve-VASAllowedFile {
-    param([string]$RootPath, [string]$Scope, [string]$RelativePath, [bool]$TextOnly = $false)
+    param($State, [string]$Scope, [string]$RelativePath, [bool]$TextOnly = $false)
     if ($Scope -notin @('src', 'docs')) { return $null }
     if (-not $RelativePath -or $RelativePath.IndexOf([char]0) -ge 0 -or $RelativePath -match '(^|[\\/])\.\.([\\/]|$)' -or $RelativePath -match ':') { return $null }
-    $scopeRoot = [IO.Path]::GetFullPath((Join-Path $RootPath $Scope))
+    $publicFolder = if ($Scope -eq 'src') { $State.UiFolder } else { 'docs' }
+    $scopeRoot = [IO.Path]::GetFullPath((Join-Path $State.RootPath $publicFolder))
     if (-not (Test-Path -LiteralPath $scopeRoot -PathType Container) -or (Get-Item -LiteralPath $scopeRoot -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { return $null }
     $candidate = [IO.Path]::GetFullPath((Join-Path $scopeRoot ($RelativePath -replace '/', '\')))
     $boundary = $scopeRoot.TrimEnd('\') + '\'
@@ -288,11 +289,11 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.11.1'; layout = $State.Layout; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.12.0'; layout = $State.Layout; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path.StartsWith('/api/memory/')) { Invoke-VASMemoryHttpRoute $path $method $body $Context $State; return }
     if ($path -eq '/api/files/read' -and $method -eq 'GET') {
-        $file = Resolve-VASAllowedFile $State.RootPath $request.QueryString['scope'] $request.QueryString['path'] $true
+        $file = Resolve-VASAllowedFile $State $request.QueryString['scope'] $request.QueryString['path'] $true
         if ($null -eq $file) { Write-VASError $Context 404 '허용된 파일을 찾을 수 없습니다.'; return }
         if ((Get-Item -LiteralPath $file.path).Length -gt 1048576) { Write-VASError $Context 413 '파일이 너무 큽니다.'; return }
         $content = [IO.File]::ReadAllText($file.path, [Text.Encoding]::UTF8)
@@ -352,7 +353,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.11.1-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.12.0-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -407,14 +408,15 @@ function Invoke-VASStaticRequest {
     if ($path -eq '/') { $path = '/src/vas-hub.html' }
     $parts = $path.TrimStart('/').Split('/', 2)
     if ($parts.Count -ne 2) { Write-VASError $Context 404 '파일을 찾을 수 없습니다.'; return }
-    $file = Resolve-VASAllowedFile $State.RootPath $parts[0] $parts[1]
+    $file = Resolve-VASAllowedFile $State $parts[0] $parts[1]
     if ($null -eq $file) { Write-VASError $Context 404 '파일을 찾을 수 없습니다.'; return }
     $bytes = [IO.File]::ReadAllBytes($file.path)
     Write-VASResponse $Context 200 $null $file.type $bytes
 }
 function New-VASServerState {
     param([string]$RootPath, [string]$MemoryRoot, [int]$PreferredPort = 41725, [string]$RuntimeId)
-    $layout = Get-VASRuntimeLayout $RootPath
+    $layout = Get-VASRuntimeLayout $RootPath -ForServer
+    $uiFolder = if ($layout -eq 'project' -and (Split-Path -Leaf $RootPath) -ne '.vas') { 'ui' } else { 'src' }
     if ($layout -eq 'project') { Assert-VASProjectStateLocation $RootPath $MemoryRoot }
     $ports = @()
     for ($offset = 0; $offset -lt 10; $offset++) {
@@ -431,7 +433,7 @@ function New-VASServerState {
             return [ordered]@{
                 Listener = $listener; Port = $port; BaseUrl = "http://127.0.0.1:$port"
                 Token = New-VASSessionToken; RootPath = [IO.Path]::GetFullPath($RootPath)
-                Layout = $layout
+                Layout = $layout; UiFolder = $uiFolder
                 MemoryRoot = $MemoryRoot; RuntimeId = $RuntimeId; StartedAt = [DateTime]::UtcNow
                 LastActivity = [DateTime]::UtcNow; Shutdown = $false
             }
@@ -463,7 +465,7 @@ function Start-VASRequestLoop {
                     $context.Response.Abort(); break
                 }
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.11.1'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.12.0'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

@@ -49,7 +49,7 @@ def test_unc_paths_are_masked_without_discarding_unrelated_requirements():
     expected = 'Keep calendar\nunc=[absolute-path]\nwindows=[absolute-path]\nKeep keyboard navigation'
     assert clean(PATH_CONTROL) == expected
     code = 'global.window=globalThis; require(process.argv[1]); process.stdout.write(VASAgentContract.clean(process.argv[2]));'
-    output = subprocess.run(['node', '-e', code, str(ROOT / 'src/agent-contract.js'), PATH_CONTROL],
+    output = subprocess.run(['node', '-e', code, str(ROOT / 'ui/agent-contract.js'), PATH_CONTROL],
                             capture_output=True, text=True, check=True)
     assert output.stdout == expected
 
@@ -80,8 +80,8 @@ def test_cli_export_strips_encoded_credentials_and_keeps_unrelated_requirements(
 def test_javascript_cleaner_and_memory_handle_encoded_values_and_keys():
     code = r'''
 const fs = require('fs'); global.window = globalThis;
-require(process.argv[1] + '/src/agent-contract.js');
-require(process.argv[1] + '/src/personalization-store.js');
+require(process.argv[1] + '/ui/agent-contract.js');
+require(process.argv[1] + '/ui/personalization-store.js');
 (async () => {
   const input = JSON.parse(fs.readFileSync(0, 'utf8'));
   await VASPersonalization.consent(true);

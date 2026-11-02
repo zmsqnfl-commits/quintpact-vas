@@ -16,11 +16,12 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 from release_chat_intake_checks import check_folder_intake
+from release_starter_checks import check_app_isolation
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 PACKAGE = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
-CONFIG_TEXT = (ROOT / "src" / "vas-config.js").read_text(encoding="utf-8")
+CONFIG_TEXT = (ROOT / "ui" / "vas-config.js").read_text(encoding="utf-8")
 CONFIG_VERSION = re.search(r"version\s*:\s*['\"]([^'\"]+)", CONFIG_TEXT).group(1)
 VERSION = PACKAGE["version"]
 WINDOWS_NAME = f"VAS-{VERSION}-windows"
@@ -132,6 +133,9 @@ class ReleasePackageTests(unittest.TestCase):
             BUILD.copy_tree(source, output)
             self.assertEqual({p.name for p in output.iterdir()}, {"keep.md"})
 
+    def test_build_and_core_backup_exclude_app_data(self) -> None:
+        check_app_isolation(self, BUILD)
+
     def test_version_and_expected_release_files(self) -> None:
         self.assertEqual(VERSION, CONFIG_VERSION)
         self.assertFalse({name.casefold() for name in BUILD.ROOT_FILES} & INTERNAL_DOCUMENT_NAMES)
@@ -149,24 +153,22 @@ class ReleasePackageTests(unittest.TestCase):
         manifest, payload = self.read_and_verify_zip(
             WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"]
         )
-        self.assertIn(".vas/src/vas-hub.html", payload)
+        self.assertIn("ui/vas-hub.html", payload)
+        self.assertFalse(any(name.startswith(".vas/") for name in payload))
         self.assertEqual({path for path in payload if path.startswith("src/")}, {"src/.gitkeep"})
         self.assertEqual(payload["src/.gitkeep"], b"")
-        self.assertEqual(json.loads(payload[".vas/project-layout.json"]), {"layout": "vas-project", "version": 1})
-        self.assertEqual(payload[".vas/Run-VAS-System.bat"], (ROOT / "Run-VAS-System.bat").read_bytes())
+        self.assertEqual(json.loads(payload["project-layout.json"]), {"layout": "vas-project", "version": 2})
+        self.assertEqual(payload["project-layout.json"], (ROOT / "project-layout.json").read_bytes())
+        self.assertEqual(payload["Run-VAS-System.bat"], (ROOT / "Run-VAS-System.bat").read_bytes())
         for name in ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md"):
             self.assertEqual(payload[name], (ROOT / name).read_bytes())
         launcher = payload["Run-VAS-System.bat"]
         self.assertNotIn(b"\n", launcher.replace(b"\r\n", b""))
-        self.assertIn(b'pushd "%~dp0.vas"', launcher)
-        # The app folder is never interpolated into a reparsed CALL command.
-        self.assertIn(b'call ".\\Run-VAS-System.bat"', launcher)
-        engine_launcher = payload[".vas/Run-VAS-System.bat"].decode("utf-8")
-        for reference in re.findall(r"(?:src|scripts)[\\/][A-Za-z0-9_.-]+", engine_launcher, re.I):
-            self.assertIn(".vas/" + reference.replace("\\", "/"), payload)
+        for reference in re.findall(r"(?:ui|scripts)[\\/][A-Za-z0-9_.-]+", launcher.decode("utf-8"), re.I):
+            self.assertIn(reference.replace("\\", "/"), payload)
         for name in ("README.md", "00-처음-사용하기.txt"):
             text = payload[name].decode("utf-8")
-            for marker in ("전체 압축 해제", "Run-VAS-System.bat", "src/", ".vas/", "폴더 자체", "Python 3.10"):
+            for marker in ("전체 압축 해제", "Run-VAS-System.bat", "src/", "ui/", "폴더 자체", "Python 3.10"):
                 self.assertIn(marker, text)
         release = json.loads((DIST / "release-manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["commit"], release["commit"])
@@ -188,11 +190,11 @@ class ReleasePackageTests(unittest.TestCase):
             "scripts/vas_session_execution.py", "scripts/vas_followup.py",
             "scripts/vas_session_progress.py", "scripts/vas_session_work.py",
             "scripts/vas_work_contract.py", "scripts/vas_work_files.py", "scripts/vas_work_inspection.py",
-            "src/chat-design-sync.js", "src/chat-design-sync.css",
+            "ui/chat-design-sync.js", "ui/chat-design-sync.css",
         }
         guides.add("docs/PROJECT-ROOT.md")
         for relative in sorted(guides | session_scripts):
-            self.assertEqual(payload[".vas/" + relative], (ROOT / relative).read_bytes(), relative)
+            self.assertEqual(payload[relative], (ROOT / relative).read_bytes(), relative)
         template = (ROOT / ".agents/PROJECT-ROOT.md").read_bytes()
         for relative in sorted(entrypoints):
             self.assertEqual(payload[relative], template)
@@ -200,9 +202,8 @@ class ReleasePackageTests(unittest.TestCase):
         for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
             for role in ("implementer", "designer", "reviewer"):
                 text = payload[f"{host}/agents/vas_{role}{suffix}"].decode("utf-8")
-                self.assertIn("Do not edit the bundled .vas engine", text)
-                self.assertNotRegex(text, r"(?<![\w./])(?:\.agents|docs|scripts)/")
-        guides = {".vas/" + name for name in guides}
+                self.assertIn("Build the user's app in src/", text)
+                self.assertIn("Follow the project root AGENTS.md", text)
         for relative in sorted(entrypoints | guides | {"README.md"}):
             text = payload[relative].decode("utf-8")
             for reference in re.findall(r"\[[^\]]+\]\(([^)\s]+)\)", text):
@@ -213,22 +214,12 @@ class ReleasePackageTests(unittest.TestCase):
                 assert_safe_relative(self, target)
                 self.assertIn(target, payload, f"배포 문서의 누락 링크: {relative}: {reference}")
 
-    @unittest.skipUnless(os.name == "nt", "Windows BAT entrypoint")
-    def test_launcher_follows_renamed_project_and_propagates_engine_exit_code(self) -> None:
-        with tempfile.TemporaryDirectory() as scratch:
-            project = Path(scratch) / "한글 프로젝트 (A&B) !literal! %PATH%"
-            engine = project / ".vas"
-            engine.mkdir(parents=True)
-            with zipfile.ZipFile(WINDOWS_ZIP) as archive:
-                (project / "Run-VAS-System.bat").write_bytes(archive.read(f"{WINDOWS_NAME}/Run-VAS-System.bat"))
-            launcher = ["cmd.exe", "/d", "/c", "Run-VAS-System.bat"]
-            missing = subprocess.run(launcher, cwd=project, capture_output=True, timeout=15)
-            self.assertEqual(missing.returncode, 1)
-            (engine / "Run-VAS-System.bat").write_bytes(b"@echo off\r\n>launcher.marker echo ran\r\nexit /b 23\r\n")
-            run = subprocess.run(launcher, cwd=project, capture_output=True, timeout=15)
-            self.assertEqual(run.returncode, 23, run.stderr)
-            self.assertTrue((engine / "launcher.marker").is_file())
-            self.assertFalse((project / "launcher.marker").exists())
+    def test_github_checkout_host_guides_match_the_release(self) -> None:
+        _, payload = self.read_and_verify_zip(WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"])
+        for relative in ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules",
+                         "Run-VAS-System.bat", "project-layout.json", ".agents/skills/design-analysis/SKILL.md",
+                         ".claude/skills/design-analysis/SKILL.md", *BUILD.HOST_FILES]:
+            self.assertEqual(payload[relative], (ROOT / relative).read_bytes(), relative)
 
     def test_extracted_windows_zip_can_prepare_and_assess_session(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vas-release-execution-") as temporary:
@@ -236,11 +227,11 @@ class ReleasePackageTests(unittest.TestCase):
             with zipfile.ZipFile(WINDOWS_ZIP) as archive:
                 archive.extractall(base)
             app = (base / WINDOWS_NAME).rename(base / "재고 프로젝트 renamed")
-            vas = app / ".vas"
+            self.assertFalse((app / ".vas").exists())
             self.assertFalse((app / "package.json").exists())
             (app / "src/sentinel.txt").write_text("unchanged", encoding="utf-8")
             before = tree_fingerprints(app)
-            command = [sys.executable, "-B", str(vas / "scripts/vas-session.py"),
+            command = [sys.executable, "-B", str(app / "scripts/vas-session.py"),
                        "--state-home", str(base / "state")]
 
             def invoke(arguments, payload=None):
@@ -428,10 +419,6 @@ class SessionPrivacyBoundaryTests(unittest.TestCase):
         from vas_agent_handoff import build_preview
         from vas_project_import import MigrationManager
         from vas_project_knowledge import _candidate_files
-        backup_spec = importlib.util.spec_from_file_location("vas_backup", ROOT / "scripts" / "vas-backup.py")
-        backup = importlib.util.module_from_spec(backup_spec)
-        assert backup_spec.loader is not None
-        backup_spec.loader.exec_module(backup)
         with tempfile.TemporaryDirectory(prefix="vas-session-boundary-") as temporary:
             base = Path(temporary)
             source = base / "source"
@@ -446,9 +433,7 @@ class SessionPrivacyBoundaryTests(unittest.TestCase):
                 path.write_text("private-session-canary" if relative in blocked else "safe fixture", encoding="utf-8")
             before = tree_fingerprints(source)
             BUILD.copy_tree(source, base / "release")
-            shutil.copytree(source, base / "backup", ignore=backup.ignore)
             self.assertEqual(set(tree_fingerprints(base / "release")), preserved)
-            self.assertEqual(set(tree_fingerprints(base / "backup")), preserved)
             self.assertEqual({item[0] for item in _candidate_files(source)}, preserved)
             scanned, _ = MigrationManager(base / "vas")._walk(source)
             self.assertEqual({item[0] for item in scanned}, preserved)

@@ -38,7 +38,7 @@ def test_target_is_project_root_and_prompt_remains_bound_to_it(kit, tmp_path):
     assert result["status"] == "prepared" and result["target"]["path"] == str(app)
     assert result["handoff"]["context"]["execution"]["projectLayout"] == "vas-project"
     prompt = result["handoff"]["assistantGuide"]["pasteText"]
-    assert "앱 코드는 루트의 src/" in prompt and ".vas/는 VAS 도구 전용" in prompt
+    assert "앱 코드는 루트의 src/" in prompt and "VAS 설정 화면과 도구 파일은 보존" in prompt
     assert "빈 폴더" not in prompt and str(app) not in prompt
     for invalid in (tmp_path, app / "src", engine, engine / "src", engine / "workspace/unrelated"):
         with pytest.raises(SessionError, match="target_is_vas"):
@@ -148,3 +148,37 @@ def test_src_link_into_engine_is_not_a_writable_app_target(kit):
     with pytest.raises(SessionError, match="target_unsafe"):
         manager.create(SETTINGS, app)
     assert (engine / "src/vas-hub.html").read_text() == "engine content"
+
+
+def test_root_layout_keeps_tool_files_out_of_app_work(tmp_path):
+    app = tmp_path / "메뉴판"
+    ui = app / "ui"
+    ui.mkdir(parents=True)
+    (app / "src").mkdir()
+    (app / "Run-VAS-System.bat").write_text("fixture")
+    (ui / "vas-hub.html").write_text("settings")
+    marker = app / "project-layout.json"
+    marker.write_text('{"layout":"vas-project","version":2}')
+    manager = SessionManager(app, tmp_path / "private")
+    sid = manager.create(SETTINGS, app)["session"]["sessionId"]
+    assert prepare(manager, sid, 1)["status"] == "prepared"
+    open_work(manager, sid, 1, 0)
+    start = {"kind": "implementation", "role": "main", "mode": "direct", "label": "Render menu"}
+    for path in ("ui/vas-hub.html", "scripts/app.py", "project-layout.json", "README.md"):
+        with pytest.raises(SessionError, match="work_files_path_invalid"):
+            start_work(manager, sid, 1, 1, dict(start, observedFiles=[path], writableFiles=[path]))
+    unit = start_work(manager, sid, 1, 1, dict(start, observedFiles=["src/menu.py"],
+                                               writableFiles=["src/menu.py"]))["unitId"]
+    (app / "src/menu.py").write_text("print('menu')")
+    finish_work(manager, sid, 1, 2, unit, {"state": "returned", "hostCallId": "fixture",
+                "summary": "Created menu", "changedFiles": ["src/menu.py"], "exitCode": 0})
+    assert inspect_work(manager, sid, 1)["units"][0]["reportedOutOfScopeFiles"] == []
+    assert (ui / "vas-hub.html").read_text() == "settings"
+    assert not (app / ".vas").exists()
+    for invalid in (tmp_path, app / "src", ui):
+        with pytest.raises(SessionError, match="target_is_vas"):
+            manager.rebind(sid, 1, invalid)
+    marker.unlink()
+    assert manager.resume(session_id=sid)["status"] == "target_unavailable"
+    with pytest.raises(SessionError, match="vas_root_invalid"):
+        SessionManager(app, tmp_path / "private")

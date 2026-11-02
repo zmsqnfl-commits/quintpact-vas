@@ -13,11 +13,13 @@ test.beforeAll(async () => {
   directory = fs.mkdtempSync(path.join(os.tmpdir(), 'vas-connected-'));
   runtimeRoot = path.join(directory, '검증 원본'); state = path.join(directory, 'isolated state');
   fs.mkdirSync(runtimeRoot, { recursive: true });
-  const copied = spawnSync('python', ['-c', 'import shutil,sys; shutil.copytree(sys.argv[1],sys.argv[2])', path.join(root, 'src'), path.join(runtimeRoot, 'src')], { windowsHide: true, cwd: directory });
-  if (copied.status !== 0) throw new Error('Synthetic source copy failed');
+  fs.cpSync(path.join(root, 'ui'), path.join(runtimeRoot, 'src'), { recursive: true });
+  fs.cpSync(path.join(root, 'scripts'), path.join(runtimeRoot, 'scripts'), { recursive: true });
+  fs.cpSync(path.join(root, '.agents'), path.join(runtimeRoot, '.agents'), { recursive: true });
+  fs.writeFileSync(path.join(runtimeRoot, 'package.json'), JSON.stringify({name: 'quintpact-vas', version: '2.11.0'}));
   fs.mkdirSync(path.join(runtimeRoot, 'docs'));
   const port = await new Promise(resolve => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => resolve(p)); }); });
-  const launch = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(root, 'scripts/Start-VAS.ps1'), '-NoBrowser', '-RootPath', runtimeRoot, '-StateRoot', state, '-Port', String(port), '-IdleTimeoutSeconds', '180'], { windowsHide: true, cwd: directory, timeout: 25000 });
+  const launch = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(runtimeRoot, 'scripts/Start-VAS.ps1'), '-NoBrowser', '-RootPath', runtimeRoot, '-StateRoot', state, '-Port', String(port), '-IdleTimeoutSeconds', '180'], { windowsHide: true, cwd: directory, timeout: 25000 });
   if (launch.status !== 0) throw new Error('Synthetic Windows runtime launch failed: ' + launch.status);
   const name = fs.readdirSync(state).find(n => /^runtime-.*\.json$/.test(n));
   const details = JSON.parse(fs.readFileSync(path.join(state, name), 'utf8').replace(/^\uFEFF/, ''));

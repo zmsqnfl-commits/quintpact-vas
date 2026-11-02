@@ -26,7 +26,7 @@ CONTROLS = [
 def test_public_content_retains_exact_bytes(value):
     assert clean(value) == value
     code = 'global.window=globalThis; require(process.argv[1]); process.stdout.write(VASAgentContract.clean(process.argv[2]));'
-    output = subprocess.run(['node', '-e', code, str(ROOT / 'src/agent-contract.js'), value], capture_output=True, text=True, check=True)
+    output = subprocess.run(['node', '-e', code, str(ROOT / 'ui/agent-contract.js'), value], capture_output=True, text=True, check=True)
     assert output.stdout == value
 
 
@@ -34,7 +34,7 @@ def test_empty_header_preserves_following_requirement_in_both_cleaners():
     value = 'Authorization:\nFeature: calendar'
     assert clean(value) == '[redacted]\nFeature: calendar'
     code = 'global.window=globalThis; require(process.argv[1]); process.stdout.write(VASAgentContract.clean(process.argv[2]));'
-    assert subprocess.run(['node', '-e', code, str(ROOT / 'src/agent-contract.js'), value], capture_output=True, text=True, check=True).stdout == clean(value)
+    assert subprocess.run(['node', '-e', code, str(ROOT / 'ui/agent-contract.js'), value], capture_output=True, text=True, check=True).stdout == clean(value)
 
 
 def test_compatibility_staging_removes_all_http_variants(tmp_path):

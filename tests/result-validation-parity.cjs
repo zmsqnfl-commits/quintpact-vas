@@ -2,7 +2,7 @@
 'use strict';
 const fs = require('node:fs'), path = require('node:path');
 global.window = globalThis;
-require(path.join(__dirname, '..', 'src', 'agent-contract.js'));
+require(path.join(__dirname, '..', 'ui', 'agent-contract.js'));
 const C = global.VASAgentContract, input = JSON.parse(fs.readFileSync(0, 'utf8'));
 async function run() {
   if (input.operation === 'repair') return input.documents.map(raw => C.repairLegacyNumbers(raw));

@@ -13,6 +13,7 @@ import urllib.request
 import uuid
 
 import pytest
+from runtime_install import install_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -57,7 +58,7 @@ def runtime(tmp_path_factory):
         port = probe.getsockname()[1]
     process = subprocess.Popen([
         POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-        str(ROOT / "scripts/Start-VAS.ps1"), "-Server", "-NoBrowser", "-RootPath", str(root),
+        str(install_runtime(root)), "-Server", "-NoBrowser", "-RootPath", str(root),
         "-StateRoot", str(memory), "-Port", str(port), "-IdleTimeoutSeconds", "180",
     ], env={**os.environ, "LOCALAPPDATA": str(local), "VAS_PYTHON": sys.executable,
             "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"},

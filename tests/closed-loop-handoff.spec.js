@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const root = path.join(__dirname, '..', 'src');
+const root = path.join(__dirname, '..', 'ui');
 const importUrl = pathToFileURL(path.join(root, 'project-import.html')).href;
 const clientUrl = pathToFileURL(path.join(root, 'client-application.html')).href;
 

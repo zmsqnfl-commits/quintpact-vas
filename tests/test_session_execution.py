@@ -347,8 +347,8 @@ def test_distributed_cli_without_package_json_prepares_and_assesses(setup, tmp_p
     release = tmp_path / "windows-release"
     shutil.copytree(ROOT / "scripts", release / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
     (release / ".agents").mkdir()
-    (release / "src").mkdir()
-    shutil.copyfile(ROOT / "src/vas-config.js", release / "src/vas-config.js")
+    (release / "ui").mkdir()
+    shutil.copyfile(ROOT / "ui/vas-config.js", release / "ui/vas-config.js")
     shutil.copyfile(ROOT / ".agents/agent-resources.json", release / ".agents/agent-resources.json")
     assert not (release / "package.json").exists()
     command = [sys.executable, "-B", str(release / "scripts/vas-session.py"),
@@ -358,7 +358,7 @@ def test_distributed_cli_without_package_json_prepares_and_assesses(setup, tmp_p
                               capture_output=True, timeout=30, env={**os.environ, "PYTHONUTF8": "1"})
     assert prepared.returncode == 0, prepared.stderr + prepared.stdout
     payload = json.loads(prepared.stdout)
-    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.11.1"
+    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.12.0"
     checked = subprocess.run(command + ["assess"] + arguments, text=True, encoding="utf-8",
                              input=json.dumps(result(payload)), capture_output=True, timeout=30,
                              env={**os.environ, "PYTHONUTF8": "1"})

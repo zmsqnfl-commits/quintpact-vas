@@ -67,7 +67,7 @@ def prepared_context(manager, session_id, number, binding):
 def capture_target(manager, binding, paths):
     from vas_work_files import capture
     selected = target(manager, binding)
-    in_project = manager.root.name.casefold() == ".vas" and selected == manager.root.parent
+    in_project = selected == manager.project_root
     return capture(selected, binding["identity"], paths, in_project)
 
 

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const appUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href;
+const appUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'client-application.html')).href;
 
 async function waitStep(page, step) {
   await page.locator(`.step[data-step="${step}"].active`).waitFor();
@@ -47,7 +47,7 @@ test('new project flow is step-by-step and safely renders file names', async ({ 
 
 test('new project produces the common safe VAS-AI-HANDOFF.json', async ({ page }) => {
   await reachDone(page);
-  await expect(page.locator('#handoffReview')).toContainText('최상위 src/에 앱을 만들고 .vas/는 보존하세요');
+  await expect(page.locator('#handoffReview')).toContainText('모두 최상위 src/에 두고 그 안에서 실행·빌드·검증하세요');
   await expect(page.locator('#handoffReview')).toContainText('Preset: awwwards');
   await expect(page.locator('#handoffReview')).not.toContainText('VAS-AI-RESULT.json');
   await expect(page.locator('#handoffInputReview')).toContainText('필수');

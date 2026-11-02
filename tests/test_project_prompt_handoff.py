@@ -22,15 +22,17 @@ SUMMARY = {"phase": "paused", "summary": "구현 전 준비", "nextStep": "목�
            "decisions": [], "changedFiles": [], "checks": [], "remaining": []}
 
 
-@pytest.fixture
-def kit(tmp_path):
+@pytest.fixture(params=[1, 2], ids=["nested-v1", "root-v2"])
+def kit(tmp_path, request):
     app, private = tmp_path / "재고 앱", tmp_path / "state"
-    engine = app / ".vas"
+    legacy = request.param == 1
+    engine = app / ".vas" if legacy else app
+    ui = engine / ("src" if legacy else "ui")
     (app / "src").mkdir(parents=True)
-    (engine / "src").mkdir(parents=True)
-    (engine / "src/vas-hub.html").write_text("tool")
+    ui.mkdir(parents=True)
+    (ui / "vas-hub.html").write_text("tool")
     (engine / "Run-VAS-System.bat").write_text("@echo off")
-    (engine / "project-layout.json").write_text('{"layout":"vas-project","version":1}')
+    (engine / "project-layout.json").write_text('{"layout":"vas-project","version":%d}' % request.param)
     manager = SessionManager(engine, private)
     sid = manager.create(SETTINGS, app)["session"]["sessionId"]
     return manager, sid, app, engine, private

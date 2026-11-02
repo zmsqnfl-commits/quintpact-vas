@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 
 import pytest
+from runtime_install import install_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 POWERSHELL = shutil.which("powershell.exe")
@@ -37,24 +38,29 @@ class Client:
             return response.status, json.load(response), response.headers
 
 
-@pytest.fixture
-def live(tmp_path):
+@pytest.fixture(params=[1, 2])
+def live(tmp_path, request):
     app = tmp_path / "나의 재고 앱"
-    engine = app / ".vas"
+    engine = app / ".vas" if request.param == 1 else app
+    public = engine / ("src" if request.param == 1 else "ui")
     (app / "src").mkdir(parents=True)
     (app / "src/app.js").write_text("unchanged app", encoding="utf-8")
-    (engine / "src").mkdir(parents=True)
-    (engine / "src/vas-hub.html").write_text("VAS", encoding="utf-8")
+    public.mkdir(parents=True)
+    (public / "vas-hub.html").write_text("VAS", encoding="utf-8")
     (engine / "Run-VAS-System.bat").write_text("fixture", encoding="utf-8")
-    (engine / "project-layout.json").write_text('{"layout":"vas-project","version":1}', encoding="utf-8")
-    before = {p.relative_to(engine): p.read_bytes() for p in engine.rglob("*") if p.is_file()}
+    (engine / "project-layout.json").write_text(json.dumps({"layout":"vas-project","version":request.param}), encoding="utf-8")
+    launcher = install_runtime(engine, legacy=False)
+    def engine_files():
+        return {p.relative_to(engine): p.read_bytes() for p in engine.rglob("*")
+                if p.is_file() and p != app / "VAS-PROJECT-PROMPT.json"}
+    before = engine_files()
     state = tmp_path / "pc-state"
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
     process = subprocess.Popen([
         POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-        str(ROOT / "scripts/Start-VAS.ps1"), "-Server", "-NoBrowser",
+        str(launcher), "-Server", "-NoBrowser",
         "-RootPath", str(engine), "-StateRoot", str(state), "-Port", str(port),
         "-IdleTimeoutSeconds", "120",
     ], env={**os.environ, "VAS_PYTHON": sys.executable, "LOCALAPPDATA": str(tmp_path / "local"),
@@ -75,7 +81,7 @@ def live(tmp_path):
             time.sleep(.1)
         assert client is not None
         yield client, app, engine
-        assert {p.relative_to(engine): p.read_bytes() for p in engine.rglob("*") if p.is_file()} == before
+        assert engine_files() == before
         assert (app / "src/app.js").read_text(encoding="utf-8") == "unchanged app"
     finally:
         if client and process.poll() is None:

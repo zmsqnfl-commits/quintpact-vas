@@ -152,9 +152,14 @@ def _read(root, relative, before, parents, used):
 
 
 def _exclude_engine(root, paths, required):
-    engine = root / ".vas"
     if not required:
         return
+    if reserves_engine(root):
+        _check(is_project_engine(root), "target_changed")
+        _check(all(path.startswith("src/") for path in paths), "path_invalid")
+        safe_directory(root / "src")
+        return
+    engine = root / ".vas"
     _check(is_project_engine(engine), "target_changed")
     reserved = engine.lstat()
     for name in {path.split("/", 1)[0] for path in paths}:
@@ -172,7 +177,7 @@ def capture(target, expected_identity, paths, project_root=False):
     paths = normalize_paths(paths)
     try:
         root = _root(target, expected_identity)
-        reserved = project_root or reserves_engine(root / ".vas")
+        reserved = project_root or reserves_engine(root) or reserves_engine(root / ".vas")
         _exclude_engine(root, paths, reserved)
         files, observations, used = [], [], 0
         for relative in paths:

@@ -11,7 +11,7 @@ import stat
 import time
 
 from vas_ai_contract import clean, credential_view, redact_credentials
-from vas_project_layout import is_project_engine
+from vas_project_layout import is_project_engine, project_directory, ui_directory
 
 FILE_NAME = "VAS-PROJECT-PROMPT.json"
 TEMP_NAME = ".VAS-PROJECT-PROMPT.tmp"
@@ -94,7 +94,7 @@ class _Project:
         _require(".." not in raw.parts, "layout")
         self.engine = Path(os.path.abspath(raw))
         _require(is_project_engine(self.engine), "layout")
-        self.root = self.engine.parent
+        self.root = project_directory(self.engine)
         self.root_info, self.engine_info = self.root.stat(), self.engine.stat()
         self.dir_fd = None
 
@@ -177,7 +177,7 @@ def _pin(project):
             api.CreateFileW.restype = wintypes.HANDLE
             api.CloseHandle.argtypes = [wintypes.HANDLE]
             # No FILE_SHARE_DELETE: a pinned ancestor cannot be renamed or replaced.
-            for path in (*reversed(project.root.parents), project.root, project.engine, project.engine / "src"):
+            for path in (*reversed(project.engine.parents), project.engine, ui_directory(project.engine)):
                 handle = api.CreateFileW(str(path), 0, 3, None, 3, 0x02200000, None)
                 if handle == ctypes.c_void_p(-1).value:
                     raise ctypes.WinError(ctypes.get_last_error())

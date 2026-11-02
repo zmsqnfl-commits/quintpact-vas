@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     name: Build Pages artifact
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -38,6 +39,7 @@ jobs:
           include-hidden-files: true
 
   deploy:
+    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     name: Deploy Pages
     needs: build
     runs-on: ubuntu-latest

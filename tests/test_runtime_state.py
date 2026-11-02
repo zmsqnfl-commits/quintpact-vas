@@ -16,6 +16,7 @@ import time
 import pytest
 
 from test_windows_runtime import RuntimeClient
+from runtime_install import install_runtime
 
 BASE = Path(__file__).resolve().parents[1]
 POWERSHELL = shutil.which("powershell.exe")
@@ -39,7 +40,7 @@ def json_ps(script, **paths):
 
 def launch(root, state, port, session=None):
     command = [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-               str(BASE / "scripts/Start-VAS.ps1"), "-NoBrowser", "-RootPath", str(root),
+               str(install_runtime(root)), "-NoBrowser", "-RootPath", str(root),
                "-StateRoot", str(state), "-Port", str(port), "-IdleTimeoutSeconds", "60"]
     if session:
         command += ["-SessionId", session]
@@ -244,7 +245,7 @@ def test_launcher_rejects_junctions_without_touching_external_state(tmp_path, lo
     before = marker.read_bytes()
     if location == "runtime-file":
         canonical = str(root.resolve()).rstrip("\\").upper().encode("utf-8")
-        runtime_id = "2.11.1-" + hashlib.sha256(canonical).hexdigest()[:16]
+        runtime_id = "2.12.0-" + hashlib.sha256(canonical).hexdigest()[:16]
         junction = state / f"runtime-{runtime_id}.json"
     else:
         junction = tmp_path / "linked-ancestor"

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const importUrl = pathToFileURL(path.join(__dirname, '..', 'src', 'project-import.html')).href;
+const importUrl = pathToFileURL(path.join(__dirname, '..', 'ui', 'project-import.html')).href;
 
 async function prepareExisting(page, name = '레거시 앱') {
   await page.goto(importUrl, { waitUntil: 'domcontentloaded' });

@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 const cases = require('./fixtures/secret-redaction-cases.json');
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 function stable(value) {
   if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
   if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + stable(value[key])).join(',') + '}';

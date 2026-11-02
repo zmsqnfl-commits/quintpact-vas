@@ -1,10 +1,9 @@
-"""VAS 2.11.1 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.12.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import os
 import re
 import shutil
 import stat
@@ -16,17 +15,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
-CONFIG = ROOT / "src" / "vas-config.js"
+CONFIG = ROOT / "ui" / "vas-config.js"
 ROOT_FILES = [
-    "Run-VAS-System.bat", "README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
+    "Run-VAS-System.bat", "project-layout.json", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
     "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
     ".cursorrules", ".windsurfrules",
 ]
-FULL_DIRS = ["src", "docs", "scripts", ".agents"]
+FULL_DIRS = ["ui", "docs", "scripts", ".agents"]
 LEGAL_FILES = ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md")
-HOST_GUIDES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules")
-PROJECT_SKILLS = ("design-analysis",)
-SKILL_HOSTS = (".agents", ".claude")
+HOST_FILES = [f"{host}/agents/vas_{role}{suffix}" for host, suffix in
+              ((".codex", ".toml"), (".claude", ".md")) for role in ("implementer", "designer", "reviewer")]
+DESIGN_SKILL = Path(".agents/skills/design-analysis")
+CLAUDE_SKILL = Path(".claude/skills/design-analysis")
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
     ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session",
@@ -61,7 +61,7 @@ def version() -> str:
     text = CONFIG.read_text(encoding="utf-8")
     match = re.search(r"version\s*:\s*['\"]([^'\"]+)", text)
     if not match:
-        raise RuntimeError("src/vas-config.js 버전을 찾지 못했습니다.")
+        raise RuntimeError("ui/vas-config.js 버전을 찾지 못했습니다.")
     return match.group(1)
 
 
@@ -84,25 +84,36 @@ def allowed(path: Path) -> bool:
 
 def is_link(path: Path) -> bool:
     try:
-        attrs = getattr(path.lstat(), "st_file_attributes", 0)
-        return path.is_symlink() or bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+        info = path.lstat()
+        return (stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
+                or (stat.S_ISREG(info.st_mode) and info.st_nlink != 1))
     except OSError:
         return True
 
 
-def copy_tree(source: Path, target: Path) -> None:
+def tree_members(source: Path):
+    if is_link(source) or not source.is_dir():
+        raise RuntimeError(f"배포 원본 디렉터리를 읽을 수 없습니다: {source}")
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
+        if path.name.startswith(".vas-knowledge-index-") and path.suffix == ".tmp":
+            continue
         if is_link(path):
             raise RuntimeError(f"배포 원본에 링크가 포함되어 있습니다: {relative}")
-        if not allowed(relative):
-            continue
+        if allowed(relative) and path.is_file():
+            yield relative, path
+
+
+def copy_tree(source: Path, target: Path) -> None:
+    for relative, path in tree_members(source):
         destination = target / relative
-        if path.is_dir():
-            destination.mkdir(parents=True, exist_ok=True)
-        elif path.is_file():
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, destination)
+
+
+def host_skill_files():
+    for relative, source in tree_members(ROOT / DESIGN_SKILL):
+        yield CLAUDE_SKILL / relative, source
 
 
 def git_commit() -> str:
@@ -150,70 +161,33 @@ def zip_directory(source: Path, destination: Path) -> None:
             archive.writestr(info, path.read_bytes())
 
 
-def native_project_role(relative: Path) -> bytes:
-    """Keep the maintained role and host-specific tool limits in project coordinates."""
-    source = (ROOT / relative).read_text(encoding="utf-8")
-    old = "Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md."
-    if source.count(old) != 1:
-        raise RuntimeError(f"Unrecognized host role preamble: {relative}")
-    source = source.replace(old, "Follow the project root AGENTS.md. App code belongs in src/. "
-                            "Do not edit the bundled .vas engine. Use the app's own checks.")
-    # The generated role contains both prose and commands; never relocate an app's src/.
-    source = re.sub(r"(?<![\w./])(?=(?:\.agents|docs|scripts)/)", ".vas/", source)
-    return source.encode("utf-8")
+def starter_files():
+    """Only VAS-owned release sources. The app and project prompt are never inputs."""
+    for filename in ROOT_FILES:
+        source = ROOT / filename
+        if is_link(source) or not source.is_file():
+            raise RuntimeError(f"Missing or linked release input: {filename}")
+        yield Path(filename), source
+    for dirname in FULL_DIRS:
+        for relative, source in tree_members(ROOT / dirname):
+            yield Path(dirname) / relative, source
+    for relative in [*HOST_FILES, *(path for path, _ in host_skill_files())]:
+        source = ROOT / relative
+        if any(is_link(path) for path in [source, *source.parents] if path.is_relative_to(ROOT)):
+            raise RuntimeError(f"Missing or linked host entry: {relative}")
+        yield Path(relative), source
 
 
 def build_windows(stage: Path) -> Path:
     subprocess.run([sys.executable, str(ROOT / "scripts/build-agent-resources.py"), "--check"], check=True)
     root = stage / f"VAS-{version()}-windows"
-    engine = root / ".vas"
-    engine.mkdir(parents=True)
-    for filename in ROOT_FILES:
-        shutil.copy2(ROOT / filename, engine / filename)
-    for dirname in FULL_DIRS:
-        copy_tree(ROOT / dirname, engine / dirname)
-    (engine / "project-layout.json").write_bytes(b'{ "layout": "vas-project", "version": 1 }\n')
+    for relative, source in starter_files():
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
     (root / "src").mkdir()
     (root / "src/.gitkeep").write_bytes(b"")
-    for filename in LEGAL_FILES:
-        shutil.copy2(ROOT / filename, root / filename)
-    for filename in HOST_GUIDES:
-        shutil.copy2(engine / ".agents/PROJECT-ROOT.md", root / filename)
-    # Hosts can discover the bundled skill without scanning the private engine.
-    # All copies come from the maintained source; relative references stay intact.
-    for skill in PROJECT_SKILLS:
-        for host in SKILL_HOSTS:
-            copy_tree(engine / ".agents/skills" / skill, root / host / "skills" / skill)
-    for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
-        for role in ("implementer", "designer", "reviewer"):
-            relative = Path(host) / "agents" / ("vas_" + role + suffix)
-            destination = root / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(native_project_role(relative))
-    # pushd supports UNC folders. CALL only a constant relative path: it reparses arguments.
-    launcher = ["@echo off", "setlocal DisableDelayedExpansion", 'pushd "%~dp0.vas" || exit /b 1',
-                'if not exist ".\\Run-VAS-System.bat" goto :missing', 'call ".\\Run-VAS-System.bat"',
-                'set "vasLaunchResult=%ERRORLEVEL%"', "popd", "exit /b %vasLaunchResult%", ":missing",
-                "echo Missing .vas\\Run-VAS-System.bat. Extract the entire project ZIP.", "popd", "exit /b 1"]
-    (root / "Run-VAS-System.bat").write_bytes(("\r\n".join(launcher) + "\r\n").encode("ascii"))
-    # Keep the root quick start independent of the installation folder's name.
-    start = f"""# VAS {version()} 프로젝트 시작
-
-ZIP을 새 위치에 **전체 압축 해제**한 뒤, Run-VAS-System.bat과 src가 있는 폴더의 이름을 프로젝트 이름으로 바꾸세요.
-그 폴더 자체를 코딩 AI에서 열고 “이 폴더를 프로젝트로 지정하고 색인해줘”라고 말하세요.
-Claude Code를 쓰면 같은 폴더에서 터미널을 열어 claude를 실행하고 위 문장을 입력하세요. 프로젝트 지침은 루트 CLAUDE.md에 있습니다.
-AI가 새 앱인지 기존 앱인지 확인하고, 필요한 기능과 완료조건을 한두 가지씩 묻습니다.
-답을 정리한 뒤 “이 조건으로 만들어줘”라고 하면 src/에 구현하고 결과를 확인합니다.
-작업이 이미 정해졌다면 “재고 관리 앱을 만들어줘”처럼 바로 요청할 수도 있습니다.
-.vas/는 함께 제공되는 도구입니다. 앱 코드를 여기에 넣거나 도구 파일을 수정하지 마세요.
-이후 같은 위치에서 작업을 재개하려면 먼저 폴더 이름을 정한 뒤 첫 대화를 시작하세요.
-
-화면으로 설정하려면 프로젝트 루트의 Run-VAS-System.bat을 더블클릭합니다.
-Windows PowerShell 5.1 이상, 대화형 세션에는 Python 3.10 이상이 필요합니다.
-프로젝트 설정과 다음 작업 안내: [프로젝트 사용법](.vas/docs/PROJECT-ROOT.md).
-"""
-    (root / "README.md").write_text(start, encoding="utf-8", newline="\n")
-    (root / "00-처음-사용하기.txt").write_text(start, encoding="utf-8", newline="\n")
+    shutil.copy2(root / "00-처음-사용하기.txt", root / "README.md")
     write_json(root / "manifest.json", manifest_for(root, "windows", ["Run-VAS-System.bat"]))
     return root
 
@@ -223,7 +197,7 @@ def build_client(stage: Path) -> Path:
     root = stage / name
     root.mkdir(parents=True)
     for filename in CLIENT_ASSETS:
-        source = ROOT / "src" / filename
+        source = ROOT / "ui" / filename
         target = root / ("index.html" if filename == "client-application.html" else filename)
         if filename == "client-application.html":
             html = source.read_text(encoding="utf-8")
@@ -242,7 +216,7 @@ def build_client(stage: Path) -> Path:
             target.write_text(html, encoding="utf-8")
         else:
             shutil.copy2(source, target)
-    for filename in ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md"):
+    for filename in LEGAL_FILES:
         shutil.copy2(ROOT / filename, root / filename)
     (root / "README.md").write_text(
         "# VAS Setup Form\n\nZIP을 새 폴더에 전체 압축 해제한 뒤 `index.html`을 여세요. 요구사항과 디자인을 확인하면 `VAS-AI-HANDOFF.json`이 만들어집니다. 파일 내용과 연락처는 포함하지 않으며 초안은 JSON 저장 뒤 삭제됩니다.\n",
@@ -254,7 +228,8 @@ def build_client(stage: Path) -> Path:
 
 def build_pages(output: Path) -> Path:
     pages = output / "pages"
-    copy_tree(ROOT / "src", pages / "src")
+    # Keep published Pages URLs stable while the local UI lives in ui/.
+    copy_tree(ROOT / "ui", pages / "src")
     copy_tree(ROOT / "docs", pages / "docs")
     (pages / ".nojekyll").write_text("", encoding="utf-8")
     (pages / "index.html").write_text(
@@ -282,6 +257,9 @@ def verify_zip(path: Path) -> None:
 
 
 def build(output: Path) -> list[Path]:
+    output = output.resolve()
+    if ROOT.is_relative_to(output) or (output.is_relative_to(ROOT) and not output.is_relative_to(DIST)):
+        raise ValueError("Write release artifacts to dist/ or a directory outside the project")
     subprocess.run([sys.executable, str(ROOT / "scripts" / "build-knowledge-index.py")], cwd=ROOT, check=True)
     if output.exists():
         shutil.rmtree(output)

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const source = path.resolve(__dirname, '../src');
+const source = path.resolve(__dirname, '../ui');
 let server, base;
 test.beforeAll(async () => {
   server = http.createServer((req, res) => {

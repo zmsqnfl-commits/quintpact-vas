@@ -3,7 +3,7 @@ name: vas-designer
 description: "사용자 토큰과 참고 화면을 UI 명세로 바꾸고 구현 화면의 디자인 일치 여부를 확인한다. 화면 설계와 시각 수정에 사용한다."
 ---
 
-Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
+Follow the project root AGENTS.md. Build the user's app in src/ and use its own checks. The ui/ directory is VAS's interface. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
 
 # 디자인 실행 지침
 
@@ -58,7 +58,7 @@ Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. F
 - 관찰·측정·추정·미확인을 구분한다. 정확한 폰트명, HEX, 치수, 비율은 실제 자산·소스·도구 측정 근거가 있을 때만 원본의 값으로 적는다. 스크린샷 픽셀을 CSS px로 단정하지 않는다.
 - 구현에 필요한 수치는 **적용 제안값**으로 정할 수 있다. 예: “제목이 본문보다 크게 보임(관찰), 앱에서는 2.5배로 시작(제안)”처럼 원본의 정확한 수치와 구별한다.
 - 폰트 계열이 비슷해 보여도 이름을 확정하지 않는다. 확정 토큰·기존 자산·사용 가능한 한글 대체 글꼴을 확인한다. CSS의 `font-family` 선언과 실제 폰트 로딩은 다르므로 적용 후 로딩·한글 대체 결과를 확인하고 미지원은 알린다.
-- VAS 프로젝트 ZIP의 선택 글꼴은 `.vas/src/assets/fonts/`의 파일·라이선스와 `.vas/src/design-collection.css` 선언을 먼저 확인한다. 사용할 자산이 있으면 필요한 파일과 라이선스만 앱 자산 폴더로 복사해 연결한다. `.vas`를 앱의 런타임 의존 경로로 쓰거나 외부 폰트를 임의 설치하지 않는다. 라틴·숫자와 한글 대체 글꼴을 각각 확인하며, 자산이 없으면 대체 사실을 알린다.
+- VAS 프로젝트 ZIP의 선택 글꼴은 `ui/assets/fonts/`의 파일·라이선스와 `ui/design-collection.css` 선언을 먼저 확인한다. 사용할 자산이 있으면 필요한 파일과 라이선스만 앱 자산 폴더로 복사해 연결한다. `ui/`를 앱의 런타임 의존 경로로 쓰거나 외부 폰트를 임의 설치하지 않는다. 라틴·숫자와 한글 대체 글꼴을 각각 확인하며, 자산이 없으면 대체 사실을 알린다.
 - 정적 이미지에서 기능·반응형·접근성·사용 성과가 검증됐다고 추정하지 않는다. 실제 측정하지 않은 대비 수치나 효과 점수를 만들지 않는다.
 
 ## 현재 앱에 적용

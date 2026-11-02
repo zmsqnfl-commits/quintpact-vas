@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const source = path.resolve(__dirname, '../src');
+const source = path.resolve(__dirname, '../ui');
 let server, base;
 test.beforeAll(async () => {
   server = http.createServer((req, res) => {
@@ -63,6 +63,8 @@ test('editing an external target while initial layout is pending cannot inherit 
   await page.locator('#copyPrompt').click();
   await expect.poll(() => page.evaluate(() => window.copiedPrompt)).toContain('C:\\OtherProject');
   expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('ROOT ONLY');
+  expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('scripts/vas-project-prompt.py');
+  expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('모두 최상위 src/');
   expect(state.reads).toBe(0);
 });
 
@@ -118,3 +120,14 @@ for (const action of ['copyPrompt', 'downloadJson']) {
     expect(downloads).toBe(0);
   });
 }
+
+test('the open project keeps the app and its VAS workflow together even before the first saved prompt', async ({ page }) => {
+  await setup(page, { current: { revision: 0, prompt: '' } });
+  await page.locator('#continueSettings').click();
+  await page.locator('#copyPrompt').click();
+  const copied = await page.evaluate(() => window.copiedPrompt);
+  for (const text of ['프로젝트 폴더 전체', '최상위 src/', 'ui/', 'scripts/vas-project-prompt.py get', 'prepared', 'checkpoint', 'resume']) {
+    expect(copied).toContain(text);
+  }
+  expect(copied).not.toContain('.vas/');
+});

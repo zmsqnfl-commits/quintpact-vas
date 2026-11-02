@@ -5,8 +5,8 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def test_html_files_exist():
     expected_files = [
-        os.path.join("src", "vas-hub.html"),
-        os.path.join("src", "design-controller.html"),
+        os.path.join("ui", "vas-hub.html"),
+        os.path.join("ui", "design-controller.html"),
     ]
     for file in expected_files:
         path = os.path.join(ROOT_DIR, file)
@@ -15,8 +15,8 @@ def test_html_files_exist():
 
 def test_js_files_exist():
     expected_files = [
-        os.path.join("src", "client-form.js"),
-        os.path.join("src", "storage-utils.js"),
+        os.path.join("ui", "client-form.js"),
+        os.path.join("ui", "storage-utils.js"),
     ]
     for file in expected_files:
         path = os.path.join(ROOT_DIR, file)
@@ -27,14 +27,14 @@ def test_line_limits():
     """Non-data 파일이 500줄 이하인지 확인"""
     html_files = (
         glob.glob(os.path.join(ROOT_DIR, "*.html"))
-        + glob.glob(os.path.join(ROOT_DIR, "src", "*.html"))
+        + glob.glob(os.path.join(ROOT_DIR, "ui", "*.html"))
     )
     for file_path in html_files:
         with open(file_path, "r", encoding="utf-8") as f:
             lines = len(f.readlines())
             assert lines <= 500, f"File {os.path.basename(file_path)} exceeds 500 lines ({lines} lines)"
 
-    js_files = glob.glob(os.path.join(ROOT_DIR, "*.js")) + glob.glob(os.path.join(ROOT_DIR, "src", "*.js"))
+    js_files = glob.glob(os.path.join(ROOT_DIR, "*.js")) + glob.glob(os.path.join(ROOT_DIR, "ui", "*.js"))
     for file_path in js_files:
         if os.path.basename(file_path).endswith('-data.js'):
             continue  # 데이터 전용 파일 제외
@@ -44,7 +44,7 @@ def test_line_limits():
 
 def test_html_structure():
     """HTML 파일이 정상적으로 닫혀 있는지 확인 (절단 버그 방지)"""
-    html_files = glob.glob(os.path.join(ROOT_DIR, "*.html")) + glob.glob(os.path.join(ROOT_DIR, "src", "*.html"))
+    html_files = glob.glob(os.path.join(ROOT_DIR, "*.html")) + glob.glob(os.path.join(ROOT_DIR, "ui", "*.html"))
     for file_path in html_files:
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             content = f.read()

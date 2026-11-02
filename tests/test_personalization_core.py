@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
+SRC = ROOT / "ui"
 SCRIPTS = ROOT / "scripts"
 CORE_FILES = [
     SRC / "vas-config.js",

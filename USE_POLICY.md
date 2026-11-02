@@ -1,6 +1,6 @@
 # VAS Use Policy
 
-- Windows 배포판과 GitHub Pages는 같은 `src/` 원본에서 생성합니다.
+- Windows 배포판과 GitHub Pages는 같은 `ui/` 원본에서 생성합니다.
 - 프로젝트 원본, `workspace/`, 개인화 메모리, 시크릿은 GitHub Pages와 Release에 포함하지 않습니다.
 - 기존 프로젝트는 분석과 백업 검증 전에는 변경하거나 삭제하지 않습니다.
 - 개인화 기능은 최초 안내와 동의 후 사용하며 언제든 중지·삭제할 수 있습니다.

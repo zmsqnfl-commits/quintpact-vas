@@ -1,4 +1,4 @@
-"""VAS 2.11.1 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
+"""VAS 2.12.0 단일 무결성 검사: 핵심 시스템 경계를 한 번 확인합니다."""
 from __future__ import annotations
 
 import ast
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
+SRC = ROOT / "ui"
 results: list[tuple[str, bool, str]] = []
 
 
@@ -33,10 +33,10 @@ js_files = sorted(SRC.glob("*.js"))
 package = json.loads(text(ROOT / "package.json"))
 config = text(SRC / "vas-config.js")
 
-check("01 package version", package.get("version") == "2.11.1")
-check("02 runtime version", "version: '2.11.1'" in config or 'version: "2.11.1"' in config)
+check("01 package version", package.get("version") == "2.12.0")
+check("02 runtime version", "version: '2.12.0'" in config or 'version: "2.12.0"' in config)
 check("03 public entrypoints", all((ROOT / item).exists() for item in [
-    "Run-VAS-System.bat", "src/vas-hub.html", "src/client-application.html",
+    "Run-VAS-System.bat", "ui/vas-hub.html", "ui/client-application.html",
 ]))
 check("04 connected screens", all((SRC / item).exists() for item in [
     "project-import.html", "design-controller.html", "setup-tools.js", "setup-design.js",

@@ -12,13 +12,13 @@ VAS는 요청·설정·진행 요약·실행 근거를 이어 코딩 AI의 구�
 
 ## 기준
 
-- 단일 작업 원본: `src/`, `docs/`, `scripts/`, `tests/`와 에이전트 지침
+- VAS 제품 원본은 `ui/`, `docs/`, `scripts/`, `tests/`와 에이전트 지침이다. 사용자 앱의 최상위 `src/`는 제품 원본·배포에 넣지 않는다.
 - 결과물: 인계 v3 프롬프트·JSON
 - 배포 생성물: `dist/` (Git 제외)
 - VAS 개발 TASK·현재 상태·작업 결과는 별도 `VAS-handoff` 저장소에서 관리하며 제품 원본과 배포본에 넣지 않는다.
 - 파일당 500줄 이하, 외부 CDN·원격 폰트 금지
 - 기존 프로젝트 복사·등록 모듈은 호환용으로만 유지
-- 루트 시작 지침은 `.agents/ENTRYPOINT.md`와 `.agents/BOOTSTRAP.md`에서 생성한다. 변경 후 `npm.cmd run agents:build`와 `npm.cmd run agents:check`를 실행한다.
+- 프로젝트 시작 지침의 정본은 `.agents/PROJECT-ROOT.md`다. 변경 후 `npm.cmd run agents:build`와 `npm.cmd run agents:check`를 실행한다.
 
 ## 흐름
 

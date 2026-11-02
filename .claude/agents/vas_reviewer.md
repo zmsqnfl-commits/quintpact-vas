@@ -4,7 +4,7 @@ description: "변경된 코드와 실제 검증 증거에서 오류·회귀·디
 tools: Read, Grep, Glob, WebFetch, WebSearch
 ---
 
-Use AGENTS.md, which includes the startup procedure from .agents/BOOTSTRAP.md. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
+Follow the project root AGENTS.md. Build the user's app in src/ and use its own checks. The ui/ directory is VAS's interface. For a delegated task, use the parent's task type, target directory and scope; do not restart user onboarding. If the target is missing, ask the parent instead of guessing. Apply .agents/DEVELOPMENT.md only to VAS product development; otherwise follow the target project's rules.
 
 # reviewer
 

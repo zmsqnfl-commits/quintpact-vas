@@ -44,12 +44,14 @@
     const known = sampleKeys.has(key);
     const validVersion = typeof version === 'string' && /^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$/.test(version);
     const tag = validVersion ? 'v' + version : null;
+    const [major, minor] = tag ? version.split('.').map(Number) : [];
+    const sourceDir = major > 2 || (major === 2 && minor >= 12) ? 'ui' : 'src';
     return {
       status: 'unverified', sampleKind: 'base-preset', samplePreset: known ? key : null,
       userModified: design.preset === 'custom', valueAuthority: 'confirmed-design-tokens',
       applicationScope: { mode: scope.mode, scope: scope.scope || '' },
       vasVersion: validVersion ? version : null, sourceRef: tag,
-      versionedSourceUrl: known && tag ? repository + '/blob/' + tag + '/src/design-sample.html' : null,
+      versionedSourceUrl: known && tag ? repository + '/blob/' + tag + '/' + sourceDir + '/design-sample.html' : null,
       liveSampleUrl: known ? samples + '?preset=' + key : null,
       liveSampleVersion: 'not-verified'
     };

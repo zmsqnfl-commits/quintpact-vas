@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 
 import pytest
+from runtime_install import install_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
 POWERSHELL = shutil.which("powershell.exe")
@@ -56,12 +57,13 @@ def server(tmp_path):
     runner = tmp_path / "response-runner.ps1"
     runner.write_text(RUNNER, encoding="utf-8-sig")
     ready = tmp_path / "ready.json"
+    install_runtime(tmp_path)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
     process = subprocess.Popen([
         POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(runner),
-        "-ModulePath", str(ROOT / "scripts/VAS.Server.psm1"), "-RootPath", str(tmp_path),
+        "-ModulePath", str(tmp_path / "scripts/VAS.Server.psm1"), "-RootPath", str(tmp_path),
         "-MemoryPath", str(tmp_path / "memory"), "-ReadyPath", str(ready), "-Port", str(port),
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     runtime = None

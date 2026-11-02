@@ -5,14 +5,14 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 (async () => {
   const root = path.resolve(__dirname, '..');
-  const destination = path.join(root, 'src/assets/designs/samples');
+  const destination = path.join(root, 'ui/assets/designs/samples');
   fs.mkdirSync(destination, { recursive: true });
   const chrome = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
   const browser = await chromium.launch(fs.existsSync(chrome) ? { executablePath: chrome } : {});
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1200 }, deviceScaleFactor: 1 });
     for (const key of ['awwwards', 'linear', 'stripe', 'notion']) {
-      await page.goto(pathToFileURL(path.join(root, 'src/design-sample.html')).href + '?preset=' + key);
+      await page.goto(pathToFileURL(path.join(root, 'ui/design-sample.html')).href + '?preset=' + key);
       await page.evaluate(async () => {
         await document.fonts.ready;
         await Promise.all(Array.from(document.images, image => image.decode()));

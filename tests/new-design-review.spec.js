@@ -3,7 +3,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 test('new project redacted design requires review before any download', async ({ page }) => {
-  await page.goto(pathToFileURL(path.join(__dirname, '..', 'src', 'client-application.html')).href);
+  await page.goto(pathToFileURL(path.join(__dirname, '..', 'ui', 'client-application.html')).href);
   const result = await page.evaluate(async () => {
     const built = await VASAgentHandoffWeb.buildNew({ project_name: 'synthetic', problem_desc: 'Header typography' },
       { included: true, direction: 'Typography contact@example.com', tokens: { fontFamily: 'contact@example.com' } });

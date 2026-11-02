@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   windows:
+    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     name: Verify Windows before publishing
     runs-on: windows-latest
     timeout-minutes: 15
@@ -45,6 +46,7 @@ jobs:
       - name: Verify the extracted Windows package
         run: python tests/test_release_runtime_flow.py
   release:
+    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     needs: windows
     name: Verify and publish release
     runs-on: ubuntu-latest
@@ -83,6 +85,8 @@ jobs:
         run: npm run test:browser
       - name: Build and verify release packages
         run: npm run test:package
+      - name: Verify the tagged source ZIP opens as a project
+        run: python tests/release_starter_checks.py
       - name: Publish GitHub Release assets
         env:
           GH_TOKEN: ${{ github.token }}

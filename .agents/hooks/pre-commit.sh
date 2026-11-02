@@ -21,7 +21,11 @@ fi
 
 # 2. 민감 데이터 패턴 체크 (ABAC sensitive_data_guard)
 HOOK_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd) || exit 2
-if command -v python3 >/dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
+if python3 -c 'import sys; sys.exit(sys.version_info.major != 3)' >/dev/null 2>&1; then
+    PYTHON=python3
+else
+    PYTHON=python
+fi
 "$PYTHON" "$HOOK_DIR/check-staged.py" || exit $?
 
 echo "[Pre-Commit] 검증 통과 ✓"

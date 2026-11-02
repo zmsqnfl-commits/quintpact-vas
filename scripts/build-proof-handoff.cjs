@@ -12,7 +12,7 @@ const { pathToFileURL } = require('node:url');
   const browser = await chromium.launch(fs.existsSync(chrome) ? { executablePath: chrome } : {});
   try {
     const page = await browser.newPage({ acceptDownloads: true });
-    await page.goto(pathToFileURL(path.join(root, 'src/client-application.html')).href);
+    await page.goto(pathToFileURL(path.join(root, 'ui/client-application.html')).href);
     await page.getByLabel('프로젝트 이름', { exact: true }).fill(request.project_name);
     await page.getByLabel('해결할 문제와 원하는 결과').fill(request.problem_desc);
     await page.locator('#nextBtn').click();

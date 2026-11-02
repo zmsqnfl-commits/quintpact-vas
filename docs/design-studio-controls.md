@@ -4,7 +4,7 @@ VAS 디자인 스튜디오는 프리셋과 Taste Profile을 조정하고 실제 
 
 ## 사용
 
-1. `src/design-controller.html` 또는 허브의 디자인 스튜디오를 엽니다.
+1. `ui/design-controller.html` 또는 허브의 디자인 스튜디오를 엽니다.
 2. 프리셋을 고르고 색상·폰트·간격 등을 조정합니다.
 3. Taste Profile을 자동으로 두거나 원하는 방향을 선택합니다.
 4. 설정을 저장한 뒤 신청서에서 프롬프트를 복사합니다. JSON 저장은 선택입니다.
@@ -41,6 +41,6 @@ VAS 자체의 Vanilla JS·오프라인 제약을 다른 프로젝트의 React �
 
 원본은 `.agents/skills/designer/SKILL.md`, `references/profiles/*.md`, `.agents/HANDOFF-WORKFLOW.md`입니다.
 변경 후 `npm run agents:build`와 `npm run knowledge:index`를 실행합니다.
-생성된 `src/agent-resources.js`는 일반 화면과 독립 신청서에서 같은 지침을 사용하게 합니다.
+생성된 `ui/agent-resources.js`는 일반 화면과 독립 신청서에서 같은 지침을 사용하게 합니다.
 
 `npm run test:python`, `npm run test:browser`, `npm run test:package`로 상태 보존·프롬프트·배포 포함 여부를 확인합니다.

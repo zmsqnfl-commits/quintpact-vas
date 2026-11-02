@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 const sample = key => source('design-sample.html') + '?preset=' + key;
 const curated = ['awwwards', 'linear', 'stripe', 'notion'];
 

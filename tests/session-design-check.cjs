@@ -81,7 +81,10 @@ async function start() {
   task = fs.mkdtempSync(path.join(os.tmpdir(), 'vas-session-design-'));
   runtimeRoot = path.join(task, 'runtime');
   fs.mkdirSync(runtimeRoot);
-  fs.cpSync(path.join(root, 'src'), path.join(runtimeRoot, 'src'), { recursive: true });
+  fs.cpSync(path.join(root, 'ui'), path.join(runtimeRoot, 'src'), { recursive: true });
+  fs.cpSync(path.join(root, 'scripts'), path.join(runtimeRoot, 'scripts'), { recursive: true });
+  fs.cpSync(path.join(root, '.agents'), path.join(runtimeRoot, '.agents'), { recursive: true });
+  fs.writeFileSync(path.join(runtimeRoot, 'package.json'), JSON.stringify({name: 'quintpact-vas', version: '2.11.0'}));
   fs.copyFileSync(path.join(root, 'Run-VAS-System.bat'), path.join(runtimeRoot, 'Run-VAS-System.bat'));
   const probe = spawnSync(process.env.VAS_PYTHON || 'python.exe', ['-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', windowsHide: true });
   assert.equal(probe.status, 0, 'Python 3.10+ is required');
@@ -90,7 +93,7 @@ async function start() {
   const state = path.join(task, 'runtime-state');
   fs.mkdirSync(state);
   server = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-    path.join(root, 'scripts/Start-VAS.ps1'), '-Server', '-NoBrowser', '-RootPath', runtimeRoot,
+    path.join(runtimeRoot, 'scripts/Start-VAS.ps1'), '-Server', '-NoBrowser', '-RootPath', runtimeRoot,
     '-StateRoot', state, '-Port', String(await freePort()), '-IdleTimeoutSeconds', '600'],
   { cwd: root, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   server.stdout.on('data', value => { serverOutput += value; });

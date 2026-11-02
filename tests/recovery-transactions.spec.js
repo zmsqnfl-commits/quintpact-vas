@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const source = name => pathToFileURL(path.join(__dirname, '..', 'src', name)).href;
+const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).href;
 
 for (const replace of [false, true]) for (const failure of ['quota', 'abort']) {
   test(`memory ${replace ? 'replace' : 'merge'} rolls back ${failure} and retries intact`, async ({ page }) => {
