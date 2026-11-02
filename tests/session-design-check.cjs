@@ -81,21 +81,20 @@ async function start() {
   task = fs.mkdtempSync(path.join(os.tmpdir(), 'vas-session-design-'));
   runtimeRoot = path.join(task, 'runtime');
   fs.mkdirSync(runtimeRoot);
-  fs.cpSync(path.join(root, 'ui'), path.join(runtimeRoot, 'src'), { recursive: true });
-  fs.cpSync(path.join(root, 'scripts'), path.join(runtimeRoot, 'scripts'), { recursive: true });
-  fs.cpSync(path.join(root, '.agents'), path.join(runtimeRoot, '.agents'), { recursive: true });
-  fs.writeFileSync(path.join(runtimeRoot, 'package.json'), JSON.stringify({name: 'quintpact-vas', version: '2.11.0'}));
-  fs.copyFileSync(path.join(root, 'Run-VAS-System.bat'), path.join(runtimeRoot, 'Run-VAS-System.bat'));
   const probe = spawnSync(process.env.VAS_PYTHON || 'python.exe', ['-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', windowsHide: true });
   assert.equal(probe.status, 0, 'Python 3.10+ is required');
   python = probe.stdout.trim();
+  const installed = spawnSync(python, ['-B', path.join(__dirname, 'runtime_install.py'), runtimeRoot],
+    { encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  assert.equal(installed.status, 0, String(installed.error || installed.stderr || 'Runtime fixture installation failed'));
+  assert.ok(fs.existsSync(path.join(runtimeRoot, 'scripts/Start-VAS.ps1')));
   env = { ...process.env, LOCALAPPDATA: path.join(task, 'local-appdata'), VAS_PYTHON: python, PYTHONUTF8: '1', PYTHONDONTWRITEBYTECODE: '1' };
   const state = path.join(task, 'runtime-state');
   fs.mkdirSync(state);
   server = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-    path.join(runtimeRoot, 'scripts/Start-VAS.ps1'), '-Server', '-NoBrowser', '-RootPath', runtimeRoot,
+    'scripts\\Start-VAS.ps1', '-Server', '-NoBrowser',
     '-StateRoot', state, '-Port', String(await freePort()), '-IdleTimeoutSeconds', '600'],
-  { cwd: root, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+  { cwd: runtimeRoot, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   server.stdout.on('data', value => { serverOutput += value; });
   server.stderr.on('data', value => { serverOutput += value; });
   for (let attempt = 0; attempt < 100; attempt++) {

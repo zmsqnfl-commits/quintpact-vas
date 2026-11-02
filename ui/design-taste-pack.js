@@ -83,7 +83,7 @@
     const presetPrompt = selectedPreset.prompt || '';
 
     return [
-      '[VAS DESIGN STUDIO PROMPT]\nPreset: ' + presetKey + '\nTaste Profile: ' + profile.label + '\nTaste Source: ' + profile.source,
+      '[VAS DESIGN STUDIO PROMPT]\nPreset: ' + presetKey + '\nTaste Profile: ' + profile.label,
       '[REFERENCE USAGE]\n' + window.VASDesignReference.usagePrompt(),
       '[DESIGN ANALYSIS]\n' + window.VASAgentResources.designAnalysis,
       '[DESIGN SKILL]\n' + window.VASAgentResources.designer,

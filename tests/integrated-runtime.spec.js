@@ -13,14 +13,19 @@ test.beforeAll(async () => {
   directory = fs.mkdtempSync(path.join(os.tmpdir(), 'vas-connected-'));
   runtimeRoot = path.join(directory, '검증 원본'); state = path.join(directory, 'isolated state');
   fs.mkdirSync(runtimeRoot, { recursive: true });
-  fs.cpSync(path.join(root, 'ui'), path.join(runtimeRoot, 'src'), { recursive: true });
-  fs.cpSync(path.join(root, 'scripts'), path.join(runtimeRoot, 'scripts'), { recursive: true });
-  fs.cpSync(path.join(root, '.agents'), path.join(runtimeRoot, '.agents'), { recursive: true });
-  fs.writeFileSync(path.join(runtimeRoot, 'package.json'), JSON.stringify({name: 'quintpact-vas', version: '2.11.0'}));
-  fs.mkdirSync(path.join(runtimeRoot, 'docs'));
+  const installed = spawnSync(process.env.VAS_PYTHON || 'python', ['-B', path.join(__dirname, 'runtime_install.py'), runtimeRoot],
+    { encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  if (installed.status !== 0 || !fs.existsSync(path.join(runtimeRoot, 'scripts/Start-VAS.ps1'))) {
+    throw new Error('Runtime fixture installation failed: ' + (installed.error || installed.stderr || installed.status));
+  }
   const port = await new Promise(resolve => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => resolve(p)); }); });
-  const launch = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(runtimeRoot, 'scripts/Start-VAS.ps1'), '-NoBrowser', '-RootPath', runtimeRoot, '-StateRoot', state, '-Port', String(port), '-IdleTimeoutSeconds', '180'], { windowsHide: true, cwd: directory, timeout: 25000 });
-  if (launch.status !== 0) throw new Error('Synthetic Windows runtime launch failed: ' + launch.status);
+  const launch = spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+    'scripts\\Start-VAS.ps1', '-NoBrowser', '-StateRoot', state, '-Port', String(port), '-IdleTimeoutSeconds', '180'],
+    { encoding: 'utf8', windowsHide: true, cwd: runtimeRoot, timeout: 25000 });
+  if (launch.status !== 0) {
+    throw new Error('Synthetic Windows runtime launch failed: ' + launch.status + ' ' +
+      String(launch.error || launch.stderr || launch.stdout || '').slice(0, 2000));
+  }
   const name = fs.readdirSync(state).find(n => /^runtime-.*\.json$/.test(n));
   const details = JSON.parse(fs.readFileSync(path.join(state, name), 'utf8').replace(/^\uFEFF/, ''));
   base = 'http://127.0.0.1:' + details.port; token = details.token;

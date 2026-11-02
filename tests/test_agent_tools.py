@@ -91,6 +91,10 @@ def test_generated_agent_resources_and_native_configs():
         raw = (ROOT / f".agents/skills/{role}/SKILL.md").read_text(encoding="utf-8")
         assert instructions == raw.split("---", 2)[2].strip()
         assert f"[ROLE INSTRUCTIONS: {role}]\n{instructions}" in resource["workflow"]
+        shared = resource["portableRoles"][role]
+        assert shared == instructions.split("\n## VAS 프로젝트에서 추가로 확인할 사항\n", 1)[0].rstrip()
+        assert len(shared.splitlines()) >= 6
+        assert all(value not in shared for value in ("scripts/", ".agents/", "docs/", "ui/", "prepare", "checkpoint"))
     for profile in resource["profiles"].values():
         body = (ROOT / profile["source"]).read_text(encoding="utf-8")
         assert profile["rules"] == [line[2:] for line in body.splitlines() if line.startswith("- ")]

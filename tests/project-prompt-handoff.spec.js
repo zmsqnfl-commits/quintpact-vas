@@ -63,8 +63,11 @@ test('editing an external target while initial layout is pending cannot inherit 
   await page.locator('#copyPrompt').click();
   await expect.poll(() => page.evaluate(() => window.copiedPrompt)).toContain('C:\\OtherProject');
   expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('ROOT ONLY');
-  expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('scripts/vas-project-prompt.py');
-  expect(await page.evaluate(() => window.copiedPrompt)).not.toContain('모두 최상위 src/');
+  const portable = await page.evaluate(() => ({ copied: window.copiedPrompt, roles: VASAgentResources.portableRoles }));
+  for (const [role, instructions] of Object.entries(portable.roles)) {
+    expect(portable.copied).toContain('[ROLE INSTRUCTIONS: ' + role + ']\n' + instructions);
+  }
+  expect(portable.copied).not.toMatch(/scripts\/|\.agents\/|ui\/|모두 최상위 src\//);
   expect(state.reads).toBe(0);
 });
 

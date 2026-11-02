@@ -20,6 +20,13 @@ def body(relative: str) -> str:
     return text
 
 
+def portable_role(skill: str) -> str:
+    shared, separator, local = skill.partition("\n## VAS 프로젝트에서 추가로 확인할 사항\n")
+    if not separator or not shared.strip() or not local.strip():
+        raise ValueError("Each role needs shared instructions and a separate VAS section")
+    return shared.rstrip()
+
+
 def outputs() -> dict[str, str]:
     profiles = {}
     folder = ROOT / ".agents/skills/designer/references/profiles"
@@ -33,13 +40,15 @@ def outputs() -> dict[str, str]:
         }
     roles = {role: body(f".agents/skills/{role}/SKILL.md")
              for role in ("implementer", "designer", "reviewer")}
+    portable_roles = {role: portable_role(skill) for role, skill in roles.items()}
     workflow = body(".agents/HANDOFF-WORKFLOW.md") + "\n\n" + "\n\n".join(
         f"[ROLE INSTRUCTIONS: {role}]\n{instructions}" for role, instructions in roles.items())
     data = {
-        "designer": body(".agents/skills/designer/SKILL.md"),
+        "designer": portable_roles["designer"],
         "designAnalysis": body(".agents/skills/design-analysis/SKILL.md"),
         "workflow": workflow,
         "roles": roles,
+        "portableRoles": portable_roles,
         "profiles": profiles,
     }
     encoded = json.dumps(data, ensure_ascii=False, indent=2)

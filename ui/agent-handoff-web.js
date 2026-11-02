@@ -59,7 +59,7 @@
     if (context && JSON.stringify(sanitize(context, 0)) !== JSON.stringify(context)) changed.push('추가 요구사항·디자인');
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.12.0' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.12.1' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),
@@ -189,8 +189,12 @@
     const isNew = project.sourceType === 'new';
     const folder = isNew ? '' : localFolder(folderPath);
     const inStarter = !folder && document.context && document.context.projectLayout === 'vas-project';
-    const workflow = inStarter && global.VASAgentResources ? VASAgentResources.workflow :
-      '주 실행자가 대상 앱의 지침과 원본을 확인하고 요청 범위를 구현하세요. 가능한 경우에만 독립 작업을 위임하세요. 실제 실행한 검사·결과·미실행 항목과 다음 행동을 보고하세요.';
+    const resources = global.VASAgentResources;
+    const workflow = inStarter && resources ? resources.workflow : [
+      '주 실행자가 대상 앱의 지침과 원본을 확인하고 요청 범위를 구현하세요. 역할별 관점은 직접 적용할 수 있습니다. 독립 작업과 위임 도구가 있을 때만 위임하고 실제 실행한 검사·결과·미실행 항목과 다음 행동을 보고하세요.',
+      ...Object.entries(resources && resources.portableRoles || {}).map(([role, instructions]) =>
+        '[ROLE INSTRUCTIONS: ' + role + ']\n' + instructions)
+    ].join('\n\n');
     const opening = inStarter
       ? tool + '에서 지금 연 프로젝트 폴더 전체를 사용하세요. 루트의 project-layout.json과 프로젝트 지침을 먼저 확인하세요.'
       : (isNew ? tool + '에서 새 앱의 프로젝트 폴더를 여세요.' : tool + '에서 실제 작업할 원본 프로젝트 폴더를 여세요.');
