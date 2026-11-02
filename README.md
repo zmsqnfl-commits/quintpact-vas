@@ -1,4 +1,4 @@
-# VAS 2.11.0
+# VAS 2.11.1
 
 **Keep coding agents aligned from request to delivery.**
 
@@ -6,7 +6,17 @@ VAS (Vibecoding Agent System) is a local workflow tool that helps coding agents 
 
 The main agent uses VAS to save and resume settings and progress, prepare current instructions, coordinate scoped supporting work, and turn assessment into concrete next actions. Selected file observations help it distinguish checks that still apply from checks affected by later changes. Your coding host supplies the actual file, command, browser and delegation tools. Design choices are one part of that task context, used when the work needs them.
 
-**[Download VAS 2.11.0](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.11.0)** · **[Get started](#get-started-on-windows)** · **[Implementation and verification](docs/CHAT-EXECUTION.md)** · **[Release notes](docs/releases/2.11.0.md)**
+**[Download the Windows project ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.11.1/VAS-2.11.1-windows.zip)** · [Get started](#get-started-on-windows) · [2.11.1 release notes](docs/releases/2.11.1.md)
+
+## What's new in VAS 2.11.1
+
+Open the extracted project folder in your coding host and send the following message to start setup in the chat.
+
+> 이 폴더를 프로젝트로 지정하고 색인해줘
+
+In English, you can say “Use this folder as my project and index it.” In an empty starter, the agent asks who will use the app and what they need to do first. In an existing app, it identifies a real feature and asks what to change. If you ask for the structure only, the agent reports what it found and stops there.
+
+Answer the remaining questions in the same chat. Once you ask for implementation, the agent builds in `src/` and checks the agreed result. In a three-turn Codex trial, the first two turns produced no file changes. After the user requested a Python command-line tool, Codex created `src/minutes_to_seconds.py` and verified that 3 minutes produced 180 seconds and 0 minutes produced 0 seconds.
 
 ## One connected workflow
 
@@ -56,32 +66,35 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
-1. Open the [v2.11.0 release](https://github.com/zmsqnfl-commits/quintpact-vas/releases/tag/v2.11.0) and download **`VAS-2.11.0-windows.zip`** from its assets.
+1. Download the project starter. [VAS-2.11.1-windows.zip](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.11.1/VAS-2.11.1-windows.zip)
 2. Extract the entire archive into a **new folder**. Rename the folder for your app before creating its first saved session.
-3. Open that whole folder in your coding AI and describe what to build. The agent works in the project's `src/` and keeps the bundled `.vas/` tools separate.
+3. Open the folder containing `src/` and `.vas/` in Codex or start Claude Code from that directory. Send `이 폴더를 프로젝트로 지정하고 색인해줘` to begin the setup conversation. A concrete build request can also start work directly.
 4. To edit shared project instructions on screen, double-click `Run-VAS-System.bat`, change **Project working instructions**, and save. Then say “Continue using the saved instructions” in the coding chat. The screen and agent use the same file, including before a private session exists.
 5. Continue in the conversation. The main agent reads the latest instructions, saves the agreed task context when available, prepares the work, and uses its host tools to implement and check the application.
-6. Review the deliverable, actual checks and remaining conditions. On the same PC and installation, “Resume the saved task” reads the latest settings and progress, rechecks current files, and continues with the remaining actions.
+6. Review the deliverable and any remaining checks. On the same PC and installation, a new chat can restore saved decisions and progress when the private session store was written successfully. If storage was unavailable, the host can still inspect the app files and continue from them.
 
 ```text
 your-project/
 ├── src/                       Your application source
 ├── .vas/                      Bundled VAS tools, UI and guides
 ├── .agents/                   Project instructions and design-analysis skill
-├── AGENTS.md                  Coding-host entry instructions
+├── AGENTS.md                  Codex project instructions
+├── CLAUDE.md                  Claude Code project instructions
 ├── Run-VAS-System.bat          Open VAS settings
 └── VAS-PROJECT-PROMPT.json     Created when project instructions are saved
 ```
 
 **GitHub's Code → Download ZIP and the automatic “Source code” assets are developer sources.** Their root `src/` contains VAS itself. Use the named Windows release ZIP for the project layout above. The standalone client form and GitHub Pages are also separate from a project installation. See [the project-folder guide](docs/PROJECT-ROOT.md).
 
-Saved instructions are portable with the project; private chat sessions and target bindings are not. Concurrent screen edits require a refresh or comparison, and a failed save is not shown as success. Missing private-store permissions are reported separately from reading the project instructions. Your current explicit request and higher-priority host rules still apply.
+Saved instructions travel with the project. Private chat sessions and target bindings stay on the PC where they were recorded. Concurrent screen edits require a refresh or comparison, and a failed save is not shown as success. Missing private-store permissions are reported separately from reading the project instructions. Your current explicit request and higher-priority host rules still apply.
+
+**Claude Code.** Start Claude Code in the extracted project root and send the same opening message. In Claude Code 2.1.316, `/context` listed the starter's `CLAUDE.md` as project memory, its `design-analysis` skill and all three VAS project agents. The CLI required authentication before it could answer the test message, so the model's first setup question remains unverified. [Claude Code project instructions](https://code.claude.com/docs/en/memory)
 
 The host handles the session commands and result format. Users do not need to author a settings file, execution record or result JSON.
 
-For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.11.0.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
+For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.11.1.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
 
-**Upgrading from 2.10.x changes the package layout.** Close the old runtime, back up your application and user files, and extract 2.11.0 into a fresh folder. Do not unpack a new release over an existing app. Keep your app's `src/`, assets, configuration and saved project prompt, then transfer only the application-owned files into the new project after checking for conflicts. Do not copy the old VAS tool `src/` as your app, overwrite existing app instructions, or delete the original installation until the new setup is checked. A new path or PC does not automatically migrate private sessions, progress or target bindings; the prompt file is not a session backup. See [upgrade guidance](docs/MIGRATION.md) and [saved settings](docs/CHAT-STATE.md).
+**Upgrading from 2.10.x changes the package layout.** Close the old runtime, back up your application and user files, and extract 2.11.1 into a fresh folder. Do not unpack a new release over an existing app. Keep your app's `src/`, assets, configuration and saved project prompt, then transfer only the application-owned files into the new project after checking for conflicts. Do not copy the old VAS tool `src/` as your app, overwrite existing app instructions, or delete the original installation until the new setup is checked. A new path or PC does not automatically migrate private sessions, progress or target bindings; the prompt file is not a session backup. See [upgrade guidance](docs/MIGRATION.md) and [saved settings](docs/CHAT-STATE.md).
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -98,18 +111,6 @@ These records do not execute commands, authenticate host reports or grant new pe
 Agent reports, VAS assessment and user acceptance remain separate. When a task has only automatic conditions and all relevant evidence is consistent, `followUp.actions` can be empty while the assessment remains `needs-verification`. That does not invent another manual test or approval step. Originally required manual/static conditions remain visible. Further work uses refreshed settings and a new preparation; automatic iteration numbering and a complete result history are not provided.
 
 See [progress and resume](docs/CHAT-PROGRESS.md), [work and file observations](docs/CHAT-WORK.md), [assessment follow-up](docs/CHAT-FOLLOWUP.md), and the [agent workflow](.agents/HANDOFF-WORKFLOW.md) for the host procedure and limits.
-
-## What's new in VAS 2.11.0
-
-This release makes the downloaded folder the actual project and connects editable instructions to the agent's next implementation and verification work.
-
-- **Build inside the folder you opened.** The Windows starter keeps user app code in root `src/` and VAS tools in `.vas/`, with project instructions that explain the boundary to the agent.
-- **Edit the brief once.** The starter hub and host CLI use the same revisioned project prompt. The agent rereads it before work and delegation instead of relying only on an old copied prompt or conversation summary.
-- **Keep samples within scope.** Typography, color, layout, imagery and spacing guide the requested app. A sample's pricing, checkout, login or domain-specific features become requirements only when the actual task asks for them.
-- **Analyze your own references.** A bundled design-analysis skill connects observed image elements to app components and verification, while distinguishing observed facts, proposed values and unavailable evidence.
-- **Inspect what was actually rendered.** The workflow now calls out real font loading, Korean fallback, narrow layouts, long data, contrast, interactions and reload behavior. Failed or unavailable checks remain visible.
-
-The progress, scoped work, selected-file observations and assessment follow-up introduced in [2.10.0](docs/releases/2.10.0.md) remain in use. Handoff v3 / result v1 contracts and existing storage protections remain available. Read the [2.11.0 changes and verification boundaries](docs/releases/2.11.0.md) and the [operations guide](docs/OPERATIONS.md).
 
 ## A working deliverable: Morrow
 
@@ -131,7 +132,7 @@ Application checks include PC and mobile widths, 320 CSS px reflow, empty and lo
 
 When you use it, **Save to chat settings** commits the selection. The main agent reads the latest settings before continuing. Opening a sample or saving a design does not wake the AI or replace its active conversation context. GitHub Pages previews are separate from the PC's private task store.
 
-[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.11.0) · [Connect a local task](docs/CHAT-DESIGN.md)
+[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.11.1) · [Connect a local task](docs/CHAT-DESIGN.md)
 
 <details>
 <summary>View design collections and interactive samples</summary>
@@ -157,7 +158,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four interactive sample websites
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.11.0). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.11.1). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -183,9 +184,9 @@ The image is an earlier promotional composition of the app and design samples.
 
 ## Verification and development
 
-The [2.11.0 release notes](docs/releases/2.11.0.md) describe the release scope and verification boundaries. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
+The [2.11.1 release notes](docs/releases/2.11.1.md) describe the chat setup changes and the observed host behavior. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs. Release checks and a coding AI's actual application work are different evidence sources.
 
-Application verification for this update separately inspected Bento, Swiss and external-image examples in Windows Chrome at desktop and mobile widths. It found and corrected example-level font, contrast and long-data issues. Two fresh coding-host runs reached their time limit; the separate rendered checks are not presented as completed autonomous host runs. The [2.11.0 verification record](docs/verification/2.11.0-project-workflow.md) separates those observations from product regressions. The earlier [2.10.0 agent-flow record](docs/verification/2.10.0-agent-flow.md) remains available.
+Application verification for 2.11.0 separately inspected Bento, Swiss and external-image examples in Windows Chrome at desktop and mobile widths. It found and corrected example-level font, contrast and long-data issues. Two fresh coding-host runs reached their time limit; the separate rendered checks are not presented as completed autonomous host runs. The [2.11.0 verification record](docs/verification/2.11.0-project-workflow.md) separates those observations from product regressions. The earlier [2.10.0 agent-flow record](docs/verification/2.10.0-agent-flow.md) remains available.
 
 The required gates cover Python contracts and local storage, browser workflows, session/design integration, Windows HTTP behavior and extracted-package contents. Actual-host checks exercise instruction discovery, saved-task resume and result linkage separately. A successful implementation/reviewer delegation exercise does not mean every app run uses subagents; tools and execution records determine that for each run. An application's remaining manual checks stay visible even when its automated checks pass.
 

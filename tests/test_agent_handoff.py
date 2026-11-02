@@ -1,4 +1,4 @@
-"""Safety and compatibility tests for VAS 2.11.0 AI handoff packages."""
+"""Safety and compatibility tests for VAS 2.11.1 AI handoff packages."""
 from __future__ import annotations
 
 import hashlib

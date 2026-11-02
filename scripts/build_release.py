@@ -1,4 +1,4 @@
-"""VAS 2.11.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.11.1 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -201,6 +201,7 @@ def build_windows(stage: Path) -> Path:
 
 ZIP을 새 위치에 **전체 압축 해제**한 뒤, Run-VAS-System.bat과 src가 있는 폴더의 이름을 프로젝트 이름으로 바꾸세요.
 그 폴더 자체를 코딩 AI에서 열고 “이 폴더를 프로젝트로 지정하고 색인해줘”라고 말하세요.
+Claude Code를 쓰면 같은 폴더에서 터미널을 열어 claude를 실행하고 위 문장을 입력하세요. 프로젝트 지침은 루트 CLAUDE.md에 있습니다.
 AI가 새 앱인지 기존 앱인지 확인하고, 필요한 기능과 완료조건을 한두 가지씩 묻습니다.
 답을 정리한 뒤 “이 조건으로 만들어줘”라고 하면 src/에 구현하고 결과를 확인합니다.
 작업이 이미 정해졌다면 “재고 관리 앱을 만들어줘”처럼 바로 요청할 수도 있습니다.

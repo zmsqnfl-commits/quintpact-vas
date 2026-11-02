@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 BASE = Path(__file__).resolve().parents[1]
-ARCHIVE = BASE / "dist" / "VAS-2.11.0-windows.zip"
+ARCHIVE = BASE / "dist" / "VAS-2.11.1-windows.zip"
 POWERSHELL = shutil.which("powershell.exe")
 
 
@@ -59,7 +59,7 @@ def start_release(root, state, *, launcher=None):
         raise AssertionError(f"release launcher failed: {output}")
     deadline = time.time() + 10
     while time.time() < deadline:
-        for path in state.glob("runtime-2.11.0-*.json"):
+        for path in state.glob("runtime-2.11.1-*.json"):
             try:
                 return json.loads(path.read_text(encoding="utf-8-sig"))
             except (OSError, ValueError):
@@ -77,7 +77,7 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             with zipfile.ZipFile(ARCHIVE) as bundle:
                 bundle.extractall(base)
             project = base / "우리 앱 & 재고"
-            (base / "VAS-2.11.0-windows").rename(project)
+            (base / "VAS-2.11.1-windows").rename(project)
             engine = project / ".vas"
             state = base / "pc-state"
             sentinel = project / "src" / "inventory.txt"
