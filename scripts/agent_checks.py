@@ -38,7 +38,7 @@ WRITE_ROOTS = {
     "tester": {"tests"},
     "security": {"docs"},
 }
-PROTECTED = {"workspace", "dist", "node_modules", ".git", ".vas", ".vas_backups", ".temp data", "logs", "backups"}
+PROTECTED = {"workspace", "dist", "node_modules", ".git", ".vas", ".vas_backups", "vas-state", ".temp data", "logs", "backups"}
 WRITE_TOOLS = {"write", "edit", "write_to_file", "replace_file_content", "multi_replace_file_content"}
 
 

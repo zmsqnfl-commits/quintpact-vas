@@ -88,3 +88,29 @@ function Invoke-VASProjectPromptHttpRoute {
         Write-VASError $Context $status $message $code
     }
 }
+
+function Invoke-VASProjectProgressRoute {
+    param([Net.HttpListenerContext]$Context, $State)
+    if ($State.Layout -ne 'project') {
+        Write-VASError $Context 404 '현재 프로젝트에서만 진행 요약을 조회할 수 있습니다.' 'shared_progress_layout'; return
+    }
+    $request = $Context.Request
+    if ($request.HttpMethod -ne 'GET') {
+        $Context.Response.Headers['Allow'] = 'GET'
+        Write-VASError $Context 405 '지원하지 않는 요청입니다.' 'shared_progress_method'; return
+    }
+    if ($request.Url.Query.Length -gt 0 -or $request.HasEntityBody) {
+        Write-VASError $Context 400 '요청에 경로나 본문을 포함하지 마세요.' 'shared_progress_invalid_request'; return
+    }
+    try {
+        $result = Invoke-VASProjectPromptProcess $State.RootPath 'progress'
+        Write-VASResponse $Context 200 $result
+    } catch {
+        $code = $_.Exception.Message
+        if ($code -in @('shared_progress_invalid', 'shared_progress_unsafe', 'shared_progress_full')) {
+            Write-VASError $Context 409 '공유 진행 기록을 확인할 수 없습니다.' $code
+        } else {
+            Write-VASError $Context 503 '프로젝트 진행 기록에 접근할 수 없습니다.' 'shared_progress_unavailable'
+        }
+    }
+}

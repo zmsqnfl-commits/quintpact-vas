@@ -59,7 +59,7 @@
     if (context && JSON.stringify(sanitize(context, 0)) !== JSON.stringify(context)) changed.push('추가 요구사항·디자인');
     const document = {
       format: 'vas-ai-handoff', schemaVersion: 3,
-      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.12.1' },
+      generatedBy: { name: 'VAS', version: global.VASConfig ? VASConfig.version : '2.13.0' },
       locale: 'ko-KR', mode: 'intent-only',
       workflow: {
         handoffId: '', iteration: Math.max(1, Number(workflow.iteration) || 1),
@@ -206,7 +206,7 @@
       sourceRule = '현재 폴더에 project-layout.json과 ui/vas-hub.html이 있으면 ' + appRule + ' 일반 프로젝트는 현재 구조를 먼저 확인하세요.';
     }
     const prepareRule = inStarter
-      ? '편집 전에 scripts/vas-project-prompt.py get으로 현재 지시를 읽고 scripts/vas-session.py로 세션을 조회하거나 합의한 작업을 등록하세요. prepare 결과가 prepared이면 진행하세요. 구간을 마칠 때 실제 검사와 다음 행동을 checkpoint에 남기고 resume으로 다시 확인하세요. 저장이 막히면 어떤 기록이 남지 않았는지 알려주세요.\n\n'
+      ? '먼저 python -B scripts/vas.py start로 이 앱의 저장 지시·세션을 읽으세요. 이전 앱이 언급됐고 이전할지 불분명하면 그 선택만 물으세요. 확인된 단일 문구·스타일 수정은 실제 검사 뒤 짧은 finish로 기록하세요. 여러 파일·데이터·이전·배포 작업은 합의한 범위와 완료조건을 세션에 저장하고 실제 판본의 prepare가 prepared이면 편집하세요. 구간 끝에는 python -B scripts/vas.py finish로 실제 검사와 다음 행동을 기록하고 재조회 결과를 확인하세요. 기록이 막히면 실패한 단계를 알려주세요.\n\n'
       : '';
     const designDirection = VASTaskPolicy.direction(task.designScope) + '\n' + (design.included === true && design.direction
       ? '디자인 참고 문구 (기능 요구사항 아님):\n' + clean(design.direction, 12000)

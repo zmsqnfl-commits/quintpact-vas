@@ -185,6 +185,12 @@ def prepare(manager, session_id, expected_revision):
 
 
 def assess(manager, session_id, expected_revision, raw_result):
+    response, _ = assess_with_result(manager, session_id, expected_revision, raw_result)
+    return response
+
+
+def assess_with_result(manager, session_id, expected_revision, raw_result):
+    """Retain the validated report for local callers that need its check summaries."""
     prepared = prepare(manager, session_id, expected_revision)
     require(prepared["status"] == "prepared", "execution_needs_input")
     handoff = prepared["handoff"]
@@ -236,4 +242,4 @@ def assess(manager, session_id, expected_revision, raw_result):
             handoff["context"]["session"]["agentResourcesSha256"], "execution_resources_changed")
     require(snapshot_hash(project_snapshot(manager, after["target"]["path"])) ==
             snapshot_hash(handoff["context"].get("projectPrompt")), "project_prompt_conflict")
-    return dict({"status": "assessed", "reportedStatus": result["reportedStatus"], "assessment": assessment}, **extra)
+    return dict({"status": "assessed", "reportedStatus": result["reportedStatus"], "assessment": assessment}, **extra), result

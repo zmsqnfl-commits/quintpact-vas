@@ -164,38 +164,48 @@ class _Project:
 
 
 @contextmanager
-def _pin(project):
-    """Pin ancestors on Windows; use directory-relative operations on POSIX."""
+def _pin_windows(directories):
+    """Pin each real directory in parent-first order without allowing renames."""
+    import ctypes
+    from ctypes import wintypes
+    api = ctypes.WinDLL("kernel32", use_last_error=True)
+    api.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+                               wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    api.CreateFileW.restype = wintypes.HANDLE
+    api.CloseHandle.argtypes = [wintypes.HANDLE]
     handles = []
     try:
-        if os.name == "nt":
-            import ctypes
-            from ctypes import wintypes
-            api = ctypes.WinDLL("kernel32", use_last_error=True)
-            api.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
-                                       wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
-            api.CreateFileW.restype = wintypes.HANDLE
-            api.CloseHandle.argtypes = [wintypes.HANDLE]
-            # No FILE_SHARE_DELETE: a pinned ancestor cannot be renamed or replaced.
-            for path in (*reversed(project.engine.parents), project.engine, ui_directory(project.engine)):
-                handle = api.CreateFileW(str(path), 0, 3, None, 3, 0x02200000, None)
-                if handle == ctypes.c_void_p(-1).value:
-                    raise ctypes.WinError(ctypes.get_last_error())
-                handles.append(handle)
-                data = path.lstat()
-                _require(stat.S_ISDIR(data.st_mode) and not getattr(data, "st_file_attributes", 0) & 0x400,
-                         "unsafe")
-        else:
-            project.dir_fd = os.open(project.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-            _require(os.path.samestat(os.fstat(project.dir_fd), project.root_info), "unsafe")
+        for path in directories:
+            handle = api.CreateFileW(str(path), 0, 3, None, 3, 0x02200000, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            handles.append(handle)
+            data = path.lstat()
+            _require(stat.S_ISDIR(data.st_mode) and not getattr(data, "st_file_attributes", 0) & 0x400,
+                     "unsafe")
+        yield
+    finally:
+        for handle in reversed(handles):
+            api.CloseHandle(handle)
+
+
+@contextmanager
+def _pin(project, extra_directories=()):
+    """Pin ancestors on Windows; use directory-relative operations on POSIX."""
+    if os.name == "nt":
+        paths = (*reversed(project.engine.parents), project.engine, ui_directory(project.engine), *extra_directories)
+        with _pin_windows(paths):
+            project.guard()
+            yield
+        return
+    project.dir_fd = os.open(project.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        _require(os.path.samestat(os.fstat(project.dir_fd), project.root_info), "unsafe")
         project.guard()
         yield
     finally:
-        if project.dir_fd is not None:
-            os.close(project.dir_fd)
-            project.dir_fd = None
-        for handle in reversed(handles):
-            api.CloseHandle(handle)
+        os.close(project.dir_fd)
+        project.dir_fd = None
 
 
 @contextmanager
@@ -241,6 +251,40 @@ def _locked(project):
                     fcntl.flock(fd, fcntl.LOCK_UN)
         finally:
             os.close(fd)
+
+
+def read_project_start(engine):
+    """Read only the saved prompt and whether src contains more than its placeholder."""
+    project = _Project(engine)
+    src = project.root / "src"
+    try:
+        with _pin(project, (src,)), _locked(project):
+            prompt, _ = project.read()
+            # The directory path is pinned on Windows. On POSIX enumerate the real
+            # child of the pinned root descriptor, never a link replacing src.
+            fd = None
+            try:
+                if os.name != "nt":
+                    fd = os.open("src", os.O_RDONLY | os.O_NOFOLLOW | os.O_DIRECTORY, dir_fd=project.dir_fd)
+                with os.scandir(src if fd is None else fd) as entries:
+                    state = "empty"
+                    for entry in entries:
+                        if entry.name == ".gitkeep":
+                            info = (os.stat(entry.name, dir_fd=fd, follow_symlinks=False) if fd is not None
+                                    else (src / entry.name).lstat())
+                            if _regular(info) and info.st_size == 0:
+                                continue
+                        state = "nonempty"
+                        break
+                if fd is not None:
+                    _require(os.path.samestat(os.fstat(fd), src.lstat()), "unsafe")
+                project.guard()
+                return prompt, state
+            finally:
+                if fd is not None:
+                    os.close(fd)
+    except OSError as error:
+        raise ProjectPromptError("project_start_unavailable") from error
 
 
 def read_project_prompt(engine):

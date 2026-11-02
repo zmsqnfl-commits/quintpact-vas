@@ -7,6 +7,8 @@ import sys
 import tempfile
 import zipfile
 
+from release_lifecycle_checks import verify_chat_lifecycle
+
 
 def check_folder_intake(test, archive_path, root_name, fingerprints):
     with tempfile.TemporaryDirectory(prefix="vas-intake-") as temporary:
@@ -31,14 +33,17 @@ def check_folder_intake(test, archive_path, root_name, fingerprints):
                         "format": "vas-project-prompt", "schemaVersion": 1, **brief,
                     }), encoding="utf-8")
                 before = fingerprints(app)
-                for command, code, expected in (
-                    ("-B scripts/vas-project-prompt.py get", 0, brief),
-                    ("-B scripts/vas-session.py resume --target .", 1, {"status": "error", "code": "session_not_found"}),
-                ):
-                    test.assertIn(f"`python {command}`", guide)
-                    run = subprocess.run([sys.executable, *command.split()], cwd=app, env=env,
-                                         capture_output=True, encoding="utf-8", timeout=20)
-                    test.assertEqual(run.returncode, code, run.stdout + run.stderr)
-                    test.assertEqual(json.loads(run.stdout), expected)
+                test.assertIn("python -B scripts/vas.py start", guide)
+                run = subprocess.run([sys.executable, "-B", "scripts/vas.py", "start"], cwd=app, env=env,
+                                     capture_output=True, encoding="utf-8", timeout=20)
+                test.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+                result = json.loads(run.stdout)
+                test.assertEqual(result["projectPrompt"], brief)
+                test.assertEqual(result["app"]["state"], "nonempty" if existing else "empty")
+                test.assertEqual(result["session"]["status"], "none")
                 test.assertEqual(fingerprints(app), before)
                 test.assertFalse(private.exists(), "Read-only intake created private session state")
+        # Start again from a distinct, untouched Windows starter for the write/verify/resume exercise.
+        with zipfile.ZipFile(archive_path) as archive:
+            archive.extractall(base / "second")
+        verify_chat_lifecycle(base / "second" / root_name, base)

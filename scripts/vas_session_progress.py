@@ -138,7 +138,18 @@ def _bounded(record):
 def validate_record(record):
     """Stored snapshots must already be canonical: do not repair or reveal tampering."""
     try:
-        _fields(record, {"format", "schemaVersion", "revision", "recordedAt", "basedOn", "savedFor", "summary"})
+        required = {"format", "schemaVersion", "revision", "recordedAt", "basedOn", "savedFor", "summary"}
+        _fields(record, required | {"finish"}, required)
+        if "finish" in record:
+            receipt = record["finish"]
+            _fields(receipt, {"inputSha256", "assessmentStatus", "reportedStatus"})
+            require(isinstance(receipt["inputSha256"], str) and HASH.fullmatch(receipt["inputSha256"]),
+                    "progress_invalid")
+            require(receipt["assessmentStatus"] in (None, "needs-verification", "incomplete",
+                    "complete", "failed", "blocked") and receipt["reportedStatus"] in
+                    (None, "complete", "failed", "incomplete", "blocked"), "progress_invalid")
+            require((receipt["reportedStatus"] is None) == (receipt["assessmentStatus"] is None),
+                    "progress_invalid")
         require(record["format"] == "vas-session-progress" and type(record["schemaVersion"]) is int and
                 record["schemaVersion"] == 1, "progress_invalid")
         require(type(record["revision"]) is int and record["revision"] >= 1, "progress_invalid")
@@ -180,11 +191,15 @@ def progress_view(record, document, project_prompt_hash=None):
 
 
 def checkpoint(manager, session_id, expected_revision, expected_progress_revision, raw,
-               expected_project_prompt_revision=None):
+               expected_project_prompt_revision=None, *, expected_work_revision=None,
+               expected_project_prompt=None, finish_receipt=None):
     """Atomically pair the latest canonical settings next step and a single summary."""
     def update(data):
         record = manager._record(manager._records(data), session_id)
         manager._revision(record, expected_revision)
+        if expected_work_revision is not None:
+            from vas_session_work import revision
+            revision(record, expected_work_revision)
         require(type(expected_progress_revision) is int and expected_progress_revision >= 0,
                 "progress_revision_invalid")
         previous = validate_record(record["progress"])["revision"] if "progress" in record else 0
@@ -193,6 +208,8 @@ def checkpoint(manager, session_id, expected_revision, expected_progress_revisio
         require(not changes, "session_review_required")
         require(manager._view(record)["status"] == "resumed", "target_unavailable")
         prompt = project_snapshot(manager, record["binding"]["path"])
+        if expected_project_prompt is not None:
+            require(prompt == expected_project_prompt, "project_prompt_conflict")
         number = prompt["revision"] if prompt else 0
         if number or expected_project_prompt_revision is not None:
             require(type(expected_project_prompt_revision) is int and
@@ -210,6 +227,8 @@ def checkpoint(manager, session_id, expected_revision, expected_progress_revisio
         if prompt_hash:
             for context in ("basedOn", "savedFor"):
                 progress[context]["projectPromptSha256"] = prompt_hash
+        if finish_receipt is not None:
+            progress["finish"] = finish_receipt
         _bounded(progress)
         validate_record(progress)
         record.update(document=document, progress=progress)

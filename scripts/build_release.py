@@ -1,4 +1,4 @@
-"""VAS 2.12.1 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.13.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -29,7 +29,7 @@ DESIGN_SKILL = Path(".agents/skills/design-analysis")
 CLAUDE_SKILL = Path(".claude/skills/design-analysis")
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
-    ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session",
+    ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session", "vas-state",
 }
 INTERNAL_DOCUMENT_NAMES = {
     name.casefold() for name in (

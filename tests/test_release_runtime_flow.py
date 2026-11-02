@@ -17,7 +17,7 @@ from runtime_install import install_runtime
 
 
 BASE = Path(__file__).resolve().parents[1]
-ARCHIVE = BASE / "dist" / "VAS-2.12.1-windows.zip"
+ARCHIVE = BASE / "dist" / "VAS-2.13.0-windows.zip"
 POWERSHELL = shutil.which("powershell.exe")
 
 
@@ -60,7 +60,7 @@ def start_release(root, state, *, launcher=None):
         raise AssertionError(f"release launcher failed: {output}")
     deadline = time.time() + 10
     while time.time() < deadline:
-        for path in state.glob("runtime-2.12.1-*.json"):
+        for path in state.glob("runtime-2.13.0-*.json"):
             try:
                 return json.loads(path.read_text(encoding="utf-8-sig"))
             except (OSError, ValueError):
@@ -91,7 +91,7 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             with zipfile.ZipFile(ARCHIVE) as bundle:
                 bundle.extractall(base)
             project = base / "우리 앱 & 재고"
-            (base / "VAS-2.12.1-windows").rename(project)
+            (base / "VAS-2.13.0-windows").rename(project)
             self.assertFalse((project / ".vas").exists())
             state = base / "pc-state"
             sentinel = project / "src" / "inventory.txt"
@@ -149,6 +149,40 @@ class ReleaseRuntimeFlowTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "Check the extracted project folder"):
                 start_release(project, base / "invalid-layout-state")
             self.assertFalse((base / "invalid-layout-state").exists())
+
+    def test_other_host_progress_is_readable_without_a_local_session(self):
+        with tempfile.TemporaryDirectory(prefix="vas-progress-runtime-") as temporary:
+            base = Path(temporary)
+            with zipfile.ZipFile(ARCHIVE) as bundle:
+                bundle.extractall(base)
+            project = base / "VAS-2.13.0-windows"
+            cli = [sys.executable, "-B", "scripts/vas.py", "--state-home"]
+            env = {**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+            def run(state, *command):
+                result = subprocess.run(cli + [str(state), *command], cwd=project, env=env,
+                                        capture_output=True, encoding="utf-8", timeout=20)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                return json.loads(result.stdout)
+            first, second = base / "remote-agent", base / "other-host"
+            self.assertEqual(run(first, "start")["session"]["status"], "none")
+            run(first, "finish", "--summary", "메뉴판 제목 수정", "--check", "메뉴판 표시: 통과",
+                "--next-step", "다음 변경 확인")
+            self.assertEqual(run(second, "start")["session"]["status"], "none")
+            runtime = start_release(project, base / "windows-state")
+            client = RuntimeClient(runtime)
+            try:
+                self.assertEqual(client.request("/api/status")[1]["layout"], "project")
+                status, data = client.request("/api/project-progress")
+                self.assertEqual(status, 200)
+                self.assertEqual(data["progress"]["summary"], "메뉴판 제목 수정")
+                self.assertEqual(data["progress"]["nextStep"], "다음 변경 확인")
+                self.assertEqual(data["progress"]["checks"], [{"name":"메뉴판 표시", "status":"passed"}])
+                with self.assertRaises(urllib.error.HTTPError) as denied:
+                    urllib.request.urlopen(client.base + "/api/project-progress", timeout=8)
+                self.assertEqual(denied.exception.code, 401)
+            finally:
+                client.request("/api/shutdown", "POST", {})
+                time.sleep(.5)
 
     def test_legacy_tool_import_index_and_rollback_still_work(self):
         with tempfile.TemporaryDirectory(prefix="vas-release-legacy-") as temporary:

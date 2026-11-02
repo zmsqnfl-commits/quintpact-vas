@@ -128,6 +128,21 @@ def normalize_settings(raw):
     return settings, list(dict.fromkeys(changes))
 
 
+def read_input(stream):
+    raw = stream.read(MAX_INPUT + 1)
+    if len(raw) > MAX_INPUT:
+        raise SessionError("session_input_too_large")
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise SessionError("session_duplicate_key")
+            value[key] = item
+        return value
+    return json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique,
+                      parse_constant=lambda _: (_ for _ in ()).throw(SessionError("session_invalid")))
+
+
 def safe_directory(value):
     path = Path(os.path.abspath(value))
     for current in (path, *path.parents):
@@ -312,7 +327,7 @@ class SessionManager:
             return dict(self._view(record), reviewFields=changes)
         return self.store.mutate(update)
 
-    def resume(self, session_id=None, target=None):
+    def resume(self, session_id=None, target=None, *, allow_empty=False):
         require(not (session_id is not None and target is not None), "selector_conflict")
         records = self._records(self.store.read())
         if session_id is not None:
@@ -321,6 +336,10 @@ class SessionManager:
             canonical = str(self._target(target))
             matches = [record for record in records.values() if
                        os.path.normcase(record["binding"]["path"]) == os.path.normcase(canonical)]
+            if allow_empty:
+                require(len(matches) <= 1, "session_target_ambiguous")
+                if not matches:
+                    return {"status": "empty"}
             require(len(matches) == 1, "session_not_found")
             return self._view(matches[0])
         if not records:

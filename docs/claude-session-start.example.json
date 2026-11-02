@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "-B",
+              "${CLAUDE_PROJECT_DIR}/scripts/vas.py",
+              "start",
+              "--claude-hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -6,6 +6,8 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+
+from release_lifecycle_checks import verify_chat_lifecycle
 from pathlib import Path
 
 
@@ -68,6 +70,7 @@ def verify_git_archive():
                              env=environment, check=True, capture_output=True)
         if json.loads(run.stdout) != {"revision": 0, "prompt": ""}:
             raise ValueError("The source download failed read-only project intake")
+        verify_chat_lifecycle(app, base)
     print("Git source download opened as a renamed VAS project.")
 
 

@@ -262,6 +262,7 @@ function Invoke-VASApiRequest {
             Write-VASError $Context 409 '지금 연 폴더가 이미 앱 프로젝트입니다. 채팅에서 이 폴더의 src/를 사용하세요.' 'project_root_layout'; return
         }
     }
+    if ($path -eq '/api/project-progress') { Invoke-VASProjectProgressRoute $Context $State; return }
     if ($path -eq '/api/project-prompt') { Invoke-VASProjectPromptHttpRoute $Context $State; return }
     if ($path.StartsWith('/api/chat/')) { Invoke-VASSessionHttpRoute $path $Context $State; return }
     $body = $null
@@ -289,7 +290,7 @@ function Invoke-VASApiRequest {
             projectImport = [ordered]@{ available = $importAvailable; reason = $reason }
             python = [ordered]@{ available = [bool]$python.available; command = $python.command; version = $python.version }
         }
-        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.12.1'; layout = $State.Layout; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
+        Write-VASResponse $Context 200 ([ordered]@{ service = 'VAS'; version = '2.13.0'; layout = $State.Layout; port = $State.Port; uptimeSeconds = $uptime; capabilities = $capabilities; memory = Get-VASMemoryStatus $State.MemoryRoot }); return
     }
     if ($path.StartsWith('/api/memory/')) { Invoke-VASMemoryHttpRoute $path $method $body $Context $State; return }
     if ($path -eq '/api/files/read' -and $method -eq 'GET') {
@@ -353,7 +354,7 @@ function Invoke-VASApiRequest {
         $projectId = [string](Get-VASBodyProperty $body 'projectId' '')
         try {
             $package = Export-VASProjectHandoff -Root $State.RootPath -ProjectId $projectId
-            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.12.1-handoff.zip"'
+            $Context.Response.Headers['Content-Disposition'] = 'attachment; filename="VAS-2.13.0-handoff.zip"'
             Write-VASResponse $Context 200 $null 'application/zip' $package.bytes
         } catch {
             if ($_.Exception.Message -eq 'VAS_PROJECT_NOT_FOUND') { Write-VASError $Context 404 '프로젝트를 찾을 수 없습니다.' 'project_not_found' }
@@ -465,7 +466,7 @@ function Start-VASRequestLoop {
                     $context.Response.Abort(); break
                 }
                 if ($context.Request.Url.AbsolutePath -eq '/health') {
-                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.12.1'; runtimeId = $State.RuntimeId; port = $State.Port })
+                    Write-VASResponse $context 200 ([ordered]@{ service = 'VAS'; version = '2.13.0'; runtimeId = $State.RuntimeId; port = $State.Port })
                 } elseif ($context.Request.Url.AbsolutePath.StartsWith('/api/')) {
                     Invoke-VASApiRequest $context $State
                 } else {

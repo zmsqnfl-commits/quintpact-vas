@@ -23,10 +23,13 @@ def pairs(items):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vas-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("operation", choices=("get", "save"))
+    parser.add_argument("operation", choices=("get", "save", "progress"))
     args = parser.parse_args()
     try:
-        if args.operation == "get":
+        if args.operation == "progress":
+            from vas_portable_progress import read_shared_progress
+            result = {"progress": read_shared_progress(args.vas_root)}
+        elif args.operation == "get":
             result = read_project_prompt(args.vas_root)
         else:
             raw = sys.stdin.buffer.read(MAX_BYTES + 1)

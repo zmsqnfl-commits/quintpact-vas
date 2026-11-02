@@ -20,7 +20,7 @@ from vas_project_layout import reserves_engine
 SCHEMA_VERSION = 1
 EXCLUDED_DIRS = {
     ".cache", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".staging",
-    ".tox", ".vas_backups", ".vas-session", ".venv", ".vs", ".vscode", "__pycache__",
+    ".tox", ".vas_backups", ".vas-session", "vas-state", ".venv", ".vs", ".vscode", "__pycache__",
     "bower_components", "build", "coverage", "dist", "env", "node_modules",
     "out", "target", "test-results", "venv",
 }

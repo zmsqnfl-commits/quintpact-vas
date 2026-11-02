@@ -21,7 +21,7 @@ from build_release import is_link
 
 SCHEMA = 1
 EXCLUDED_PARTS = {
-    ".git", ".temp data", "node_modules", "backups", "secrets",
+    ".git", ".temp data", "node_modules", "backups", "secrets", "vas-state",
     "credentials", "private", "__pycache__",
 }
 INTERNAL_DOCUMENT_NAMES = {

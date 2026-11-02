@@ -25,7 +25,7 @@ ALLOWED_SUFFIXES = {
 }
 EXCLUDED_DIRS = {
     ".cache", ".git", ".mypy_cache", ".pytest_cache", ".ruff_cache",
-    ".ssh", ".tox", ".vas", ".vas-session", ".venv", "__pycache__", "build", "cache", "caches",
+    ".ssh", ".tox", ".vas", ".vas-session", "vas-state", ".venv", "__pycache__", "build", "cache", "caches",
     "coverage", "credentials", "dist", "keys", "node_modules", "out",
     "private", "secrets", "target", "vendor", "venv",
 }

@@ -425,6 +425,7 @@ class SessionPrivacyBoundaryTests(unittest.TestCase):
             preserved = {"README.md", "src/app.js"}
             blocked = {
                 ".vas-session/sessions.json", "docs/.VAS-SESSION/private.json",
+                "vas-state/progress/000001.json", "docs/VAS-STATE/progress/000001.ok",
                 "vas-session-store.json", "docs/VAS-SESSION-STORE.JSON",
             }
             for relative in preserved | blocked:

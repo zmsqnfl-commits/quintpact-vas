@@ -2,7 +2,7 @@
 
 `project-layout.json`과 `ui/vas-hub.html`이 있는 현재 폴더는 사용자 앱 프로젝트입니다. 루트 호스트 지침의 정본 `.agents/PROJECT-ROOT.md`에 따라 앱을 최상위 `src/`에서 확인합니다.
 `ui/`, `scripts/`, `docs/`는 VAS 지원 도구입니다. 사용자가 VAS 자체 수정을 요청한 경우 `.agents/DEVELOPMENT.md`를 적용합니다.
-대화 절차의 자세한 내용은 `.agents/BOOTSTRAP.md`에 있습니다.
+프로젝트 루트에서 `python -B scripts/vas.py start`로 앱 상태·지시·세션을 조회하고, 현재 대화에 새 작업과 이전 작업 중 무엇을 원했는지 반영합니다. 대화 절차의 자세한 내용은 `.agents/BOOTSTRAP.md`에 있습니다.
 사용자에게 지침 파일 읽기, BAT 실행, 폼 작성, 프롬프트 복사를 먼저 요구하지 않습니다.
 
 - 새 앱 제작: 대화에서 요구와 작업 폴더를 정리합니다.

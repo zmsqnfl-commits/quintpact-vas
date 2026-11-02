@@ -110,6 +110,7 @@ test('the editor stays hidden on a tool installation and fits a narrow project s
   await fixture(context, 'tool');
   await page.goto(base + '/vas-hub.html?vasToken=' + 'x'.repeat(32));
   await expect(page.locator('#projectPromptPanel')).toBeHidden();
+  await expect(page.locator('#projectProgressPanel')).toBeHidden();
   await context.unroute('**/api/**');
   await fixture(context);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -118,4 +119,33 @@ test('the editor stays hidden on a tool installation and fits a narrow project s
   await page.locator('#projectPromptSave').click();
   await expect(page.locator('#projectPromptStatus')).toContainText('저장했습니다');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('project progress readback distinguishes missing, saved checks and unreadable records', async ({ context, page }) => {
+  await fixture(context);
+  let entry = null, fail = false;
+  await context.route('**/api/project-progress', route => {
+    expect(route.request().method()).toBe('GET');
+    if (fail) return route.fulfill({ status: 409, json: { code: 'project_progress_invalid' } });
+    return route.fulfill({ json: { progress: entry } });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  const status = page.locator('#projectProgressStatus');
+  await expect(status).toContainText('저장한 진행 요약이 없습니다');
+  entry = { revision: 1, phase: 'testing', summary: '<img src=x onerror=alert(1)>', nextStep: '다시 실행',
+    checks: [{ name: '메뉴 표시', status: 'passed' }, { name: '배포 확인', status: 'not-run' }] };
+  await page.locator('#projectProgressReload').click();
+  await expect(status).toContainText('검사 · 프로젝트에 저장된 판본 1');
+  await expect(page.locator('#projectProgressSummary')).toHaveText(entry.summary);
+  await expect(page.locator('#projectProgressSummary img')).toHaveCount(0);
+  await expect(page.locator('#projectProgressNext')).toHaveText('다시 실행');
+  await page.locator('#projectProgressPanel summary').click();
+  await expect(page.locator('#projectProgressChecks')).toContainText('메뉴 표시 · 통과');
+  await expect(page.locator('#projectProgressChecks')).toContainText('배포 확인 · 미실행');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  fail = true;
+  await page.locator('#projectProgressReload').click();
+  await expect(status).toContainText('읽지 못했습니다');
+  await expect(page.locator('#projectProgressBody')).toBeHidden();
 });

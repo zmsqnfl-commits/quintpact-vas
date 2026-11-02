@@ -130,7 +130,7 @@ test('the open project keeps the app and its VAS workflow together even before t
   await page.locator('#copyPrompt').click();
   await expect.poll(() => page.evaluate(() => window.copiedPrompt)).toContain('프로젝트 폴더 전체');
   const copied = await page.evaluate(() => window.copiedPrompt);
-  for (const text of ['프로젝트 폴더 전체', '최상위 src/', 'ui/', 'scripts/vas-project-prompt.py get', 'prepared', 'checkpoint', 'resume']) {
+  for (const text of ['프로젝트 폴더 전체', '최상위 src/', 'ui/', 'python -B scripts/vas.py start', 'prepared', 'python -B scripts/vas.py finish', '재조회']) {
     expect(copied).toContain(text);
   }
   expect(copied).not.toContain('.vas/');

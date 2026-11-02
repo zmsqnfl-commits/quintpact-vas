@@ -86,6 +86,10 @@ a { color: inherit; }
 }
 .prompt-actions .prompt-primary { background: var(--text); color: var(--bg); }
 .prompt-actions button:disabled { cursor: default; opacity: .55; }
+.progress-notes { margin: 12px 0; }
+.progress-notes dt { font-size: 13px; font-weight: 700; }
+.progress-notes dd { margin: 3px 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+#projectProgressChecks { margin: 0 0 12px; padding-inline-start: 20px; overflow-wrap: anywhere; }
 .prompt-panel #projectPromptStatus { margin: 10px 0; font-size: 13px; }
 .prompt-panel summary { display: inline-block; padding: 8px 0; cursor: pointer; text-decoration: underline; }
 .prompt-panel pre { margin: 0; max-height: 12em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }

@@ -17,7 +17,7 @@ MAX_FILE_BYTES = 1024 * 1024
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 HASH = re.compile(r"[a-f0-9]{64}")
 RESERVED = re.compile(r"(?:con|prn|aux|nul|conin\$|conout\$|clock\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\..*)?", re.I)
-PRIVATE_PARTS = {".git", ".ssh", ".aws", ".azure", ".kube", ".vas-session",
+PRIVATE_PARTS = {".git", ".ssh", ".aws", ".azure", ".kube", ".vas-session", "vas-state",
                  "credentials", "secrets", "keys", "vas-session-store.json",
                  ".npmrc", ".pypirc", ".netrc", "_netrc", ".git-credentials", "service-account.json"}
 PRIVATE_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}

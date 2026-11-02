@@ -10,25 +10,10 @@ from pathlib import Path
 # Do not populate a packaged project's reserved engine with bytecode on first use.
 sys.dont_write_bytecode = True
 
-from vas_session import MAX_INPUT, SessionError, SessionManager
+from vas_session import SessionError, SessionManager, read_input
 from vas_session_store import SessionStoreError
 from vas_session_web import dispatch
 from vas_session_execution import assess, prepare
-
-
-def read_input():
-    raw = sys.stdin.buffer.read(MAX_INPUT + 1)
-    if len(raw) > MAX_INPUT:
-        raise SessionError("session_input_too_large")
-    def unique(pairs):
-        value = {}
-        for key, item in pairs:
-            if key in value:
-                raise SessionError("session_duplicate_key")
-            value[key] = item
-        return value
-    return json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique,
-                      parse_constant=lambda _: (_ for _ in ()).throw(SessionError("session_invalid")))
 
 
 def main():
@@ -73,7 +58,7 @@ def main():
     try:
         manager = SessionManager(args.vas_root, args.state_home)
         if args.action == "web":
-            result = dispatch(manager, args.operation, read_input())
+            result = dispatch(manager, args.operation, read_input(sys.stdin.buffer))
         elif args.action == "work":
             from vas_session_work import open_work, start_work, finish_work, inspect_work, clear_work
             base = (manager, args.session, args.expected_revision)
@@ -82,22 +67,22 @@ def main():
             else:
                 base += (args.expected_work_revision,)
                 if args.work_action == "finish":
-                    result = finish_work(*base, args.unit, read_input())
+                    result = finish_work(*base, args.unit, read_input(sys.stdin.buffer))
                 elif args.work_action == "start":
-                    result = start_work(*base, read_input())
+                    result = start_work(*base, read_input(sys.stdin.buffer))
                 else:
                     result = (open_work if args.work_action == "open" else clear_work)(*base)
         elif args.action == "prepare":
             result = prepare(manager, args.session, args.expected_revision)
         elif args.action == "assess":
-            result = assess(manager, args.session, args.expected_revision, read_input())
+            result = assess(manager, args.session, args.expected_revision, read_input(sys.stdin.buffer))
         elif args.action == "create":
-            result = manager.create(read_input(), args.target)
+            result = manager.create(read_input(sys.stdin.buffer), args.target)
         elif args.action == "save":
-            result = manager.save(args.session, args.expected_revision, read_input())
+            result = manager.save(args.session, args.expected_revision, read_input(sys.stdin.buffer))
         elif args.action == "checkpoint":
             result = manager.checkpoint(args.session, args.expected_revision,
-                                        args.expected_progress_revision, read_input(),
+                                        args.expected_progress_revision, read_input(sys.stdin.buffer),
                                         args.expected_project_prompt_revision)
         elif args.action == "clear-progress":
             result = manager.clear_progress(args.session, args.expected_revision)

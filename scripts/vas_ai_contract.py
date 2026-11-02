@@ -301,7 +301,9 @@ def build_prompt(document: dict[str, Any], target: str = "universal", *, project
         opening = f"{tool}에서 현재 연결한 프로젝트 루트를 그대로 사용하세요. 별도 앱 폴더를 만들지 마세요."
         location = "이 폴더가 사용자 앱의 프로젝트 루트이며 src/는 새 프로그램의 소스 위치입니다."
         source_rule = ("프로젝트의 기존 파일과 지침을 보존하고 앱 코드는 루트의 src/에 구현하세요. 새 앱의 자산·의존성 설정·배포 파일도 src/에 두고 그 안에서 실행·빌드·검증하세요. "
-                       "VAS 설정 화면과 도구 파일은 보존하세요. 실행·배포할 앱 원본은 src/에서 확인하세요.")
+                       "VAS 설정 화면과 도구 파일은 보존하세요. 실행·배포할 앱 원본은 src/에서 확인하세요. "
+                       "python -B scripts/vas.py start로 현재 지시와 세션을 읽고 이 인계에 지정한 작업의 prepare가 prepared인지 확인하세요. "
+                       "작업 구간 끝에는 python -B scripts/vas.py finish로 실제 검사와 다음 행동을 기록하고 재조회 결과를 확인하세요.")
     try:
         from .vas_handoff_details import prompt_details, design_direction
         from .vas_design_reference import prompt as reference_prompt
