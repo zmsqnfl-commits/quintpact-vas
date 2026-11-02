@@ -15,6 +15,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
+from release_chat_intake_checks import check_folder_intake
+
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 PACKAGE = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
@@ -194,6 +196,7 @@ class ReleasePackageTests(unittest.TestCase):
         template = (ROOT / ".agents/PROJECT-ROOT.md").read_bytes()
         for relative in sorted(entrypoints):
             self.assertEqual(payload[relative], template)
+        check_folder_intake(self, WINDOWS_ZIP, WINDOWS_NAME, tree_fingerprints)
         for host, suffix in ((".codex", ".toml"), (".claude", ".md")):
             for role in ("implementer", "designer", "reviewer"):
                 text = payload[f"{host}/agents/vas_{role}{suffix}"].decode("utf-8")
