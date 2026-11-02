@@ -1,10 +1,20 @@
 """Exercise the public chat commands and the app's own entry point in an extracted kit."""
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+
+
+def check_target_anchor(test, before, bound_tree, directories, expected_directories):
+    added = set(bound_tree) - set(before)
+    test.assertEqual(len(added), 1)
+    anchor, = added
+    test.assertRegex(anchor, r"^vas-state/target-identity/[0-9a-f]{32}$")
+    test.assertEqual(bound_tree, {**before, anchor: hashlib.sha256(b"").hexdigest()})
+    test.assertEqual(directories, expected_directories)
 
 
 def verify_chat_lifecycle(app: Path, scratch: Path):

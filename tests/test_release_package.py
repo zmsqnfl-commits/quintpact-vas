@@ -17,6 +17,7 @@ from urllib.parse import unquote, urlsplit
 
 from release_chat_intake_checks import check_folder_intake
 from release_import_checks import verify_imported_entrypoint
+from release_lifecycle_checks import check_target_anchor
 from release_starter_checks import check_app_isolation
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -260,12 +261,7 @@ class ReleasePackageTests(unittest.TestCase):
                                                          "method": "automatic", "required": True}]}}
             session = invoke(["create", "--target", "."], settings)["session"]
             bound_tree = tree_fingerprints(app)
-            added = set(bound_tree) - set(before)
-            self.assertEqual(len(added), 1)
-            anchor, = added
-            self.assertRegex(anchor, r"^vas-state/target-identity/[0-9a-f]{32}$")
-            self.assertEqual(bound_tree, {**before, anchor: sha256_bytes(b"")})
-            self.assertEqual(directories(), bound_dirs)
+            check_target_anchor(self, before, bound_tree, directories(), bound_dirs)
             selector = ["--session", session["sessionId"], "--expected-revision", "1"]
             prepared = invoke(["prepare"] + selector)
             self.assertEqual(prepared["status"], "prepared")
