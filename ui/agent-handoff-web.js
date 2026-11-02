@@ -186,10 +186,11 @@
       ? { included: false } : document.context && document.context.design || {};
     const details = document.context && document.context.requirements && document.context.requirements.value || {};
     const requirementDetails = ['reference', 'capabilities', 'dataReadiness', 'platforms', 'deadline', 'budget', 'attachments'].reduce(function (out, key) { if (details[key] !== undefined) out[key] = details[key]; return out; }, {});
-    const workflow = global.VASAgentResources ? VASAgentResources.workflow : '주 실행자가 원본을 읽고 구현·검증을 완료하세요. 실제 서브에이전트 도구가 제공되는 경우에만 필요한 역할에 위임하고 결과를 회수하세요.';
     const isNew = project.sourceType === 'new';
     const folder = isNew ? '' : localFolder(folderPath);
     const inStarter = !folder && document.context && document.context.projectLayout === 'vas-project';
+    const workflow = inStarter && global.VASAgentResources ? VASAgentResources.workflow :
+      '주 실행자가 대상 앱의 지침과 원본을 확인하고 요청 범위를 구현하세요. 가능한 경우에만 독립 작업을 위임하세요. 실제 실행한 검사·결과·미실행 항목과 다음 행동을 보고하세요.';
     const opening = inStarter
       ? tool + '에서 지금 연 프로젝트 폴더 전체를 사용하세요. 루트의 project-layout.json과 프로젝트 지침을 먼저 확인하세요.'
       : (isNew ? tool + '에서 새 앱의 프로젝트 폴더를 여세요.' : tool + '에서 실제 작업할 원본 프로젝트 폴더를 여세요.');
