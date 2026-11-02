@@ -46,8 +46,8 @@ jobs:
       - name: Verify the extracted Windows package
         run: python tests/test_release_runtime_flow.py
   release:
-    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     needs: windows
+    if: github.repository == 'zmsqnfl-commits/quintpact-vas'
     name: Verify and publish release
     runs-on: ubuntu-latest
     timeout-minutes: 30
