@@ -1,5 +1,6 @@
 """A bounded, append-only project summary shared by hosts. All records are reference data."""
 from contextlib import ExitStack, contextmanager
+import errno
 import hashlib
 import html
 import json
@@ -10,7 +11,7 @@ import threading
 import time
 
 from vas_ai_contract import canonical
-from vas_project_prompt import ProjectPromptError, _Project, _pin, _regular
+from vas_project_prompt import ProjectPromptError, _Project, _pin, _regular, unsupported_fs_lock
 from vas_session_progress import CHECK_STATUSES, PHASES, _text as progress_text
 
 MAX_SLOTS = 2048
@@ -102,6 +103,7 @@ def _directory(root, create):
         path, parent_fd = project.root, project.dir_fd
         dirs = []
         for name in ("vas-state", "progress"):
+            parent = _Journal(path, parent_fd)
             path = path / name
             dirs.append(path)
             relative = name if parent_fd is not None else path
@@ -125,13 +127,24 @@ def _directory(root, create):
                 stack.callback(os.close, child)
                 require(os.path.samestat(info, os.fstat(child)), "unsafe")
                 parent_fd = child
-        yield _Journal(path, parent_fd)
+        yield _Journal(path, parent_fd, parent)
         require(os.path.samestat(info, path.lstat()), "unsafe")
 
 
 class _Journal:
-    def __init__(self, path, fd):
-        self.path, self.fd = path, fd
+    def __init__(self, path, fd, parent=None):
+        self.path, self.fd, self.parent = path, fd, parent
+
+    def lock_mode(self):
+        name = "writer.lock" if self.fd is not None else self.path / "writer.lock"
+        try:
+            info = os.stat(name, dir_fd=self.fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return None
+        if stat.S_ISDIR(info.st_mode) and not getattr(info, "st_file_attributes", 0) & 0x400:
+            return "exclusive"
+        require(_regular(info), "unsafe")
+        return "locked"
 
     @contextmanager
     def file(self, name, flags):
@@ -189,53 +202,116 @@ class _Journal:
         except (KeyError, AttributeError, TypeError, UnicodeError, ValueError, RecursionError):
             raise SharedProgressError("shared_progress_invalid") from None
 
-    def write(self, revision, data):
+    def write_once(self, revision, suffix, content, exclusive):
+        name = f"{revision:06d}.{suffix}"
+        try:
+            with self.file(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL) as fd:
+                if content:
+                    with os.fdopen(fd, "wb", closefd=False) as out:
+                        out.write(content)
+                        out.flush()
+                        os.fsync(fd)
+        except FileExistsError:
+            if not exclusive:
+                raise
+            # Only an identical complete component may be reused on retry. A partial,
+            # different, or still-being-written file must never be filled or skipped.
+            with self.file(name, os.O_RDONLY) as fd:
+                same = os.fstat(fd).st_size == len(content) and os.read(fd, len(content) + 1) == content
+            if not same:
+                try:
+                    with self.file(f"{revision:06d}.ok", os.O_RDONLY):
+                        pass
+                except FileNotFoundError:
+                    raise SharedProgressError("shared_progress_pending") from None
+                self.read(revision)
+                raise SharedProgressError("shared_progress_conflict")
+
+    def write(self, revision, data, exclusive=False):
         record = {"revision": revision, **data, "markdownPath": f"vas-state/progress/{revision:06d}.md"}
         raw = canonical({"record": record, "sha256": hashlib.sha256(canonical(record)).hexdigest()})
         require(len(raw) <= MAX_BYTES, "full")
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         markdown = _markdown(record)
         require(len(markdown) <= MAX_MARKDOWN_BYTES, "full")
-        for suffix, content in (("json", raw), ("md", markdown)):
-            with self.file(f"{revision:06d}.{suffix}", flags) as fd:
-                with os.fdopen(fd, "wb", closefd=False) as out:
-                    out.write(content)
-                    out.flush()
-                    os.fsync(fd)
-        # Readers only consume slots with a complete publication marker.
-        with self.file(f"{revision:06d}.ok", flags):
-            pass
+        for suffix, content in (("json", raw), ("md", markdown), ("ok", b"")):
+            self.write_once(revision, suffix, content, exclusive)
         return self.read(revision)
+
+    @contextmanager
+    def lock_file(self, name):
+        # Windows can byte-lock a read-only handle; POSIX lockf needs write access.
+        access = os.O_RDONLY if os.name == "nt" else os.O_RDWR
+        with ExitStack() as stack:
+            try:
+                fd = stack.enter_context(self.file(name, access | os.O_CREAT | os.O_EXCL))
+            except FileExistsError:
+                fd = stack.enter_context(self.file(name, access))
+            yield fd
+
+    def choose_mode(self):
+        # Negotiate once at the SAME path a 2.13.0 writer must open as a regular
+        # file. A separate latch could race that writer's directory enumeration.
+        # The permanent probe is outside progress/, so old readers still work.
+        with self.parent.lock_file("progress-lock-probe") as probe:
+            supported = lock_attempt(probe) != "unsupported"
+        try:
+            if supported:
+                with self.file("writer.lock", os.O_RDONLY | os.O_CREAT | os.O_EXCL):
+                    pass
+            else:
+                name = "writer.lock" if self.fd is not None else self.path / "writer.lock"
+                os.mkdir(name, dir_fd=self.fd)
+        except FileExistsError:
+            pass
+        except PermissionError:
+            # Windows reports EACCES rather than EEXIST when O_EXCL meets a
+            # directory created by the winning participant.
+            if self.lock_mode() != "exclusive":
+                raise
+        mode = self.lock_mode()
+        require(mode is not None, "unavailable")
+        return mode
 
     @contextmanager
     def writer(self):
         with ExitStack() as stack:
             require(THREAD_WRITER.acquire(timeout=2), "busy")
             stack.callback(THREAD_WRITER.release)
-            # Windows can byte-lock a read-only handle; POSIX lockf needs write access.
+            mode = self.lock_mode() or self.choose_mode()
+            if mode == "exclusive":
+                yield mode
+                return
             access = os.O_RDONLY if os.name == "nt" else os.O_RDWR
-            try:
-                fd = stack.enter_context(self.file("writer.lock", access | os.O_CREAT | os.O_EXCL))
-            except FileExistsError:
-                fd = stack.enter_context(self.file("writer.lock", access))
+            fd = stack.enter_context(self.file("writer.lock", access))
             deadline = time.monotonic() + 2
-            if os.name == "nt":
-                import msvcrt
-                def acquire():
-                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
-                def acquire():
-                    fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB, 1)
             while True:
-                try:
-                    acquire()
+                state = lock_attempt(fd)
+                if state == "acquired":
                     break
-                except (BlockingIOError, PermissionError):
-                    require(time.monotonic() < deadline, "busy")
-                    time.sleep(0.025)
-            # The OS releases this advisory byte-range lock when the handle closes.
-            yield
+                require(state != "unsupported", "lock_unsupported")
+                require(time.monotonic() < deadline, "busy")
+                time.sleep(0.025)
+            # The OS releases the byte-range lock when the handle closes.
+            yield mode
+
+
+def lock_attempt(fd):
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB, 1)
+        return "acquired"
+    except OSError as error:
+        if unsupported_fs_lock(error):
+            return "unsupported"
+        if error.errno == errno.ENOLCK:
+            raise SharedProgressError("shared_progress_lock_unavailable") from None
+        if isinstance(error, (BlockingIOError, PermissionError)):
+            return "busy"
+        raise
 
 
 def read_shared_progress(root):
@@ -250,14 +326,19 @@ def append_shared_progress(root, expected_revision, summary):
     data = shared_summary(summary)
     require(expected_revision is None or type(expected_revision) is int and expected_revision >= 0, "invalid")
     try:
-        with _directory(root, create=True) as journal, journal.writer():
+        with _directory(root, create=True) as journal, journal.writer() as mode:
             last_slot, current = journal.bounds()
             latest = journal.read(current)
             if latest and shared_summary(latest) == data:
                 return latest
             require(current == (expected_revision or 0), "conflict")
-            require(last_slot < MAX_SLOTS, "full")
-            return journal.write(last_slot + 1, data)
+            # In exclusive mode every writer from the same cursor competes for
+            # exactly the same successor, even when another writer left a partial slot.
+            exclusive = mode == "exclusive"
+            target = current + 1 if exclusive else last_slot + 1
+            require(not exclusive or last_slot <= target, "pending")
+            require(target <= MAX_SLOTS, "full")
+            return journal.write(target, data, exclusive)
     except FileExistsError:
         raise SharedProgressError("shared_progress_conflict") from None
     except (OSError, ProjectPromptError):

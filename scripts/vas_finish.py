@@ -133,6 +133,12 @@ def _write_shared(output, root, cursor, progress, task, *, quick=False, keep_nex
                       sharedProgress=None, sharedError=getattr(error, "code", "shared_progress_unavailable"))
         if output["sharedError"] == "shared_progress_scope_conflict":
             output["nextAction"] = "프로젝트의 공유 범위와 이 PC의 작업 범위를 비교한 뒤 합의한 세션으로 finish 하세요."
+        elif output["sharedError"] == "shared_progress_pending":
+            output["nextAction"] = "이전 쓰기가 진행 중이면 기다리세요. 중단됐으면 원래 요약과 판본으로 재시도하세요. 부분 파일이 남아 재시도가 막히면 마지막 완료 기록을 보존하고 새 프로젝트 위치에서 이어가세요."
+        elif output["sharedError"] == "shared_progress_lock_unsupported":
+            output["nextAction"] = "기존 기록은 바이트 범위 잠금을 사용합니다. 현재 기록을 보존하고 잠금을 지원하는 연결에서 start로 최신 판본을 확인한 뒤 finish를 다시 실행하세요."
+        elif output["sharedError"] == "shared_progress_lock_unavailable":
+            output["nextAction"] = "파일 시스템이 지금 잠금을 제공하지 못합니다. 기록을 보존하고 잠시 뒤 다시 시도하거나 잠금을 지원하는 연결을 사용하세요."
     return output
 
 

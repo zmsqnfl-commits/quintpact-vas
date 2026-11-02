@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 from release_chat_intake_checks import check_folder_intake
+from release_import_checks import verify_imported_entrypoint
 from release_starter_checks import check_app_isolation
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,6 +136,9 @@ class ReleasePackageTests(unittest.TestCase):
 
     def test_build_and_core_backup_exclude_app_data(self) -> None:
         check_app_isolation(self, BUILD)
+
+    def test_imported_app_starts_without_vas(self):
+        verify_imported_entrypoint(zipfile.ZipFile(WINDOWS_ZIP), WINDOWS_NAME)
 
     def test_version_and_expected_release_files(self) -> None:
         self.assertEqual(VERSION, CONFIG_VERSION)

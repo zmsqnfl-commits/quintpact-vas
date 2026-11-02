@@ -1,4 +1,5 @@
 """The portable journal stays outside Git and survives distinct host state stores."""
+import errno
 import json
 import os
 from pathlib import Path
@@ -122,3 +123,184 @@ def test_legacy_record_without_markdown_remains_readable(project):
     digest = journal.hashlib.sha256(journal.canonical(data)).hexdigest()
     (project / "vas-state/progress/000001.json").write_bytes(journal.canonical({"record": data, "sha256": digest}))
     assert journal.read_shared_progress(project) == data
+
+def unsupported_lock(monkeypatch, code):
+    def fail(*_):
+        raise OSError(code, "simulated network file system")
+    if os.name == "nt":
+        import msvcrt
+        monkeypatch.setattr(msvcrt, "locking", fail)
+    else:
+        import fcntl
+        monkeypatch.setattr(fcntl, "lockf", fail)
+
+
+@pytest.mark.parametrize("error", [errno.ENOSYS, errno.EOPNOTSUPP])
+def test_fresh_lockless_mount_advances_and_accepts_ordinary_host(project, monkeypatch, error):
+    with monkeypatch.context() as mounted:
+        unsupported_lock(mounted, error)
+        first = journal.append_shared_progress(project, 0, note())
+        assert journal.append_shared_progress(project, 0, note()) == first
+    directory = project / "vas-state/progress"
+    assert (directory / "writer.lock").is_dir()
+    # A v2.13.0 writer must open writer.lock as a regular file. It cannot ignore
+    # this election and fast-forward over an in-flight owner's successor.
+    with pytest.raises(OSError):
+        os.close(os.open(directory / "writer.lock", os.O_RDWR))
+    second = journal.append_shared_progress(project, 1, note("Ordinary host"))
+    with pytest.raises(journal.SharedProgressError, match="conflict"):
+        journal.append_shared_progress(project, 1, note("Different host"))
+    assert second["revision"] == 2 and journal.read_shared_progress(project) == second
+
+
+def test_legacy_journal_cannot_switch_under_an_unsupported_writer(project, monkeypatch):
+    first = journal.append_shared_progress(project, 0, note())
+    directory = project / "vas-state/progress"
+    assert (directory / "writer.lock").is_file()
+    original = {file.name: file.read_bytes() for file in directory.iterdir()}
+    with monkeypatch.context() as mounted:
+        unsupported_lock(mounted, errno.EOPNOTSUPP)
+        with pytest.raises(journal.SharedProgressError, match="lock_unsupported"):
+            journal.append_shared_progress(project, 1, note("Unsafe upgrade"))
+    assert original == {file.name: file.read_bytes() for file in directory.iterdir()}
+    assert journal.read_shared_progress(project) == first
+
+
+def test_legacy_first_writer_wins_the_mode_election(project, monkeypatch):
+    lock = project / "vas-state/progress/writer.lock"
+
+    def competing_writer(_fd):
+        if not lock.exists():
+            lock.touch(exist_ok=False)  # 2.13.0 first writer, between our probe and mkdir.
+        return "unsupported"
+
+    monkeypatch.setattr(journal, "lock_attempt", competing_writer)
+    with pytest.raises(journal.SharedProgressError, match="lock_unsupported"):
+        journal.append_shared_progress(project, 0, note())
+    assert lock.is_file() and journal.read_shared_progress(project) is None
+
+
+def test_transient_lock_failure_or_contention_never_downgrades(project, monkeypatch):
+    directory = project / "vas-state/progress"
+    with monkeypatch.context() as mounted:
+        unsupported_lock(mounted, errno.ENOLCK)
+        with pytest.raises(journal.SharedProgressError, match="lock_unavailable"):
+            journal.append_shared_progress(project, 0, note())
+    assert not (directory / "writer.lock").exists()
+    with monkeypatch.context() as mounted:
+        unsupported_lock(mounted, errno.EAGAIN)
+        ticks = iter([0, 3])
+        mounted.setattr(journal.time, "monotonic", lambda: next(ticks))
+        with pytest.raises(journal.SharedProgressError, match="busy"):
+            journal.append_shared_progress(project, 0, note())
+    assert (directory / "writer.lock").is_file() and not list(directory.glob("*.ok"))
+
+
+def test_exact_retry_helps_an_intact_lockless_successor_but_never_skips_a_partial(project, monkeypatch):
+    directory = project / "vas-state/progress"
+    unsupported_lock(monkeypatch, errno.ENOSYS)
+    first = journal.append_shared_progress(project, 0, note())
+
+    with monkeypatch.context() as stopped:
+        write_once = journal._Journal.write_once
+
+        def stop_before_view(self, revision, suffix, content, exclusive):
+            if suffix == "md":
+                raise OSError(errno.EIO, "stopped")
+            return write_once(self, revision, suffix, content, exclusive)
+
+        stopped.setattr(journal._Journal, "write_once", stop_before_view)
+        with pytest.raises(journal.SharedProgressError, match="unavailable"):
+            journal.append_shared_progress(project, 1, note("Intact record"))
+    assert journal.read_shared_progress(project) == first
+    with pytest.raises(journal.SharedProgressError, match="pending"):
+        journal.append_shared_progress(project, 1, note("Different record"))
+    assert not (directory / "000003.json").exists()
+    second = journal.append_shared_progress(project, 1, note("Intact record"))
+    assert second["revision"] == 2 and journal.read_shared_progress(project) == second
+
+    prefix = b'{"record":'
+    (directory / "000003.json").write_bytes(prefix)
+    with pytest.raises(journal.SharedProgressError, match="pending"):
+        journal.append_shared_progress(project, 2, note("Cannot replace a partial"))
+    assert (directory / "000003.json").read_bytes() == prefix
+    assert not (directory / "000004.json").exists() and journal.read_shared_progress(project) == second
+
+
+def test_ordinary_writer_observes_pending_fallback_writer_in_separate_process(project):
+    code = """
+import errno, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import vas_portable_progress as journal
+journal.lock_attempt = lambda fd: "unsupported"
+original = journal._Journal.write_once
+def stop(self, revision, suffix, data, exclusive):
+    original(self, revision, suffix, data, exclusive)
+    if suffix == "json":
+        print("reserved", flush=True)
+        assert sys.stdin.readline() == "continue\\n"
+journal._Journal.write_once = stop
+journal.append_shared_progress(Path(sys.argv[2]), 0,
+    {"phase": "paused", "summary": "First remote note", "nextStep": "Check menu"})
+"""
+    proc = subprocess.Popen([sys.executable, "-B", "-c", code, str(ROOT / "scripts"), str(project)],
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, encoding="utf-8")
+    try:
+        assert proc.stdout.readline().strip() == "reserved"
+        with pytest.raises(journal.SharedProgressError, match="pending"):
+            journal.append_shared_progress(project, 0, note("Cannot overtake"))
+        assert not (project / "vas-state/progress/000002.json").exists()
+        assert journal.read_shared_progress(project) is None
+        out, err = proc.communicate("continue\n", timeout=15)
+        assert proc.returncode == 0, (out, err)
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.communicate()
+    assert journal.read_shared_progress(project)["summary"] == "First remote note"
+    with pytest.raises(journal.SharedProgressError, match="conflict"):
+        journal.append_shared_progress(project, 0, note("Cannot overwrite"))
+
+
+
+def test_lockless_host_can_start_and_read_saved_prompt_without_unlocking_writes(project, tmp_path, monkeypatch):
+    from vas_project_prompt import read_project_prompt, save_project_prompt, ProjectPromptError
+    from vas_start import start
+    saved = save_project_prompt(project, 0, "Read the menu source")
+    unsupported_lock(monkeypatch, errno.EOPNOTSUPP)
+    if os.name != "nt":
+        import fcntl
+        def unsupported(*_):
+            raise OSError(errno.EOPNOTSUPP, "unsupported advisory lock")
+        monkeypatch.setattr(fcntl, "flock", unsupported)
+    first = journal.append_shared_progress(project, 0, note())
+    view = start(project, tmp_path / "new-host")
+    assert view["status"] == "ok" and view["session"]["status"] == "none"
+    assert view["projectPrompt"] == saved and view["sharedProgress"] == first
+    assert read_project_prompt(project) == saved
+    with pytest.raises(ProjectPromptError, match="unavailable"):
+        save_project_prompt(project, 1, "Must use a real write lock")
+    assert read_project_prompt(project) == saved
+
+
+def test_ordinary_first_writer_joins_winning_exclusive_mode(project, monkeypatch):
+    lock = project / "vas-state/progress/writer.lock"
+    def simultaneous_fallback(_fd):
+        lock.mkdir(exist_ok=True)
+        return "acquired"
+    monkeypatch.setattr(journal, "lock_attempt", simultaneous_fallback)
+    record = journal.append_shared_progress(project, 0, note())
+    assert lock.is_dir() and journal.read_shared_progress(project) == record
+
+
+def test_cli_finish_preserves_last_record_and_explains_legacy_lock_failure(project, tmp_path, monkeypatch):
+    from vas_finish import quick_finish
+    first = journal.append_shared_progress(project, 0, note())
+    unsupported_lock(monkeypatch, errno.EOPNOTSUPP)
+    result = quick_finish(project, tmp_path / "second-host", "Changed menu", [], "Recheck", 1)
+    assert result["status"] == "not-recorded"
+    assert result["sharedError"] == "shared_progress_lock_unsupported"
+    assert "start" in result["nextAction"]
+    assert journal.read_shared_progress(project) == first

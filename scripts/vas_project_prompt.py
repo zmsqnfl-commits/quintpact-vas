@@ -208,8 +208,12 @@ def _pin(project, extra_directories=()):
         project.dir_fd = None
 
 
+def unsupported_fs_lock(error):
+    return error.errno in (errno.ENOSYS, errno.EOPNOTSUPP) or getattr(error, "winerror", None) in (1, 50)
+
+
 @contextmanager
-def _locked(project):
+def _locked(project, *, read_only=False):
     # Lock the existing marker on Windows, the pinned directory on POSIX.
     # The OS releases the lock on a killed process; no stale lock file remains.
     marker = project.engine / "project-layout.json"
@@ -233,6 +237,8 @@ def _locked(project):
                 locked = True
                 break
             except OSError as error:
+                if read_only and unsupported_fs_lock(error):
+                    break
                 if error.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
                     raise
                 if time.monotonic() >= deadline:
@@ -240,7 +246,7 @@ def _locked(project):
                 time.sleep(0.02)
         project.guard()
         _require(os.path.samestat(original, marker.lstat()), "unsafe")
-        yield
+        yield locked
     finally:
         try:
             if locked:
@@ -258,8 +264,8 @@ def read_project_start(engine):
     project = _Project(engine)
     src = project.root / "src"
     try:
-        with _pin(project, (src,)), _locked(project):
-            prompt, _ = project.read()
+        with _pin(project, (src,)), _locked(project, read_only=True) as locked:
+            prompt, raw = project.read()
             # The directory path is pinned on Windows. On POSIX enumerate the real
             # child of the pinned root descriptor, never a link replacing src.
             fd = None
@@ -279,6 +285,8 @@ def read_project_start(engine):
                 if fd is not None:
                     _require(os.path.samestat(os.fstat(fd), src.lstat()), "unsafe")
                 project.guard()
+                if not locked:
+                    _require(project.read() == (prompt, raw), "busy")
                 return prompt, state
             finally:
                 if fd is not None:
@@ -291,8 +299,11 @@ def read_project_prompt(engine):
     """A missing file means revision zero. Reading creates or changes nothing."""
     try:
         project = _Project(engine)
-        with _pin(project), _locked(project):
-            return project.read()[0]
+        with _pin(project), _locked(project, read_only=True) as locked:
+            snapshot = project.read()
+            if not locked:
+                _require(project.read() == snapshot, "busy")
+            return snapshot[0]
     except OSError:
         _fail("unavailable")
 

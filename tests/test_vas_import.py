@@ -65,7 +65,11 @@ def test_review_and_apply_only_vetted_code_then_retry_without_writes(projects):
     assert {item["path"] for item in preview["files"]} == {"client/main.ts", "compose.yaml", "package.json"}
     assert preview["applyCommand"].endswith("--apply --expected-plan " + preview["planSha256"])
     assert tree(app) == before and tree(old) == before_old
-    assert all(name not in str(preview) for name in hidden)
+    assert preview["appVerification"]["status"] == "not-run"
+    excluded = {row["path"]: row for row in preview["excluded"]}
+    assert set(hidden) <= set(excluded) and excluded["uploads"]["kind"] == "directory"
+    assert all(row["reason"] for row in excluded.values())
+    assert all(body not in json.dumps(preview) for body in hidden.values())
     code, receipt = run(projects, *preview["addArguments"])
     assert code == 0 and receipt["copied"] == 3
     assert not (app / "compose.yaml").exists() and (app / "src/package.json").read_bytes() == manifests
@@ -220,3 +224,130 @@ def test_two_competing_sources_cannot_mix(projects):
         outcomes = list(pool.map(lambda pair: run((app, pair[0]), *pair[1]), zip((a, b), plans)))
     assert sorted(code for code, _ in outcomes) == [0, 1]
     assert len(set(p.name for p in (app / "src").iterdir()) & {"alpha.py", "beta.py"}) == 1
+
+@pytest.mark.parametrize("prefix", [("sessions", "id", "mnt"), ("data", "backup", "logs"), (".work", "mnt")])
+def test_remote_mount_ancestors_do_not_change_the_selected_app_policy(projects, tmp_path, prefix):
+    app, _ = projects
+    source = tmp_path.joinpath(*prefix, "Desktop--Old", "src")
+    source.mkdir(parents=True)
+    (source / "app.py").write_bytes(b"print('menu')\n")
+    (source / "server-config.json").write_bytes(b'{"setting":"local data"}')
+    before = tree(app)
+    code, plan = run((app, source))
+    assert code == 0 and tree(app) == before
+    assert [item["path"] for item in plan["files"]] == ["app.py"]
+    assert [(row["path"], row["category"]) for row in plan["excluded"]] == [("server-config.json", "operational")]
+
+
+@pytest.mark.parametrize("prefix", [".ssh", ".git", ".aws", ".vas", "credentials"])
+def test_credential_and_tool_stores_cannot_be_selected_through_a_subdirectory(projects, tmp_path, prefix):
+    app, _ = projects
+    source = tmp_path / prefix / "src"
+    source.mkdir(parents=True)
+    (source / "menu.py").write_text("print(1)")
+    assert run((app, source)) == (1, {"status": "error", "code": "import_private_source"})
+
+
+def test_old_vas_app_source_allowed_but_engine_and_new_app_helper_rejected(projects):
+    app, old = projects
+    engine = old.parent / ".vas"
+    (engine / "src").mkdir(parents=True)
+    (engine / "project-layout.json").write_text('{"layout":"vas-project","version":1}')
+    (engine / "Run-VAS-System.bat").write_text("helper")
+    (engine / "src/vas-hub.html").write_text("helper")
+    (old / "app.py").write_text("print(1)")
+    assert [f["path"] for f in run((app, old))[1]["files"]] == ["app.py"]
+    assert run((app, engine / "src"))[0] == 1
+    assert run((app, app / "ui"))[0] == 1
+
+
+def test_decisions_and_implementation_are_bound_to_the_reviewed_plan(projects, monkeypatch):
+    app, old = projects
+    (old / "server.py").write_text("print('menu')")
+    (old / "review.js").write_text("const unknown = 5;")
+    (old / "server-config.json").write_text('{"test":"ignored"}')
+    classify = transfer.content_reason
+    monkeypatch.setattr(transfer, "content_reason", lambda p, data: "review" if p == "review.js" else classify(p, data))
+    plan = transfer.import_app(app, str(old))
+    review = next(row for row in plan["excluded"] if row["path"] == "review.js")
+    assert review["canInclude"] and plan["skipped"]["review"] == 1
+    approved = transfer.import_app(app, str(old), include=["review.js"])
+    assert approved["planSha256"] != plan["planSha256"]
+    assert all(f["path"] != "server-config.json" for f in approved["files"])
+    with pytest.raises(SessionError, match="import_include_not_reviewable"):
+        transfer.import_app(app, str(old), include=["server-config.json"])
+    with pytest.raises(SessionError, match="import_plan_changed"):
+        transfer.import_app(app, str(old), True, plan["planSha256"], ["review.js"])
+    (old / "extra.bin").write_text("a")
+    with pytest.raises(SessionError, match="import_plan_changed"):
+        transfer.import_app(app, str(old), True, approved["planSha256"], ["review.js"])
+    current = transfer.import_app(app, str(old), include=["review.js"])
+    result = transfer.import_app(app, str(old), True, current["planSha256"], ["review.js"])
+    assert result["copied"] == 2 and result["appVerification"]["status"] == "not-run"
+    assert not (app / "src/server-config.json").exists()
+
+
+def test_preview_does_not_take_an_unsupported_mount_write_lock(projects, monkeypatch):
+    app, old = projects
+    (old / "menu.py").write_text("print(1)")
+    def no_locks(*args, **kwargs):
+        raise OSError(transfer.errno.EOPNOTSUPP, "unsupported by connector")
+    monkeypatch.setattr(transfer, "_locked", no_locks)
+    plan = transfer.import_app(app, str(old))
+    assert plan["status"] == "planned"
+    with pytest.raises(SessionError, match="import_filesystem_unavailable"):
+        transfer.import_app(app, str(old), True, plan["planSha256"])
+    assert not (app / "src/menu.py").exists()
+
+
+def test_secret_in_a_filename_is_hidden_while_ordinary_exclusions_are_named(projects):
+    app, old = projects
+    secret = "live_sk_1234567890ABCDEFGHIJ"
+    (old / f"notes-{secret}.txt").write_text("unused")
+    (old / "server-config.json").write_text('{"test":"ignored"}')
+    code, preview = run(projects)
+    assert code == 0 and preview["excluded"]
+    assert secret not in json.dumps(preview) and str(old) not in json.dumps(preview)
+    assert any(item["path"] is None and not item["canInclude"] for item in preview["excluded"])
+    assert any(item["path"] == "server-config.json" for item in preview["excluded"])
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows synthesizes mode bits for batch-file path stat")
+def test_windows_imports_executable_suffix_with_consistent_open_handle_identity(projects):
+    app, old = projects
+    launcher = old / "start-app.bat"
+    launcher.write_bytes(b"@echo off\r\npython server.py\r\n")
+    (old / "server.py").write_bytes(b"print('menu')\n")
+    code, plan = run(projects)
+    assert code == 0 and {item["path"] for item in plan["files"]} == {"server.py", "start-app.bat"}
+    code, result = run(projects, *plan["addArguments"])
+    assert code == 0 and result["copied"] == 2
+    assert (app / "src/start-app.bat").read_bytes() == launcher.read_bytes()
+
+def test_cli_include_only_accepts_a_specific_reviewed_file_and_pins_its_contents(projects):
+    app, old = projects
+    (old / "sample").mkdir()
+    test_literal = "A1bcD2efG3hiJ4klM5noP6qrS7tuV8wxY9zaBcDeFgHi"
+    path = "sample/lookup.js"
+    (old / path).write_text("const value = '" + test_literal + "';")
+    (old / "server-config.json").write_text('{"setting":"disabled"}')
+    initial = run(projects)[1]
+    assert next(row for row in initial["excluded"] if row["path"] == path)["canInclude"] is True
+    assert test_literal not in json.dumps(initial)
+    code, approved = run(projects, "--include", path.replace("/", "\\"))
+    assert code == 0 and approved["include"] == [path]
+    assert approved["planSha256"] != initial["planSha256"]
+    assert run(projects, "--include", "server-config.json") == (
+        1, {"status": "error", "code": "import_include_not_reviewable"})
+    # Authorizing a reviewed path never authorizes its newer, unreviewed contents.
+    (old / path).write_text("const value = '" + test_literal[::-1] + "';")
+    assert run(projects, "--include", path, *approved["addArguments"]) == (
+        1, {"status": "error", "code": "import_plan_changed"})
+    current = run(projects, "--include", path)[1]
+    assert run(projects, "--include", path, *current["addArguments"])[1]["copied"] == 1
+    assert (app / "src" / path).read_bytes() == (old / path).read_bytes()
+    assert not (app / "src/server-config.json").exists()
+
+
+@pytest.mark.parametrize("name", ["CON.py", "dir/aux.txt", "scripts/name?.py", "bad/../ok.js", "name\\s.js"])
+def test_nonportable_names_cannot_be_explicitly_included(name):
+    assert transfer.portable_path(name) is False

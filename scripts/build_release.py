@@ -1,4 +1,4 @@
-"""VAS 2.13.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.13.1 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 CONFIG = ROOT / "ui" / "vas-config.js"
 ROOT_FILES = [
-    "Run-VAS-System.bat", "project-layout.json", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
+    "Run-VAS-System.bat", "project-layout.json", ".claude/README.md", "00-처음-사용하기.txt", "LICENSE", "AUTHORS.md",
     "NOTICE.md", "USE_POLICY.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md",
     ".cursorrules", ".windsurfrules",
 ]

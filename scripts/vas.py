@@ -57,12 +57,14 @@ def main():
     transfer = commands.add_parser("import", help="plan an explicit app source transfer")
     transfer.add_argument("--from", dest="source", required=True, help="the old app source directory")
     transfer.add_argument("--apply", action="store_true", help="copy the vetted files into empty src")
+    transfer.add_argument("--include", action="append", default=[], metavar="RELATIVE_FILE",
+                          help="approve one ambiguous file for this reviewed plan (repeatable)")
     transfer.add_argument("--expected-plan", help="require the manifest digest from the reviewed plan")
     args = parser.parse_args()
     try:
         if args.command == "import":
             from vas_import import import_app
-            result = import_app(args.vas_root, args.source, args.apply, args.expected_plan)
+            result = import_app(args.vas_root, args.source, args.apply, args.expected_plan, args.include)
         elif args.command == "start":
             result = start(args.vas_root, args.state_home)
         else:
