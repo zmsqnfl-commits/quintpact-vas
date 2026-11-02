@@ -14,6 +14,8 @@ The main agent uses VAS to save and resume settings and progress, prepare curren
 
 An agent can resume the same project across remote shell calls when a connector remounts its folder. After implementation it can pass its checks and criterion outcomes to `finish` once. VAS builds the result report against the handoff the agent actually used and records any checks it could not run. Progress notes also preserve relative container mounts such as `./:/app`.
 
+A user verified this workflow in a remotely connected Claude Desktop folder while migrating a menu-board app. The session resumed after a remount, `finish` succeeded on the first attempt, and `start` found the saved progress. [Field verification](docs/releases/2.13.2.md#claude-desktop-field-verification)
+
 ## Start a project
 
 Open the whole project in a coding host and ask it to index the folder.
