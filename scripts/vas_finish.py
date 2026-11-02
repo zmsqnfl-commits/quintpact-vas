@@ -88,9 +88,10 @@ def _quick_context(progress, previous, task, keep_next):
     if not previous:
         return progress
     latest = previous.get("scope")
-    local = _scope(task)
-    if latest and local and local != latest:
-        raise SharedProgressError("shared_progress_scope_conflict")
+    if latest:
+        local = _scope(task)
+        if local and local != latest:
+            raise SharedProgressError("shared_progress_scope_conflict")
     record = dict(progress)
     for key in ("scope", "decisions", "remaining"):
         if key in previous:

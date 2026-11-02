@@ -289,3 +289,15 @@ def test_conflicting_private_scope_requires_full_reconciliation(kit):
         expected_shared_revision=1)
     assert saved["sharedProgress"]["scope"] == {"objective": "Show menu labels", "criteria": ["Menu visible"]}
     assert not saved["sharedProgress"].get("remaining") and not saved["sharedProgress"].get("decisions")
+
+
+def test_portable_goal_is_redacted_before_visible_bounded_clipping(kit):
+    manager, sid, _, _, _ = kit
+    settings = manager.resume(session_id=sid)["session"]["settings"]
+    settings["task"]["request"] = "Keep /department/private out: " + "재" * 1100
+    manager.save(sid, 1, settings)
+    saved = vas_finish.finish(manager, sid, 2, 0, {"result": None, "progress": {
+        "phase": "paused", "summary": "Goal confirmed", "nextStep": "Check display"}})
+    objective = saved["sharedProgress"]["scope"]["objective"]
+    assert "[absolute-path]" in objective and "/department/" not in objective
+    assert len(objective.encode("utf-16-le")) == 2000 and objective.endswith("…")
