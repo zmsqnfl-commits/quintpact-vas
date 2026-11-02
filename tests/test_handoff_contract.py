@@ -137,7 +137,7 @@ def test_result_contract_requires_hash_action_and_safety() -> None:
         validate_result(result_document(handoffPayloadSha256=""), "existing")
     unsafe_action = result_document()
     unsafe_action["changes"]["relativeFiles"][0]["action"] = "executed"
-    with pytest.raises(ValueError, match="unsafe_result_path"):
+    with pytest.raises(ValueError, match="invalid_change_action"):
         validate_result(unsafe_action, "existing")
     with pytest.raises(ValueError, match="invalid_safety_confirmation"):
         validate_result(result_document(safety={}), "existing")

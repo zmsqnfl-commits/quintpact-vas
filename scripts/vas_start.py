@@ -68,7 +68,10 @@ def _resume_action(view, prompt_revision, shared_revision):
     action["finishCommand"] = (
         f"python -B scripts/vas.py finish {args} --expected-progress-revision {progress_revision} "
         f"--expected-project-prompt-revision {prompt_revision} --expected-shared-revision {shared_revision}")
-    action["finishStdin"] = "실제 검사 뒤 progress 및 result를 담은 JSON. 설정 변경 후 start를 다시 실행하세요."
+    action["finishAfterPrepare"] = (
+        "작업 전 prepare의 finishArguments를 보관하세요. 작업 뒤 그 인자에 요약·실제 검사·조건별 결과를 "
+        "붙여 한 번 전달합니다. 설정 변경 후 start를 다시 실행하세요.")
+    action["finishStdin"] = "직접 작성한 v1 보고서가 있는 경우에만 finishCommand에 progress 및 result JSON을 전달합니다."
     return session, action
 
 

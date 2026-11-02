@@ -1,6 +1,7 @@
 {
 "base":{"format": "vas-ai-result", "schemaVersion": 1, "resultId": "r_1234567890abcdef", "handoffId": "h_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "handoffPayloadSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "iteration": 1, "sourceType": "existing", "status": "complete", "generatedBy": {"tool": "fixture"}, "readback": {"checkedFiles": ["src/app.js"]}, "changes": {"summary": "Synthetic change", "relativeFiles": []}, "tests": [{"name": "unit", "status": "passed", "summary": "Synthetic pass"}], "remaining": [], "safety": {"absolutePathsExcluded": true, "secretsExcluded": true, "rawCommandOutputExcluded": true}},
 "cases":[
+{"name": "unsupported change action", "changes": [{"path": "changes.relativeFiles", "value": [{"path": "src/app.js", "action": "added"}]}], "error": "invalid_change_action"},
 {"name": "valid baseline", "changes": [], "error": null},
 {"name": "schemaVersion type 0", "changes": [{"path": "schemaVersion", "value": true}], "error": "invalid_result_format"},
 {"name": "schemaVersion type 1", "changes": [{"path": "schemaVersion", "value": false}], "error": "invalid_result_format"},

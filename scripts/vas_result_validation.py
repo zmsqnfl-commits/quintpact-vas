@@ -92,7 +92,7 @@ def validate(raw: Any, expected: str | None, clean: Callable, safe_relative: Cal
     for item in array(changes, "relativeFiles", 100, dict):
         path = relative(item.get("path"), "unsafe_result_path")
         if item.get("action") not in ("created", "modified", "deleted", "renamed"):
-            fail("unsafe_result_path")
+            fail("invalid_change_action")
         files.append({"path": path, "action": item["action"], "fromPath": None if item.get("fromPath") in (None, "") else relative(item["fromPath"], "unsafe_result_path")})
     tests = []
     for item in array(raw, "tests", 50, dict):

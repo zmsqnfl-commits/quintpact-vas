@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from vas_session import SessionManager, read_input, require
+from vas_session import SessionManager, read_input, require, session_error_response
 from vas_session_store import SessionStoreError
 from vas_portable_progress import SharedProgressError
 from vas_start import start
@@ -18,11 +18,28 @@ from vas_start import start
 def finish_command(args):
     from vas_finish import finish, quick_finish
     full = (args.session, args.expected_revision, args.expected_progress_revision)
-    if any(value is not None for value in (*full, args.expected_project_prompt_revision)):
-        require(all(value is not None for value in full) and args.summary is None and not args.check
-                and args.next_step is None, "finish_invalid_arguments")
-        return finish(SessionManager(args.vas_root, args.state_home), *full, read_input(sys.stdin.buffer),
-                      args.expected_project_prompt_revision, args.expected_shared_revision)
+    report_flags = args.prepared_hash is not None or args.artifact_version is not None or bool(
+        args.criterion or args.changed_file or args.remaining)
+    if report_flags or any(value is not None for value in (*full, args.expected_project_prompt_revision)):
+        require(all(value is not None for value in full) and (not report_flags or args.prepared_hash is not None),
+                "finish_invalid_arguments")
+        if args.summary is None:
+            require(not (args.check or args.changed_file or args.remaining or args.next_step is not None),
+                    "finish_invalid_arguments")
+            raw = read_input(sys.stdin.buffer)
+        else:
+            from vas_finish_report import check_flags
+            require(args.prepared_hash is not None, "finish_invalid_arguments")
+            progress = {"summary": args.summary, "checks": check_flags(args.check),
+                        "changedFiles": args.changed_file}
+            if args.remaining:
+                progress["remaining"] = args.remaining
+            if args.next_step is not None:
+                progress["nextStep"] = args.next_step
+            raw = {"progress": progress}
+        return finish(SessionManager(args.vas_root, args.state_home), *full, raw,
+                      args.expected_project_prompt_revision, args.expected_shared_revision,
+                      prepared_hash=args.prepared_hash, artifact_version=args.artifact_version, criteria=args.criterion)
     return quick_finish(args.vas_root, args.state_home, args.summary, args.check, args.next_step,
                         args.expected_shared_revision)
 
@@ -54,6 +71,13 @@ def main():
     closing.add_argument("--expected-revision", type=int)
     closing.add_argument("--expected-progress-revision", type=int)
     closing.add_argument("--expected-project-prompt-revision", type=int)
+    closing.add_argument("--prepared-hash", help="payload SHA-256 returned by prepare before this work")
+    closing.add_argument("--artifact-version", help="version of the artifact that was actually checked")
+    closing.add_argument("--criterion", action="append", default=[], metavar="C1=OUTCOME:SUMMARY",
+                         help="report a checked criterion (passed/failed/skipped/not-run/not-applicable)")
+    closing.add_argument("--changed-file", action="append", default=[], metavar="[ACTION:]PATH",
+                         help="relative file, optionally with created/modified/deleted/renamed action")
+    closing.add_argument("--remaining", action="append", default=[], help="describe one remaining issue")
     transfer = commands.add_parser("import", help="plan an explicit app source transfer")
     transfer.add_argument("--from", dest="source", required=True, help="the old app source directory")
     transfer.add_argument("--apply", action="store_true", help="copy the vetted files into empty src")
@@ -80,8 +104,8 @@ def main():
             print(json.dumps(result, ensure_ascii=False, allow_nan=False))
         return code
     except (ValueError, TypeError, OSError, SessionStoreError, SharedProgressError, RecursionError) as error:
-        code = getattr(error, "code", "vas_start_unavailable" if args.command == "start" else "session_invalid")
-        print(json.dumps({"status": "error", "code": code}))
+        default = "vas_start_unavailable" if args.command == "start" else "session_invalid"
+        print(json.dumps(session_error_response(error, default)))
         return 1
 
 

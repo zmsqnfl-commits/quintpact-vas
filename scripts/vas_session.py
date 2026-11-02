@@ -1,6 +1,7 @@
 """Persist task settings, not execution authority or evidence of completion."""
 from __future__ import annotations
 
+import errno
 import json
 import math
 import os
@@ -22,9 +23,17 @@ LOCAL_POSIX = re.compile(r'''(?<![\w:/])/(?:opt|tmp|srv|private|media|run|root|p
 
 
 class SessionError(ValueError):
-    def __init__(self, code):
+    def __init__(self, code, detail=None):
         self.code = code
+        self.detail = detail
         super().__init__(code)
+
+
+def session_error_response(error, default="session_invalid"):
+    response = {"status": "error", "code": getattr(error, "code", default)}
+    if isinstance(error, SessionError) and error.detail:
+        response["detail"] = error.detail
+    return response
 
 
 def require(condition, code="session_invalid"):
@@ -252,11 +261,49 @@ class SessionManager:
             valid_document(record["document"])
             require(key == record["document"]["sessionId"])
             binding = record["binding"]
-            fields(binding, {"path", "identity"}, {"path", "identity"})
+            fields(binding, {"path", "identity", "anchor"}, {"path", "identity"})
             require(isinstance(binding["path"], str) and Path(binding["path"]).is_absolute())
             require(isinstance(binding["identity"], list) and len(binding["identity"]) == 2 and
                     all(type(item) is int and item >= 0 for item in binding["identity"]))
+            if "anchor" in binding:
+                anchor = binding["anchor"]
+                fields(anchor, {"id", "inode"}, {"id", "inode"})
+                require(isinstance(anchor["id"], str) and SESSION_ID.fullmatch(anchor["id"])
+                        and type(anchor["inode"]) is int and anchor["inode"] > 0)
         return records
+
+    def _bind(self, target):
+        ident = identity(target)
+        binding = {"path": str(target), "identity": ident}
+        if target == self.root == self.project_root and ident[1]:
+            from vas_target_anchor import project_anchor
+            try:
+                binding["anchor"] = project_anchor(target)
+            except OSError as error:
+                # A read-only project can still use its original exact device/inode binding.
+                if error.errno not in (errno.EACCES, errno.EPERM, errno.EROFS):
+                    raise SessionError("target_identity_unavailable") from None
+            except ValueError:
+                raise SessionError("target_identity_unsafe") from None
+            require(identity(target) == ident, "target_unavailable")
+        return binding
+
+    def _binding_status(self, target, binding):
+        observed = identity(target)
+        expected = binding["identity"]
+        if not expected[1]:
+            return "unverified", observed
+        if "anchor" not in binding:
+            matches = observed == expected
+        else:
+            from vas_target_anchor import project_anchor
+            try:
+                matches = (target == self.root == self.project_root and observed[1] == expected[1]
+                           and project_anchor(target, binding["anchor"]) == binding["anchor"]
+                           and identity(target) == observed)
+            except (ValueError, OSError):
+                matches = False
+        return ("available" if matches else "changed"), observed
 
     def _record(self, records, session_id):
         require(isinstance(session_id, str) and SESSION_ID.fullmatch(session_id), "session_id_invalid")
@@ -267,9 +314,7 @@ class SessionManager:
         binding = record["binding"]
         try:
             target = self._target(binding["path"])
-            status = "available" if identity(target) == binding["identity"] else "changed"
-            if not binding["identity"][1]:
-                status = "unverified"
+            status, _ = self._binding_status(target, binding)
         except (OSError, SessionError) as error:
             status = "missing" if getattr(error, "code", "") == "target_missing" else "unsafe"
         document, changes = valid_document(record["document"])
@@ -322,7 +367,7 @@ class SessionManager:
             doc = {"format": "vas-chat-session", "schemaVersion": 1, "sessionId": uuid.uuid4().hex,
                    "revision": 1, "settings": settings}
             self._stamp(doc)
-            record = {"document": doc, "binding": {"path": str(target), "identity": identity(target)}}
+            record = {"document": doc, "binding": self._bind(target)}
             records[doc["sessionId"]] = record
             return dict(self._view(record), reviewFields=changes)
         return self.store.mutate(update)
@@ -370,7 +415,7 @@ class SessionManager:
             self._revision(record, expected_revision)
             require(not any(key != session_id and os.path.normcase(other["binding"]["path"]) ==
                             os.path.normcase(str(target)) for key, other in records.items()), "target_already_registered")
-            record["binding"] = {"path": str(target), "identity": identity(target)}
+            record["binding"] = self._bind(target)
             record["document"]["revision"] += 1
             self._stamp(record["document"])
             return self._view(record)

@@ -43,7 +43,15 @@ python -B scripts/vas.py finish --summary "메뉴판 제목 문구 수정" --che
 
 ## 준비한 작업을 마치거나 중단할 때
 
-에이전트가 실제로 준비한 세션과 최신 판본을 사용해 아래 명령에 UTF-8 JSON을 표준입력으로 전달합니다. 사용자가 입력 파일이나 결과 JSON을 만들 필요는 없습니다.
+프로젝트 루트에서 구현 전 `prepare`가 반환한 `finishArguments`를 보관합니다. 이 배열에는 세션·진행·공유 판본, 확인한 프로젝트 지시 판본, 인계 해시가 들어 있습니다. 작업 후 에이전트는 `python -B scripts/vas.py`에 그 배열을 그대로 붙이고, 아래처럼 실제 결과에 해당하는 인자만 보탭니다. 이 예의 파일·검사·빌드 표시는 해당 앱에서 직접 확인한 값으로 바꾸세요.
+
+```text
+--summary "메뉴판 이전 확인" --changed-file created:src/app.js --check "메뉴판 표시:passed" --check "결제 연동:not-run" --artifact-version "build-27" --criterion "C1=passed:검사한 빌드에서 메뉴 세 항목 표시" --remaining "실서비스 결제 연동 미실행" --next-step "테스트 계정으로 결제 연동 확인"
+```
+
+도구는 이 입력으로 결과 ID, 검사 목록, 근거와 진행 요약을 구성해 연결을 검증합니다. 완료조건 ID와 검사 방법은 준비한 작업에서 읽습니다. `--artifact-version`에는 실제 검사한 커밋·빌드 또는 파일 해시를 사용합니다. `--criterion`을 쓰려면 같은 산출물의 버전이 필요합니다. 조건별 관찰이 없으면 통과를 추정하지 않습니다. 실패·미실행 조건의 번호와 이유는 다음 진행 요약에도 남습니다. 남은 항목의 저장 한도를 넘으면 비슷한 설명을 합쳐 다시 제출하세요. 변경 종류를 확인한 경우에만 `created:`, `modified:`, `deleted:`, `renamed:`를 붙입니다. 준비한 해시·판본이 달라지면 변경된 범위와 기존 검사부터 대조합니다.
+
+직접 v1 보고서를 제공하는 호스트는 아래 명령에 기존 UTF-8 JSON을 표준입력으로 전달할 수도 있습니다.
 
 ```text
 python -B scripts/vas.py finish --session ID --expected-revision N --expected-progress-revision P

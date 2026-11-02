@@ -250,6 +250,17 @@ def cli(setup, action, raw=None, revision="1"):
                           env={**os.environ, "PYTHONUTF8": "1"}, timeout=30)
 
 
+def test_cli_validation_detail_names_the_field_without_echoing_host_input(setup):
+    value = result(prepare(setup))
+    value["resultId"] = "private-user-value"
+    before = setup[0].store.path.read_bytes()
+    response = cli(setup, "assess", json.dumps(value))
+    assert response.returncode == 1 and not response.stderr
+    assert json.loads(response.stdout) == {"status": "error", "code": "execution_result_invalid",
+                                         "detail": "invalid_result_id"}
+    assert setup[0].store.path.read_bytes() == before
+
+
 def test_cli_duplicate_json_and_noninteger_revision_are_rejected(setup):
     duplicate = cli(setup, "assess", '{"status":"complete","status":"failed"}')
     assert duplicate.returncode == 1
@@ -358,7 +369,7 @@ def test_distributed_cli_without_package_json_prepares_and_assesses(setup, tmp_p
                               capture_output=True, timeout=30, env={**os.environ, "PYTHONUTF8": "1"})
     assert prepared.returncode == 0, prepared.stderr + prepared.stdout
     payload = json.loads(prepared.stdout)
-    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.13.1"
+    assert payload["status"] == "prepared" and payload["handoff"]["generatedBy"]["version"] == "2.13.2"
     checked = subprocess.run(command + ["assess"] + arguments, text=True, encoding="utf-8",
                              input=json.dumps(result(payload)), capture_output=True, timeout=30,
                              env={**os.environ, "PYTHONUTF8": "1"})

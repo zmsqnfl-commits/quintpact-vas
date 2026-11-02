@@ -62,7 +62,9 @@ revision이나 인계 해시가 달라지면 다음 변경을 진행하기 전�
 
 결과 v1은 [실행 결과 안내](../docs/CHAT-EXECUTION.md)를 따른다. 실제 검사 대상의 commit·파일 해시 등으로 `artifactVersion`을 구분하고 완료조건 ID별 `evidence`를 연결한다. 인계 해시만으로 앱 코드 버전을 대신하지 않는다. 실행 명령·종료 코드는 정제된 요약으로 보고하고 원시 로그·경로·비밀값은 결과 JSON에 넣지 않는다.
 
-최신 실행 인계에 대한 결과를 UTF-8 표준입력으로 보내 대조한다.
+프로젝트 루트에서 `prepare`가 `finishArguments`를 반환하면 구현 전에 이 값을 보관한다. 작업 후 그 인자에 실제 요약·검사와 원래 조건별 결과를 더해 한 번 `python -B scripts/vas.py`로 전달한다. 이 명령이 결과 v1 조립, 평가, 체크포인트 저장과 재조회를 맡는다. 사용법은 [프로젝트 마무리](../docs/PROJECT-ROOT.md)를 따른다.
+
+결과 v1을 따로 대조하는 호스트는 최신 실행 인계에 대한 결과를 UTF-8 표준입력으로 보낸다.
 
 `python scripts/vas-session.py assess --session ID --expected-revision N`
 

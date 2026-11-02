@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul 2>&1
-title VAS 2.13.1
+title VAS 2.13.2
 setlocal DisableDelayedExpansion
 
 if not exist "%~dp0ui\vas-hub.html" goto :missing

@@ -2,12 +2,13 @@
 import hashlib
 from pathlib import Path
 
-from vas_ai_contract import canonical, validate_result
+from vas_ai_contract import canonical
+from vas_finish_report import build_result, check_flags, prepare_draft, result_status
 from vas_portable_progress import SharedProgressError, append_shared_progress, read_shared_progress
 from vas_project_layout import is_project_engine, project_directory
 from vas_project_prompt import read_project_prompt
 from vas_session import SessionError, SessionManager, require
-from vas_session_execution import assess_with_result
+from vas_session_execution import assess_with_result, prepare, validate_execution_result
 from vas_session_progress import checkpoint, normalize_progress, _text as progress_text
 from vas_session_store import SessionStoreError
 
@@ -21,7 +22,7 @@ def _check_counts(tests):
     return counts
 
 
-def _report_progress(progress, report, followup):
+def _report_progress(progress, report, followup, *, normalized_checks=None):
     draft = dict(progress)
     draft.setdefault("phase", followup["suggestedPhase"])
     draft.setdefault("nextStep", followup["nextStep"])
@@ -32,10 +33,11 @@ def _report_progress(progress, report, followup):
         require(isinstance(explicit, list) and all(isinstance(item, dict) for item in explicit),
                 "progress_invalid")
         missing = []
+        candidates = explicit if normalized_checks is None else normalized_checks
         for item in report["tests"]:
-            matches = [check for check in explicit if check.get("name") == item["name"]
+            matches = [check for check in candidates if check.get("name") == item["name"]
                        and check.get("command", "") == item["command"]]
-            require(not matches or any(check.get("status") == item["status"] for check in matches),
+            require(not matches or any(result_status(check.get("status")) == item["status"] for check in matches),
                     "finish_check_conflict")
             if not matches and item["status"] != "passed":
                 missing.append(item)
@@ -82,6 +84,28 @@ def _scope(task):
         return None
     return {"objective": _excerpt(task["request"], 1000),
             "criteria": [_excerpt(row["description"], 300) for row in task["completionCriteria"]]}
+
+
+def _retain_criterion_issues(progress, evidence):
+    # The shared journal has room for ten 300-unit notes. Keep the specific reason
+    # when the next host has only the journal and cannot reread the agent's report.
+    explicit = progress.get("remaining", [])
+    notes = [_excerpt(f"{item['criterionId']} {item['outcome']}: {item['summary']}", 300)
+             for item in evidence if item["outcome"] != "passed"]
+    notes = [note for note in notes if note not in explicit]
+    if not notes:
+        return progress
+    if len(notes) + len(explicit) > 10:
+        packed = []
+        for note in notes:
+            combined = packed[-1] + "\n" + note if packed else ""
+            if packed and len(combined.encode("utf-16-le")) <= 600:
+                packed[-1] = combined
+            else:
+                packed.append(note)
+        notes = packed
+    require(len(notes) + len(explicit) <= 10, "finish_remaining_summary_required")
+    return {**progress, "remaining": notes + explicit}
 
 
 def _quick_context(progress, previous, task, keep_next):
@@ -143,9 +167,12 @@ def _write_shared(output, root, cursor, progress, task, *, quick=False, keep_nex
 
 
 def finish(manager, session_id, expected_revision, expected_progress_revision, raw,
-           expected_project_prompt_revision=None, expected_shared_revision=None):
-    require(type(raw) is dict and set(raw) == {"result", "progress"} and
-            type(raw["progress"]) is dict, "finish_input_invalid")
+           expected_project_prompt_revision=None, expected_shared_revision=None, *,
+           prepared_hash=None, artifact_version=None, criteria=()):
+    require(type(raw) is dict and type(raw.get("progress")) is dict, "finish_input_invalid")
+    automatic = prepared_hash is not None
+    require(set(raw) == ({"progress"} if automatic else {"result", "progress"}) and
+            (automatic or (artifact_version is None and not criteria)), "finish_input_invalid")
     require(type(expected_revision) is int and expected_revision >= 1, "revision_invalid")
     require(type(expected_progress_revision) is int and expected_progress_revision >= 0,
             "progress_revision_invalid")
@@ -158,6 +185,11 @@ def finish(manager, session_id, expected_revision, expected_progress_revision, r
     if expected_project_prompt_revision is not None or prompt["revision"]:
         require(type(expected_project_prompt_revision) is int and
                 expected_project_prompt_revision == prompt["revision"], "project_prompt_conflict")
+    progress = raw["progress"]
+    draft = None
+    input_hash = None
+    if automatic:
+        progress, draft, input_hash = prepare_draft(progress, prepared_hash, artifact_version, criteria)
     decision = None
     replayed = view["session"]["revision"] != expected_revision
     if replayed:
@@ -168,28 +200,35 @@ def finish(manager, session_id, expected_revision, expected_progress_revision, r
                 record.get("revision") == expected_progress_revision + 1 and
                 record.get("basedOn", {}).get("sessionRevision") == expected_revision and
                 "finish" in record, "revision_conflict")
-        source = view["session"]["settings"]["project"]["sourceType"]
-        try:
-            report = validate_result(raw["result"], source) if raw["result"] is not None else None
-        except ValueError:
-            raise SessionError("execution_result_invalid") from None
+        if not automatic:
+            source = view["session"]["settings"]["project"]["sourceType"]
+            report = validate_execution_result(raw["result"], source) if raw["result"] is not None else None
+            input_hash = _input_hash(progress, report)
         receipt = record["finish"]
-        require(receipt["inputSha256"] == _input_hash(raw["progress"], report), "revision_conflict")
+        require(receipt["inputSha256"] == input_hash, "revision_conflict")
         saved = view
     else:
         work_revision = view["work"]["revision"] if "work" in view else 0
         require(type(work_revision) is int, "work_invalid")
-        progress = raw["progress"]
+        if automatic:
+            prepared = prepare(manager, session_id, expected_revision)
+            require(prepared["status"] == "prepared", "execution_needs_input")
+            result = build_result(prepared["handoff"], draft, input_hash)
+        else:
+            result = raw["result"]
         report = None
-        if raw["result"] is None:
+        if result is None:
             require(progress.get("phase") in ("paused", "blocked"), "finish_result_required")
         else:
-            decision, report = assess_with_result(manager, session_id, expected_revision, raw["result"])
+            decision, report = assess_with_result(manager, session_id, expected_revision, result)
             require(decision["assessment"]["status"] != "invalid", "execution_result_invalid")
             require(decision["followUp"]["basis"]["workRevision"] == (work_revision or None),
                     "work_revision_conflict")
-            progress = _report_progress(progress, report, decision["followUp"])
-        receipt = {"inputSha256": _input_hash(raw["progress"], report),
+            if automatic:
+                progress = _retain_criterion_issues(progress, report["evidence"])
+            progress = _report_progress(progress, report, decision["followUp"],
+                                        normalized_checks=draft["normalized"]["checks"] if automatic else None)
+        receipt = {"inputSha256": input_hash if automatic else _input_hash(raw["progress"], report),
                    "assessmentStatus": decision["assessment"]["status"] if decision else None,
                    "reportedStatus": decision["reportedStatus"] if decision else None}
         saved = checkpoint(manager, session_id, expected_revision, expected_progress_revision, progress,
@@ -212,6 +251,8 @@ def finish(manager, session_id, expected_revision, expected_progress_revision, r
                   nextStep=summary["nextStep"], assessment=decision["assessment"] if decision else None,
                   assessmentStatus=receipt["assessmentStatus"], reportedStatus=receipt["reportedStatus"],
                   followUp=decision["followUp"] if decision else None, reviewFields=saved.get("progressReviewFields", []))
+    if automatic and not replayed:
+        output["result"] = report
     return _write_shared(output, manager.root, expected_shared_revision, summary,
                          resumed["session"]["settings"]["task"])
 
@@ -238,14 +279,7 @@ def quick_finish(root, state_home, summary, checks, next_step, expected_shared_r
         return output
     checks = checks or []
     require(isinstance(summary, str) and summary.strip() and len(checks) <= 10, "finish_input_invalid")
-    statuses = {"통과": "passed", "실패": "failed", "미실행": "not-run", "건너뜀": "skipped",
-                "passed": "passed", "failed": "failed", "not-run": "not-run", "skipped": "skipped"}
-    reported = []
-    for value in checks:
-        name, separator, outcome = value.rpartition(":")
-        status = statuses.get(outcome.strip().lower())
-        require(separator and name.strip() and status, "finish_check_invalid")
-        reported.append({"name": name.strip(), "status": status, "summary": "호스트 직접 보고"})
+    reported = check_flags(checks)
     draft = {"phase": "testing" if any(c["status"] != "passed" for c in reported) else "reviewing",
              "summary": summary, "checks": reported,
              "nextStep": "다음 행동 미지정" if next_step is None else next_step}

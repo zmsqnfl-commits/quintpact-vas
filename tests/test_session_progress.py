@@ -229,6 +229,29 @@ def test_generic_absolute_posix_paths_are_redacted_after_labels(text):
     assert "[absolute-path]" in normalized["summary"] and "summary" in review
 
 
+@pytest.mark.parametrize("volume", ["./:/app", ".:/app", "../assets:/app/data:ro", "../../assets:/workspace:rw"])
+def test_relative_compose_volume_survives_a_session_checkpoint(setup, volume):
+    raw = payload()
+    raw["summary"] = f"Verified compose volume `{volume}`"
+    raw["nextStep"] = f'Inspect "{volume}"'
+    raw["checks"][0]["command"] = f"docker run -v {volume} menu"
+    saved = checkpoint(setup, raw)
+    recorded = saved["progress"]["record"]["summary"]
+    for field in ("summary", "nextStep", "checks"):
+        assert recorded[field] == raw[field]
+    assert progress.normalize_progress(recorded) == (recorded, [])
+
+
+def test_container_volume_exception_requires_a_relative_source_and_a_complete_token():
+    message = (r"./:/app:ro /sessions/private_host/app:/app ../:/home/private_host "
+               r"cwd:/department/private_host /parent/./:/private_host "
+               r"./:/app:/department/private_host E:\private_host:/app \\private_host\share "
+               r"password=private_value")
+    safe, review = progress.normalize_progress(dict(payload(), summary=message))
+    assert "./:/app:ro" in safe["summary"] and "private_host" not in safe["summary"]
+    assert "private_value" not in safe["summary"] and "summary" in review
+
+
 @pytest.mark.parametrize("path", ["./tests/test_booking.py", "../shared/tests/check.js", "../../shared/check.js"])
 def test_commands_and_next_steps_preserve_relative_paths(setup, path):
     raw = payload()

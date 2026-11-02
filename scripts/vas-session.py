@@ -10,7 +10,7 @@ from pathlib import Path
 # Do not populate a packaged project's reserved engine with bytecode on first use.
 sys.dont_write_bytecode = True
 
-from vas_session import SessionError, SessionManager, read_input
+from vas_session import SessionError, SessionManager, read_input, session_error_response
 from vas_session_store import SessionStoreError
 from vas_session_web import dispatch
 from vas_session_execution import assess, prepare
@@ -98,9 +98,8 @@ def main():
             result = {"sessions": manager.list()}
         print(json.dumps(result, ensure_ascii=False, allow_nan=False))
         return 0
-    except (SessionError, SessionStoreError, ValueError, TypeError, OSError, RecursionError):
-        error = sys.exc_info()[1]
-        print(json.dumps({"status": "error", "code": getattr(error, "code", "session_invalid")}))
+    except (SessionError, SessionStoreError, ValueError, TypeError, OSError, RecursionError) as error:
+        print(json.dumps(session_error_response(error)))
         return 1
 
 

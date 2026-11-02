@@ -94,15 +94,15 @@ def _markdown(record):
 
 
 @contextmanager
-def _directory(root, create):
-    """Pin the marked project and both real child directories during all operations."""
+def _directory(root, create, names=("vas-state", "progress")):
+    """Pin the marked project and its real state directories during all operations."""
     project = _Project(root)
     require(project.root == project.engine, "layout")
     with ExitStack() as stack:
         stack.enter_context(_pin(project))
         path, parent_fd = project.root, project.dir_fd
         dirs = []
-        for name in ("vas-state", "progress"):
+        for name in names:
             parent = _Journal(path, parent_fd)
             path = path / name
             dirs.append(path)

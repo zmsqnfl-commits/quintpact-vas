@@ -192,6 +192,7 @@ class ReleasePackageTests(unittest.TestCase):
             "scripts/vas-session.py", "scripts/vas_session.py", "scripts/vas_session_store.py",
             "scripts/vas_session_web.py", "scripts/VAS.Session.psm1", "scripts/VAS.Server.Session.ps1",
             "scripts/vas_session_execution.py", "scripts/vas_followup.py",
+            "scripts/vas_target_anchor.py", "scripts/vas_finish_report.py",
             "scripts/vas_session_progress.py", "scripts/vas_session_work.py",
             "scripts/vas_work_contract.py", "scripts/vas_work_files.py", "scripts/vas_work_inspection.py",
             "ui/chat-design-sync.js", "ui/chat-design-sync.css",
@@ -235,6 +236,10 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertFalse((app / "package.json").exists())
             (app / "src/sentinel.txt").write_text("unchanged", encoding="utf-8")
             before = tree_fingerprints(app)
+            def directories():
+                return {p.relative_to(app).as_posix() for p in app.rglob("*") if p.is_dir()}
+            bound_dirs = directories() | {"vas-state", "vas-state/target-identity"}
+            bound_tree = None
             command = [sys.executable, "-B", str(app / "scripts/vas-session.py"),
                        "--state-home", str(base / "state")]
 
@@ -244,6 +249,9 @@ class ReleasePackageTests(unittest.TestCase):
                     text=True, encoding="utf-8", capture_output=True, timeout=30,
                     env={**os.environ, "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1"})
                 self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+                if bound_tree is not None:
+                    self.assertEqual(tree_fingerprints(app), bound_tree, arguments)
+                    self.assertEqual(directories(), bound_dirs, arguments)
                 return json.loads(completed.stdout)
 
             settings = {"project": {"name": "CSV fixture", "sourceType": "existing"},
@@ -251,6 +259,13 @@ class ReleasePackageTests(unittest.TestCase):
                                  "completionCriteria": [{"description": "CSV round trip",
                                                          "method": "automatic", "required": True}]}}
             session = invoke(["create", "--target", "."], settings)["session"]
+            bound_tree = tree_fingerprints(app)
+            added = set(bound_tree) - set(before)
+            self.assertEqual(len(added), 1)
+            anchor, = added
+            self.assertRegex(anchor, r"^vas-state/target-identity/[0-9a-f]{32}$")
+            self.assertEqual(bound_tree, {**before, anchor: sha256_bytes(b"")})
+            self.assertEqual(directories(), bound_dirs)
             selector = ["--session", session["sessionId"], "--expected-revision", "1"]
             prepared = invoke(["prepare"] + selector)
             self.assertEqual(prepared["status"], "prepared")
@@ -309,7 +324,6 @@ class ReleasePackageTests(unittest.TestCase):
             self.assertNotIn("progress", cleared)
             self.assertEqual(cleared["session"]["settings"]["nextStep"],
                              checkpoint["session"]["settings"]["nextStep"])
-            self.assertEqual(tree_fingerprints(app), before)
 
     def test_standalone_form_is_self_contained(self) -> None:
         _, payload = self.read_and_verify_zip(

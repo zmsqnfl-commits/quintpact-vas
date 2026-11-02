@@ -46,6 +46,14 @@ def test_revisions_redaction_no_raw_data_and_optimistic_conflicts(project):
     assert "private command" not in contents and "src/menu.py" not in contents
 
 
+def test_shared_volume_note_preserves_container_syntax_and_redacts_host_path(project):
+    first = journal.append_shared_progress(project, 0, note("Volume ./assets:/app:ro from /sessions/private_host/src"))
+    assert journal.read_shared_progress(project) == first
+    for suffix in ("json", "md"):
+        text = (project / f"vas-state/progress/000001.{suffix}").read_text(encoding="utf-8")
+        assert "./assets:/app:ro" in text and "private_host" not in text
+
+
 def test_create_only_remote_and_interrupted_writer(project, monkeypatch):
     real_open = os.open
     def create_only(path, flags, *args, **kwargs):

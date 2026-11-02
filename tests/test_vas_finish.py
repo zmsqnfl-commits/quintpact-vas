@@ -71,6 +71,16 @@ def test_real_cli_assesses_saves_reads_back_and_safe_retry(kit):
     assert manager.store.path.read_bytes() == before
 
 
+def test_prepared_finish_arguments_bind_the_existing_shared_revision(kit):
+    manager, _, _, root, state = kit
+    assert vas_finish.quick_finish(root, state, "Prior work", [], "Read next task")["sharedProgress"]["revision"] == 1
+    args = prepared(kit)["finishArguments"]
+    assert args[args.index("--expected-shared-revision") + 1] == "1"
+    code, result = close(kit, {"progress": {"summary": "Check menu"}}, *args[1:])
+    assert code == 0 and result["sharedProgress"]["revision"] == 2
+    assert manager.resume(session_id=kit[1])["progress"]["revision"] == 1
+
+
 def test_pause_records_no_assessment_or_fake_test(kit):
     manager, sid, _, _, _ = kit
     raw = {"result": None, "progress": {"phase": "paused", "summary": "Waiting for input",
@@ -81,6 +91,127 @@ def test_pause_records_no_assessment_or_fake_test(kit):
     assert manager.resume(session_id=sid)["session"]["settings"]["nextStep"] == "Ask which app to use"
 
 
+def test_cli_builds_result_from_host_checks_and_retries_once(kit):
+    manager, sid, _, _, _ = kit
+    handoff = prepared(kit)["handoff"]
+    flags = ("--prepared-hash", handoff["integrity"]["payloadSha256"], "--summary", "Checked menu",
+             "--artifact-version", "menu-v4", "--criterion", "C1=passed:Total matched",
+             "--check", "Menu:passed", "--check", "Phone:not-run", "--changed-file", "created:src/menu.js",
+             "--changed-file", "src/display.css", "--remaining", "Open phone preview")
+    code, saved = close(kit, None, *flags)
+    assert code == 0 and saved["status"] == "checkpointed"
+    assert saved["reportedStatus"] == "incomplete" and saved["assessmentStatus"] == "needs-verification"
+    assert saved["assessment"]["conditions"] == [
+        {"id": "C1", "required": True, "status": "unconfirmed", "source": "agent-submitted"}]
+    expected = saved["progress"]
+    assert expected["changedFiles"] == ["src/menu.js", "src/display.css"]
+    assert expected["remaining"] == ["Open phone preview"]
+    assert [c["status"] for c in expected["checks"]] == ["passed", "not-run"]
+    basis = saved["followUp"]["basis"]
+    assert basis["handoffId"] == handoff["workflow"]["handoffId"]
+    assert basis["handoffPayloadSha256"] == flags[1] and basis["resultId"].startswith("r_")
+    assert len(basis["resultId"]) == 34
+    assert saved["result"]["resultId"] == basis["resultId"] and saved["result"]["tests"][1]["status"] == "skipped"
+    before = manager.store.path.read_bytes()
+    code, retry = close(kit, None, *flags)
+    assert code == 0 and retry["replayed"] and retry["sharedProgress"] == saved["sharedProgress"]
+    assert "result" not in retry and "result" not in saved["sharedProgress"]
+    assert close(kit, None, *flags, "--remaining", "Changed claim")[1]["code"] == "revision_conflict"
+    assert manager.store.path.read_bytes() == before and manager.resume(session_id=sid)["session"]["revision"] == 2
+
+
+def test_generated_result_actions_evidence_and_check_state_use_only_reported_facts(kit, monkeypatch):
+    manager, sid, _, _, _ = kit
+    handoff = prepared(kit)["handoff"]
+    captured = {}
+    assess = vas_finish.assess_with_result
+
+    def inspect(*args):
+        captured.update(args[-1])
+        return assess(*args)
+
+    monkeypatch.setattr(vas_finish, "assess_with_result", inspect)
+    progress = {"summary": "Imported", "changedFiles": ["created:src/server.py", "src/route.py",
+                "modified:src\\menu.js", "modified:.env"], "remaining": ["Verify shop configuration"],
+                "checks": [{"name": "API", "command": "run-server-check", "status": "passed", "exitCode": 0,
+                            "summary": "Got 200"}]}
+    out = vas_finish.finish(manager, sid, 1, 0, {"progress": progress},
+                            prepared_hash=handoff["integrity"]["payloadSha256"], artifact_version="app-build-4",
+                            criteria=["C1=not-run:No matching fixture available"])
+    assert captured["evidence"] == [{"criterionId": "C1", "artifactVersion": "app-build-4",
+            "method": "automatic", "outcome": "skipped", "summary": "No matching fixture available"}]
+    assert captured["tests"] == [{"name": "API", "status": "passed", "summary": "Got 200", "command": "run-server-check"}]
+    assert captured["changes"]["relativeFiles"] == [{"path": "src/server.py", "action": "created"},
+                                                     {"path": "src/menu.js", "action": "modified"}]
+    assert captured["remaining"] == [{"summary": "Verify shop configuration"}] and "readback" not in captured
+    assert out["progress"]["checks"][0]["exitCode"] == 0 and out["complete"] is False
+
+
+def test_draft_requires_original_receipt_and_only_explicit_known_evidence(kit):
+    manager, _, _, _, _ = kit
+    before = manager.store.path.read_bytes()
+    opts = ("--prepared-hash", prepared(kit)["handoff"]["integrity"]["payloadSha256"], "--summary", "Checked")
+    assert close(kit, None, *opts, "--criterion", "C1=passed:Looked")[1]["code"] == "finish_artifact_version_required"
+    opts += ("--artifact-version", "v1")
+    assert close(kit, None, *opts, "--criterion", "C2=passed:Looked")[1]["code"] == "finish_criterion_unknown"
+    assert close(kit, None, *opts, "--criterion", "C1=true:value")[1]["code"] == "finish_criterion_invalid"
+    assert close(kit, None, *opts, "--criterion", "C1=passed:x", "--criterion", "C1=failed:y")[1]["code"] == "finish_criterion_invalid"
+    assert close(kit, None, *opts, "--prepared-hash", "f" * 64)[1]["code"] == "execution_result_mismatch"
+    assert manager.store.path.read_bytes() == before
+    code, saved = close(kit, {"progress": {"summary": "No tests yet"}}, *opts[:2])
+    assert code == 0 and saved["reportedStatus"] == "incomplete"
+    assert saved["assessment"]["conditions"][0]["source"] == "missing" and not saved["progress"]["checks"]
+
+
+def test_strict_report_skipped_matches_not_run_progress_and_rejects_real_disagreement(kit):
+    payload = report(prepared(kit))
+    item = payload["tests"][0]
+    item["status"] = "skipped"
+    check = {**item, "status": "passed"}
+    raw = {"result": payload, "progress": {"summary": "Check deferred", "checks": [check]}}
+    assert close(kit, raw)[1]["code"] == "finish_check_conflict"
+    check["status"] = "not-run"
+    code, saved = close(kit, raw)
+    assert code == 0 and [c["status"] for c in saved["progress"]["checks"]] == ["not-run"]
+
+
+@pytest.mark.parametrize(("reported", "canonical"), [("failed", "failed"), ("not-run", "skipped"),
+                                                     ("not-applicable", "not-applicable")])
+def test_unresolved_criterion_is_visible_in_private_and_portable_history_on_retry(kit, reported, canonical):
+    manager, sid, root, _, _ = kit
+    flags = ("--prepared-hash", prepared(kit)["handoff"]["integrity"]["payloadSha256"],
+             "--summary", "Price checked", "--artifact-version", "menu-4", "--remaining", "Review opening hours",
+             "--criterion", f"C1={reported}:Price wrong at /home/operator/private " + "메" * 400)
+    code, saved = close(kit, None, *flags)
+    assert code == 0 and saved["progress"]["checks"] == []
+    notes = saved["progress"]["remaining"]
+    assert notes[0].startswith(f"C1 {canonical}: Price wrong at [absolute-path]") and notes[0].endswith("…")
+    assert len(notes[0].encode("utf-16-le")) <= 600 and notes[1:] == ["Review opening hours"]
+    assert manager.resume(session_id=sid)["progress"]["record"]["summary"]["remaining"] == notes
+    assert saved["sharedProgress"]["remaining"] == notes
+    markdown = (root / "vas-state/progress/000001.md").read_text("utf-8")
+    assert f"C1 {canonical}: Price wrong" in markdown and "operator/private" not in markdown
+    before = manager.store.path.read_bytes()
+    code, retry = close(kit, None, *flags)
+    assert code == 0 and retry["replayed"] and retry["sharedProgress"]["remaining"] == notes
+    assert manager.store.path.read_bytes() == before and not (root / "vas-state/progress/000002.ok").exists()
+
+
+def test_concrete_criteria_pack_or_fail_before_replacing_user_remaining(kit):
+    manager, _, root, _, _ = kit
+    explicit = [f"Open issue {i}" for i in range(9)]
+    evidence = [{"criterionId": "C1", "outcome": "failed", "summary": "First failed"},
+                {"criterionId": "C2", "outcome": "skipped", "summary": "No camera"}]
+    packed = vas_finish._retain_criterion_issues({"remaining": explicit}, evidence)["remaining"]
+    assert packed == ["C1 failed: First failed\nC2 skipped: No camera", *explicit]
+    before = manager.store.path.read_bytes()
+    raw = {"progress": {"summary": "Price checked", "remaining": [*explicit, "One more issue"]}}
+    code, error = close(kit, raw, "--prepared-hash", prepared(kit)["handoff"]["integrity"]["payloadSha256"],
+                        "--artifact-version", "v4", "--criterion", "C1=failed:Price differs")
+    assert code == 1 and error["code"] == "finish_remaining_summary_required"
+    assert manager.store.path.read_bytes() == before and not (root / "vas-state/progress").exists()
+
+
 def test_mismatch_invalid_input_and_prompt_conflict_do_not_write(kit):
     manager, _, _, engine, _ = kit
     payload = report(prepared(kit))
@@ -89,7 +220,8 @@ def test_mismatch_invalid_input_and_prompt_conflict_do_not_write(kit):
     payload["handoffId"] = "h_" + "f" * 32
     assert close(kit, raw)[1]["code"] == "execution_result_mismatch"
     payload["iteration"] = True
-    assert close(kit, raw)[1]["code"] == "execution_result_invalid"
+    assert close(kit, raw)[1] == {"status": "error", "code": "execution_result_invalid",
+                                  "detail": "invalid_iteration"}
     assert close(kit, {"result": None, "progress": {"phase": "awaiting-request"}})[1]["code"] == "finish_result_required"
     save_project_prompt(engine, 0, "User changed prompt")
     assert close(kit, raw, "--expected-project-prompt-revision", "0")[1]["code"] == "project_prompt_conflict"

@@ -6,7 +6,7 @@ import hashlib
 import uuid
 
 from vas_ai_contract import canonical
-from vas_session import SessionError, identity, require, valid_document
+from vas_session import SessionError, require, valid_document
 from vas_prompt_context import snapshot_hash, stale_reason
 
 
@@ -37,9 +37,9 @@ def revision(record, expected, *, recovery=False):
 def target(manager, binding):
     try:
         path = manager._target(binding["path"])
-        require(identity(path) == binding["identity"] and bool(binding["identity"][1]),
-                "work_target_unavailable")
-        return path
+        status, observed = manager._binding_status(path, binding)
+        require(status == "available", "work_target_unavailable")
+        return path, observed
     except (OSError, SessionError):
         raise SessionError("work_target_unavailable") from None
 
@@ -66,9 +66,11 @@ def prepared_context(manager, session_id, number, binding):
 
 def capture_target(manager, binding, paths):
     from vas_work_files import capture
-    selected = target(manager, binding)
+    selected, observed = target(manager, binding)
     in_project = selected == manager.project_root
-    return capture(selected, binding["identity"], paths, in_project)
+    sample = capture(selected, observed, paths, in_project)
+    require(target(manager, binding) == (selected, observed), "work_target_unavailable")
+    return sample
 
 
 def work_view(raw, document, binding, project_prompt_hash=None):

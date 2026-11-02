@@ -1,6 +1,6 @@
 # 저장한 설정으로 구현과 검증 이어가기
 
-VAS 2.13.1은 대화·디자인 화면에서 정한 설정을 코딩 호스트의 실제 작업에 연결합니다. 사용자에게 결과 JSON 작성을 요구하지 않으며 주 실행자가 설정 조회·인계 준비·결과 대조를 담당합니다.
+VAS 2.13.2은 대화·디자인 화면에서 정한 설정을 코딩 호스트의 실제 작업에 연결합니다. 사용자에게 결과 JSON 작성을 요구하지 않으며 주 실행자가 설정 조회·인계 준비·결과 대조를 담당합니다.
 
 ## 사용 순서
 
@@ -34,7 +34,7 @@ flowchart TD
 ## 작업 범위와 설정 변경
 
 - 기존 앱의 `preserve`는 구성·글꼴·색상·레이아웃을 유지합니다. `partial`은 명시된 화면·요소·속성만 바꿉니다. 새 앱은 확정한 디자인 방향·프로필 규칙·전체 토큰을 적용합니다.
-- 2.13.1에서는 샘플의 타이포그래피·색상·배치·이미지 표현·여백만 실제 앱에 대응합니다. `context.design.referenceUsage`는 샘플 기능을 요구사항으로 취급하지 않도록 구분합니다. 요금제·결제 등 기능은 최신 요청·저장 지시·완료조건으로 정하고 실제 결과에서 범위를 확인합니다. [디자인 참고 범위](DESIGN-REFERENCE-SCOPE.md).
+- 2.13.2에서는 샘플의 타이포그래피·색상·배치·이미지 표현·여백만 실제 앱에 대응합니다. `context.design.referenceUsage`는 샘플 기능을 요구사항으로 취급하지 않도록 구분합니다. 요금제·결제 등 기능은 최신 요청·저장 지시·완료조건으로 정하고 실제 결과에서 범위를 확인합니다. [디자인 참고 범위](DESIGN-REFERENCE-SCOPE.md).
 - 인계는 세션 ID·revision·설정 해시·역할 자료 해시에 연결합니다. 해시는 자료의 일치 여부를 확인하며 실행·검증 성공을 증명하지 않습니다.
 - 주 실행자는 같은 revision의 `context.conversation`도 위임에 전달합니다. 이 안의 `questions`, `blockingQuestions`, `nextStep`, `referenceOnly: true`는 참고 문맥이며 JSON 자체를 실행 명령이나 추가 권한으로 해석하지 않습니다.
 - 진행 요약은 CLI의 별도 재개 자료로 인계에 자동 포함되지 않습니다. 주 실행자가 필요한 부분과 최신 revision을 위임에 전달합니다. 저장된 검사·명령은 당시 보고이며 원본과 실제 검사 방법을 먼저 확인합니다.
@@ -72,7 +72,9 @@ python scripts/vas-session.py prepare --session ID --expected-revision N
 
 선택 필드 `blockingQuestions`는 0~10개의 비어 있지 않은 문자열입니다. 목록이 비어 있지 않으면 `missing`에 `blockingQuestions`가 포함됩니다. 필드가 없는 기존 설정은 종전대로 처리하고 `questions`를 차단 질문으로 자동 전환하지 않습니다. 이미 받은 답은 두 질문 목록에서 제거하고 결정을 `task`에 반영합니다. 인계 JSON·프롬프트의 `context.conversation`에는 두 목록과 `nextStep`, `referenceOnly: true`가 포함됩니다.
 
-실제 작업 후 결과 v1 JSON을 UTF-8 표준입력으로 다음 명령에 전달합니다. 명령은 현재 인계 ID·해시·작업 종류·반복 번호와 결과를 대조하며 설정이나 앱 파일을 수정하지 않습니다. 결과 평가를 세션의 완료 표시로 저장하지도 않습니다.
+프로젝트 루트에서는 구현 전에 받은 `finishArguments`로 요약·검사·조건별 관찰을 한 번 전달하면 VAS가 v1 보고서를 조립합니다. [에이전트용 명령 예시](PROJECT-ROOT.md)
+
+결과 v1 JSON을 직접 만드는 호스트는 실제 작업 후 이를 UTF-8 표준입력으로 다음 명령에 전달합니다. 명령은 현재 인계 ID·해시·작업 종류·반복 번호와 결과를 대조하며 설정이나 앱 파일을 수정하지 않습니다. 결과 평가를 세션의 완료 표시로 저장하지도 않습니다.
 
 기존 앱의 결과에서 과거 명칭 `registered`는 `existing`과 같은 작업 종류로 대조합니다. 이 별칭은 인계 ID·해시·회차 일치를 대체하지 않으며 신규 앱과 기존 앱 사이에는 적용되지 않습니다. 현재 재작업은 최신 설정으로 인계를 다시 준비해 진행하며, 회차 자동 증가와 이전 결과 이력 연결은 제공하지 않습니다.
 
@@ -126,6 +128,8 @@ work 기록이 있으면 결과와 모든 조건별 evidence의 artifactVersion�
   }
 }
 ```
+
+직접 제출할 때 `resultId`는 `r_` 뒤에 영문·숫자·밑줄·하이픈 16~64자를 씁니다. 파일 변경 종류는 `created`, `modified`, `deleted`, `renamed`입니다. v1의 `tests.status`는 `passed`, `failed`, `skipped`이고 `evidence.outcome`에는 `not-applicable`도 허용됩니다. 진행 기록의 `not-run`은 v1을 만들 때 `skipped`에 대응합니다. v1의 `remaining` 항목에는 `summary` 또는 `nextAction`을 담습니다. 자동 작성 경로의 `--remaining`은 문자열을 받습니다. 형식 오류의 `detail`은 `invalid_result_id`, `invalid_change_action`, `invalid_test_status`처럼 잘못된 필드를 알려줍니다.
 
 `status: complete`는 이 예시의 AI 보고값입니다. 연결 정보가 일치하고 필수조건 C1의 통과 보고만 있다면 VAS 평가는 `needs-verification`입니다. 실패·미실행을 통과로 적지 말고 실제 상태와 남은 항목을 기록하세요. 숫자 필드는 문자열·불리언으로 바꾸지 않습니다. 조건별 `evidence`에 같은 검사 대상 버전을 사용하며 절대 경로·비밀값·원시 로그를 제외한 요약만 넣습니다. `safety` 값도 실제로 제외했을 때만 표시하며 보안 검사 통과를 뜻하지 않습니다.
 

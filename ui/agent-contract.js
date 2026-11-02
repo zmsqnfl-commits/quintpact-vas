@@ -338,7 +338,7 @@
       const facts = strings(readback, 'facts', 50), assumptions = strings(readback, 'assumptions', 50);
       const relativeFiles = array(changes, 'relativeFiles', 100, 'object').map(function (item) {
         const path = relative(item.path, 'unsafe_result_path');
-        if (!ACTIONS.has(item.action)) fail('unsafe_result_path');
+        if (!ACTIONS.has(item.action)) fail('invalid_change_action');
         return { path: path, action: item.action, fromPath: item.fromPath == null || item.fromPath === '' ? null : relative(item.fromPath, 'unsafe_result_path') };
       });
       const tests = array(raw, 'tests', 50, 'object').map(function (item) {

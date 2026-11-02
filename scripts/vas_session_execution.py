@@ -11,6 +11,7 @@ from vas_ai_contract import build_prompt, canonical, clean, finalize_handoff, va
 from vas_design_reference import attach
 from vas_followup import build_followup
 from vas_result_assessment import evaluate_result
+from vas_result_validation import ResultValidationError
 from vas_session import SessionError, require
 from vas_task_policy import apply_task, quality
 from vas_prompt_context import project_snapshot, snapshot_hash
@@ -180,8 +181,25 @@ def prepare(manager, session_id, expected_revision):
             "revision_conflict")
     require(project_snapshot(manager, latest["target"]["path"]) == project_prompt,
             "project_prompt_conflict")
-    return {"status": status, "missing": missing, "sessionId": session_id,
-            "revision": expected_revision, "target": deepcopy(view["target"]), "handoff": document}
+    response = {"status": status, "missing": missing, "sessionId": session_id,
+                "revision": expected_revision, "target": deepcopy(view["target"]), "handoff": document}
+    if (status == "prepared" and project_prompt is not None and manager.project_root == manager.root
+            and type(latest.get("progress", {}).get("revision", 0)) is int):
+        from vas_portable_progress import SharedProgressError, read_shared_progress
+        try:
+            shared = read_shared_progress(manager.root)
+        except SharedProgressError as error:
+            # An unreadable journal does not invalidate the prepared application task.
+            response["sharedProgressError"] = error.code
+            return response
+        response["finishArguments"] = [
+            "finish", "--session", session_id, "--expected-revision", str(expected_revision),
+            "--expected-progress-revision", str(latest.get("progress", {}).get("revision", 0)),
+            "--expected-project-prompt-revision", str(project_prompt["revision"]),
+            "--expected-shared-revision", str(shared["revision"] if shared else 0),
+            "--prepared-hash", document["integrity"]["payloadSha256"],
+        ]
+    return response
 
 
 def assess(manager, session_id, expected_revision, raw_result):
@@ -189,15 +207,22 @@ def assess(manager, session_id, expected_revision, raw_result):
     return response
 
 
+def validate_execution_result(raw_result, source_type):
+    try:
+        return validate_result(raw_result, source_type)
+    except ResultValidationError as error:
+        # Validator diagnostics are schema codes. Never publish raw input or exception text.
+        raise SessionError("execution_result_invalid", error.error_codes[0]) from None
+    except ValueError:
+        raise SessionError("execution_result_invalid") from None
+
+
 def assess_with_result(manager, session_id, expected_revision, raw_result):
     """Retain the validated report for local callers that need its check summaries."""
     prepared = prepare(manager, session_id, expected_revision)
     require(prepared["status"] == "prepared", "execution_needs_input")
     handoff = prepared["handoff"]
-    try:
-        result = validate_result(raw_result, handoff["project"]["sourceType"])
-    except ValueError:
-        raise SessionError("execution_result_invalid") from None
+    result = validate_execution_result(raw_result, handoff["project"]["sourceType"])
     # Legacy registered results describe an existing app. Keep all handoff
     # bindings strict; the alias does not convert results from another pipeline.
     result_source_type = "existing" if result["sourceType"] == "registered" else result["sourceType"]

@@ -15,7 +15,15 @@ MAX_RECORD_BYTES = 16 * 1024
 PHASES = {"planning", "implementing", "testing", "reviewing", "paused", "blocked", "awaiting-request"}
 CHECK_STATUSES = {"passed", "failed", "skipped", "not-run"}
 PAYLOAD_FIELDS = {"phase", "summary", "decisions", "changedFiles", "checks", "remaining", "nextStep"}
-PUBLIC_URL = re.compile(r'''https?://[^\s'"`<>]+''', re.I)
+# Recognize complete relative-source Docker volumes after credential filtering.
+# Keep sensitive host namespaces redacted even in the destination position.
+PUBLIC_REFERENCE = re.compile(r'''
+    https?://[^\s'"`<>]+
+    | (?<![^\s'"`(\[]) \.{1,2}(?:/[\w.-]+)*/?:/
+      (?!(?:home|users|sessions|mnt|volume\d*|private)\b)
+      [\w-][\w.-]*(?:/[\w-][\w.-]*)*/? (?::(?:ro|rw))?
+      (?=$|[\s'"`)\],])
+''', re.I | re.X)
 # Dot-prefixed paths remain useful relative references in commands and next steps.
 ABSOLUTE_POSIX = re.compile(r'''(?<![\w/.])/(?:[^\s'"`<>\[\]{}()]+)?''')
 HASH = re.compile(r"[a-f0-9]{64}")
@@ -28,9 +36,8 @@ def _fields(value, allowed, required=None):
 
 
 def _local_paths(value):
-    # Preserve public URLs, including query paths, after the common credential filter.
     output, cursor = [], 0
-    for match in PUBLIC_URL.finditer(value):
+    for match in PUBLIC_REFERENCE.finditer(value):
         output.append(ABSOLUTE_POSIX.sub("[absolute-path]", value[cursor:match.start()]))
         output.append(match.group())
         cursor = match.end()
