@@ -74,7 +74,7 @@ def main():
 
         @contextmanager
         def connect():
-            subprocess.run(["bindfs", "--no-allow-other", "--delete-deny", "-o", "use_ino", original, mount],
+            subprocess.run(["bindfs", "--no-allow-other", "--delete-deny", original, mount],
                            check=True, timeout=30)
             try:
                 # Pin detached connections until the end so the kernel cannot recycle their device numbers.
