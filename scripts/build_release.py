@@ -1,4 +1,4 @@
-"""VAS 2.13.2 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
+"""VAS 2.14.0 재현 가능한 Windows/독립 설정 폼/Pages 배포 빌더."""
 from __future__ import annotations
 
 import argparse
@@ -25,11 +25,11 @@ FULL_DIRS = ["ui", "docs", "scripts", ".agents"]
 LEGAL_FILES = ("LICENSE", "AUTHORS.md", "NOTICE.md", "USE_POLICY.md")
 HOST_FILES = [f"{host}/agents/vas_{role}{suffix}" for host, suffix in
               ((".codex", ".toml"), (".claude", ".md")) for role in ("implementer", "designer", "reviewer")]
-DESIGN_SKILL = Path(".agents/skills/design-analysis")
-CLAUDE_SKILL = Path(".claude/skills/design-analysis")
+# Skills copied to the Claude skill folder so the host can discover them by description.
+HOST_SKILLS = ("design-analysis", "design-craft")
 BLOCKED_PARTS = {
     ".git", "node_modules", "__pycache__", ".pytest_cache", ".vas_backups",
-    ".temp data", "workspace", "dist", "test-results", "playwright-report", ".vas-session", "vas-state",
+    ".temp data", "workspace", "dist", "dist-previous", "test-results", "playwright-report", ".vas-session", "vas-state",
 }
 INTERNAL_DOCUMENT_NAMES = {
     name.casefold() for name in (
@@ -112,8 +112,9 @@ def copy_tree(source: Path, target: Path) -> None:
 
 
 def host_skill_files():
-    for relative, source in tree_members(ROOT / DESIGN_SKILL):
-        yield CLAUDE_SKILL / relative, source
+    for name in HOST_SKILLS:
+        for relative, source in tree_members(ROOT / ".agents/skills" / name):
+            yield Path(".claude/skills") / name / relative, source
 
 
 def git_commit() -> str:
@@ -256,14 +257,37 @@ def verify_zip(path: Path) -> None:
                 raise RuntimeError(f"비밀 파일 포함: {name}")
 
 
+def clear_output(output: Path) -> list[Path]:
+    """Empty the output folder, but move a ZIP built for another version aside first.
+
+    An older build left here may be the only copy, so it goes to "<output>-previous"
+    and is never deleted or overwritten.
+    """
+    output.mkdir(parents=True, exist_ok=True)
+    current = {f"VAS-{version()}-windows.zip", f"VAS-Client-Form-{version()}.zip"}
+    previous, moved = output.with_name(output.name + "-previous"), []
+    for item in output.iterdir():
+        if item.is_file() and item.suffix.casefold() == ".zip" and item.name not in current:
+            previous.mkdir(exist_ok=True)
+            target, number = previous / item.name, 1
+            while target.exists():
+                target, number = previous / f"{item.stem}.{number}{item.suffix}", number + 1
+            shutil.move(str(item), str(target))
+            moved.append(target)
+            print(f"다른 버전의 빌드를 지우지 않고 옮겼습니다: {target.relative_to(previous.parent)}", file=sys.stderr)
+        elif item.is_dir() and not item.is_symlink():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
+    return moved
+
+
 def build(output: Path) -> list[Path]:
     output = output.resolve()
     if ROOT.is_relative_to(output) or (output.is_relative_to(ROOT) and not output.is_relative_to(DIST)):
         raise ValueError("Write release artifacts to dist/ or a directory outside the project")
     subprocess.run([sys.executable, str(ROOT / "scripts" / "build-knowledge-index.py")], cwd=ROOT, check=True)
-    if output.exists():
-        shutil.rmtree(output)
-    output.mkdir(parents=True)
+    clear_output(output)
     with tempfile.TemporaryDirectory(prefix="vas-release-") as temporary:
         stage = Path(temporary)
         windows = build_windows(stage)

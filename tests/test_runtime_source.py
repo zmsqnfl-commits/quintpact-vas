@@ -46,6 +46,7 @@ class WindowsRuntimeSourceTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt" and POWERSHELL, "Windows PowerShell is required")
     def test_conflict_mapping_never_echoes_source_path(self):
         command = (
+            "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); "
             "Import-Module '.\\scripts\\VAS.Server.psm1' -Force; "
             "& (Get-Module VAS.Server) { "
             "Get-VASMigrationError 'target already exists: C:\\Users\\demo\\secret' | "

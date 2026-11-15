@@ -254,6 +254,7 @@ def test_powershell_module_persists_selection_job_and_registry(
     quote = lambda value: str(value).replace("'", "''")
     module = SCRIPTS / "VAS.Migration.psm1"
     command = (
+        "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); "
         f"Import-Module '{quote(module)}' -Force; "
         f"$s=Select-VASProjectFolder -Root '{quote(root)}' -Path '{quote(source)}'; "
         f"$a=Analyze-VASProject -Root '{quote(root)}' -SelectionId $s.selectionId; "

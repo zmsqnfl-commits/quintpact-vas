@@ -276,6 +276,7 @@ def quick_finish(root, state_home, summary, checks, next_step, expected_shared_r
         output.update(privateSession="unavailable", privateError=getattr(error, "code", "session_unavailable"))
     if summary is None:
         require(not checks and next_step is None and expected_shared_revision is None, "finish_summary_required")
+        output["hint"] = "기록하지 않았습니다. 남기려면 --summary \"한 일\"을 붙이세요. --check와 --next-step은 선택입니다."
         return output
     checks = checks or []
     require(isinstance(summary, str) and summary.strip() and len(checks) <= 10, "finish_input_invalid")

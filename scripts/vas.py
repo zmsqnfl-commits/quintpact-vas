@@ -44,6 +44,76 @@ def finish_command(args):
                         args.expected_shared_revision)
 
 
+def _project_root(args):
+    from vas_project_layout import is_project_engine, project_directory
+    require(".." not in Path(args.vas_root).parts, "vas_root_invalid")
+    root = Path(args.vas_root).absolute()
+    require(project_directory(root) == root and is_project_engine(root), "vas_root_invalid")
+    return root
+
+
+def _bullets(values, numbered=False):
+    return "\n".join((f"- [ ] C{number} {value}" if numbered else f"- {value}")
+                     for number, value in enumerate(values, 1))
+
+
+def plan_command(args):
+    """Write what was agreed into the one-page state. Only the given parts change."""
+    from vas_memory import parse_now, read_memory, update_now
+    root = _project_root(args)
+    sections = {}
+    for name, value in (("요청", args.request), ("대상", args.target), ("다음 할 일", args.next_step)):
+        if value is not None:
+            sections[name] = value
+    if args.criterion:
+        sections["완료조건"] = _bullets(args.criterion, numbered=True)
+    if args.question:
+        sections["열린 질문"] = _bullets([item for item in args.question if item.strip()]) or "(없음)"
+    if args.decision:
+        view = read_memory(root)
+        before = (view["now"] or {"sections": {}})["sections"].get("정해진 것", "")
+        kept = "" if before.strip() == "(없음)" else before.strip()
+        sections["정해진 것"] = (kept + "\n" if kept else "") + _bullets(args.decision)
+    require(bool(sections), "memory_invalid")
+    return dict(update_now(root, sections, args.by, args.expected_revision), status="planned")
+
+
+def done_command(args):
+    """Add one record of finished work and bring the one-page state up to date."""
+    from vas_finish_report import check_flags
+    from vas_memory import known_criteria, update_now, write_record
+    root = _project_root(args)
+    require(isinstance(args.summary, str) and args.summary.strip(), "memory_invalid")
+    # Refuse an unknown criterion before anything is written.
+    require(set(args.criterion) <= known_criteria(root), "memory_criterion_unknown")
+    checks = check_flags(args.check)
+    labels = {"passed": "통과", "failed": "실패", "skipped": "건너뜀", "not-run": "미실행"}
+    checked = "\n".join(f"- {check['name']} → {labels[check['status']]}" for check in checks)
+    sections = {"한 일": args.summary, "이유": args.why or "", "확인": checked,
+                "안 된 것": _bullets(args.failed), "다음 할 일": args.next_step or ""}
+    title = args.title or " ".join(args.summary.split())[:40]
+    record = write_record(root, title, args.summary, args.by, sections, args.file, args.tag)
+    now = {"마지막 확인": (checked or "확인한 것을 적지 않음") + f"\n(기록 {record['number']:04d})"}
+    if args.next_step is not None:
+        now["다음 할 일"] = args.next_step
+    state = update_now(root, now, args.by, tick=args.criterion)
+    result = {"status": "recorded", "record": record, "now": state,
+              "unverified": [check["name"] for check in checks if check["status"] != "passed"]}
+    missing = [item for item in record["files"] if not (root / item).exists()]
+    if missing:
+        # A deleted file is a legitimate entry, so this is a note and not an error.
+        result["missingFiles"] = missing
+    return result
+
+
+def recall_command(args):
+    from vas_memory import recall
+    result = recall(_project_root(args), args.query, args.limit)
+    result["message"] = ("맞는 기록만 열어 읽고, 지금 파일과 다르면 쓰지 마세요." if result["matches"] else
+                         "맞는 기록이 없습니다. 다른 말로 찾거나 vas-state/index.md를 보세요.")
+    return result
+
+
 def hook_context(result):
     shared = result["sharedProgress"]
     # Hooks see only bounded metadata. The main chat reads the validated text on demand.
@@ -78,6 +148,29 @@ def main():
     closing.add_argument("--changed-file", action="append", default=[], metavar="[ACTION:]PATH",
                          help="relative file, optionally with created/modified/deleted/renamed action")
     closing.add_argument("--remaining", action="append", default=[], help="describe one remaining issue")
+    planning = commands.add_parser("plan", help="write the agreed request and criteria into vas-state/now.md")
+    planning.add_argument("--request")
+    planning.add_argument("--target")
+    planning.add_argument("--criterion", action="append", default=[], help="replaces the whole list")
+    planning.add_argument("--decision", action="append", default=[], help="added to what is already decided")
+    planning.add_argument("--question", action="append", default=[], help="replaces the open questions")
+    planning.add_argument("--next-step")
+    planning.add_argument("--by", default="host")
+    planning.add_argument("--expected-revision", type=int)
+    record = commands.add_parser("done", help="add a work record to vas-state/log and update now.md")
+    record.add_argument("--summary", required=True)
+    record.add_argument("--title")
+    record.add_argument("--why")
+    record.add_argument("--check", action="append", default=[], metavar="NAME:STATUS")
+    record.add_argument("--file", action="append", default=[], metavar="RELATIVE_PATH")
+    record.add_argument("--failed", action="append", default=[], help="something tried that did not work")
+    record.add_argument("--criterion", action="append", default=[], metavar="C1", help="tick a criterion")
+    record.add_argument("--tag", action="append", default=[])
+    record.add_argument("--next-step")
+    record.add_argument("--by", default="host")
+    search = commands.add_parser("recall", help="find the work records that bear on a request")
+    search.add_argument("query")
+    search.add_argument("--limit", type=int, default=5)
     transfer = commands.add_parser("import", help="plan an explicit app source transfer")
     transfer.add_argument("--from", dest="source", required=True, help="the old app source directory")
     transfer.add_argument("--apply", action="store_true", help="copy the vetted files into empty src")
@@ -89,6 +182,12 @@ def main():
         if args.command == "import":
             from vas_import import import_app
             result = import_app(args.vas_root, args.source, args.apply, args.expected_plan, args.include)
+        elif args.command == "plan":
+            result = plan_command(args)
+        elif args.command == "done":
+            result = done_command(args)
+        elif args.command == "recall":
+            result = recall_command(args)
         elif args.command == "start":
             result = start(args.vas_root, args.state_home)
         else:
@@ -105,7 +204,7 @@ def main():
         return code
     except (ValueError, TypeError, OSError, SessionStoreError, SharedProgressError, RecursionError) as error:
         default = "vas_start_unavailable" if args.command == "start" else "session_invalid"
-        print(json.dumps(session_error_response(error, default)))
+        print(json.dumps(session_error_response(error, default), ensure_ascii=False))
         return 1
 
 

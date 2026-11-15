@@ -17,3 +17,15 @@ The public catalog contains the ten new collections plus four curated sample sit
 - Fonts and imagery are bundled for offline use. Target projects should provision suitable licensed assets and fonts in their own stack; VAS asset paths are not promised to exist in a user's project.
 - Reference screenshots were used to develop each composition. Type, controls, rows, forms, glass surfaces and geometric poster graphics are native HTML/CSS; motion has pause and reduced-motion support.
 - The courtyard and fieldnotes-cover images are original generated photographs for fictional sample sites. They do not document real architecture commissions or team workspaces. Four images under `ui/assets/designs/samples/` are actual rendered-site screenshots used only as selector thumbnails. Regenerate them with `node scripts/capture-design-samples.cjs` after changing sample layouts.
+
+## design-craft skill
+
+`.agents/skills/design-craft/` is original VAS text written for this project. It is not a copy or translation of an external skill.
+
+| Informed by | Applied idea |
+| --- | --- |
+| Anthropic frontend-design skill (read from a locally installed copy; upstream revision not pinned) | Plan palette, type and layout from the subject before coding; question generic defaults; spend boldness in one place |
+| W3C WCAG 2.2 SC 1.4.3, 1.4.10, 2.5.5 | Text contrast, 320 CSS px reflow and target size used as review baselines |
+| VAS project verification records | Checks passing while composition stayed weak; Korean sentence endings stranded on narrow screens; decisions asked again in later conversations |
+
+The skill adds no approval step, external service, font download or global installation. User requests, saved project instructions and confirmed tokens take priority over it.

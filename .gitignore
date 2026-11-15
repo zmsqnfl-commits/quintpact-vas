@@ -21,6 +21,7 @@ __pycache__/
 *.so
 *.egg-info/
 dist/
+dist-previous/
 build/
 .eggs/
 *.egg

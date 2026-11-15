@@ -6,12 +6,12 @@ import hashlib
 import json
 import os
 import re
-import stat
 import tempfile
 from pathlib import Path
 from typing import Any
 
 from vas_ai_contract import redact_credentials
+from vas_paths import is_relative_to as _is_relative_to, is_reparse as _is_reparse
 from vas_project_layout import reserves_engine
 
 SCHEMA = 3
@@ -70,23 +70,6 @@ STOP_WORDS = {
 
 class KnowledgeError(RuntimeError):
     """Raised when the project registry or index cannot be handled safely."""
-
-
-def _is_relative_to(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-        return True
-    except ValueError:
-        return False
-
-
-def _is_reparse(path: Path, item_stat: os.stat_result | None = None) -> bool:
-    try:
-        value = item_stat or path.lstat()
-    except OSError:
-        return True
-    marker = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-    return path.is_symlink() or bool(getattr(value, "st_file_attributes", 0) & marker)
 
 
 def _sensitive_name(name: str) -> bool:

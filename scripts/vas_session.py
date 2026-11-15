@@ -12,6 +12,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
+from vas_hints import hint_for
 from vas_ai_contract import redact_credentials, sanitize, sensitive_key
 from vas_project_layout import is_project_engine, project_directory, reserves_engine
 from vas_task_policy import apply_task, safe_text
@@ -33,6 +34,9 @@ def session_error_response(error, default="session_invalid"):
     response = {"status": "error", "code": getattr(error, "code", default)}
     if isinstance(error, SessionError) and error.detail:
         response["detail"] = error.detail
+    hint = hint_for(response["code"])
+    if hint:
+        response["hint"] = hint
     return response
 
 

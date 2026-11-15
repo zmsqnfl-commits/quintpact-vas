@@ -99,7 +99,7 @@ def main():
         print(json.dumps(result, ensure_ascii=False, allow_nan=False))
         return 0
     except (SessionError, SessionStoreError, ValueError, TypeError, OSError, RecursionError) as error:
-        print(json.dumps(session_error_response(error)))
+        print(json.dumps(session_error_response(error), ensure_ascii=False))
         return 1
 
 

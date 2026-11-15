@@ -5,13 +5,9 @@ from datetime import datetime, timezone
 import hashlib
 import uuid
 
-from vas_ai_contract import canonical
+from vas_ai_contract import canonical, digest
 from vas_session import SessionError, require, valid_document
 from vas_prompt_context import snapshot_hash, stale_reason
-
-
-def digest(value):
-    return hashlib.sha256(canonical(value)).hexdigest()
 
 
 def stamp():

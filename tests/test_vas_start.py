@@ -61,8 +61,9 @@ def test_first_index_is_read_only_and_does_not_assume_migration(kit):
     assert code == 0 and data["status"] == "ok"
     assert data["app"]["directory"] == "src" and data["app"]["state"] == "empty"
     assert data["app"]["interpretation"] == "새 앱 자리" and data["sharedProgress"] is None
-    assert data["nextAction"]["sessionCommand"].endswith("create --target .")
-    assert "command" not in data["nextAction"] and "quick finish" in data["nextAction"]["lightweight"]
+    assert " plan --request" in data["nextAction"]["planCommand"]
+    assert " done --summary" in data["nextAction"]["doneCommand"]
+    assert "command" not in data["nextAction"] and ".agents/MEMORY.md" in data["nextAction"]["withoutPython"]
     assert data["projectPrompt"] == {"revision": 0, "prompt": ""}
     assert data["session"] == {"status": "none"}
     assert data["nextAction"]["code"] == "clarify-scope"
@@ -144,7 +145,9 @@ def test_invalid_or_missing_marker_fails_closed(kit, bad_marker):
         marker.unlink()
     else:
         marker.write_text(bad_marker)
-    assert cli(kit) == (1, {"status": "error", "code": "vas_root_invalid"})
+    code, data = cli(kit)
+    assert code == 1 and data["status"] == "error" and data["code"] == "vas_root_invalid"
+    assert "Run-VAS-System.bat" in data["hint"]
     assert not state.exists()
 
 
@@ -250,3 +253,22 @@ def test_large_shared_scope_is_a_short_preview_with_a_readable_full_note():
     assert preview["truncated"] and len(preview["scope"]["criteria"]) == 3
     assert preview["remaining"] == ["first", "second"] and preview["markdownPath"] == record["markdownPath"]
     assert len(record["scope"]["criteria"]) == 10 and len(preview["summary"]) <= 240
+
+
+def test_shared_summary_near_the_slot_limit_warns_before_it_fills():
+    from vas_portable_progress import MAX_SLOTS
+    from vas_start import shared_brief
+    record = {"revision": 3, "phase": "paused", "summary": "Short", "nextStep": "Continue", "checks": []}
+    assert "capacityWarning" not in shared_brief(record)
+    near = shared_brief(dict(record, revision=MAX_SLOTS * 9 // 10))
+    assert f"/{MAX_SLOTS}" in near["capacityWarning"] and "truncated" not in near
+
+
+def test_shared_summary_without_a_local_session_names_every_likely_cause(kit):
+    app, state = kit
+    code, _ = cli(kit, "finish", "--summary", "가격 문구 수정")
+    assert code == 0
+    code, data = cli((app, state.parent / "renamed-or-other-pc"))
+    message = data["nextAction"]["message"]
+    assert code == 0 and data["session"] == {"status": "none"} and data["nextAction"]["code"] == "review-shared"
+    assert "폴더 이름" in message and "간단 마감" in message and "다른 PC" in message

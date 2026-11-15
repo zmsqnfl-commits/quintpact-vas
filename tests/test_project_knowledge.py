@@ -251,6 +251,7 @@ class PowerShellKnowledgeHookTests(unittest.TestCase):
                 )
             enabled = "$true" if create_index else "$false"
             command = (
+                "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"
                 f"Import-Module '{quote(module)}' -Force;"
                 f"$s=Select-VASProjectFolder -Root '{quote(root)}' -Path '{quote(source)}';"
                 f"$j=Import-VASProject -Root '{quote(root)}' -SelectionId $s.selectionId -CreateIndex {enabled};" + tail

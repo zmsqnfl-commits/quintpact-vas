@@ -7,7 +7,6 @@ import json
 import os
 import re
 import shutil
-import stat
 import subprocess
 import time
 import uuid
@@ -15,6 +14,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from vas_paths import is_relative_to as _is_relative_to, is_reparse as _is_reparse
 from vas_project_layout import reserves_engine
 
 SCHEMA_VERSION = 1
@@ -58,24 +58,6 @@ class TargetExistsError(MigrationError):
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def _is_relative_to(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-        return True
-    except ValueError:
-        return False
-
-
-def _is_reparse(path: Path, item_stat: os.stat_result | None = None) -> bool:
-    try:
-        data = item_stat or path.lstat()
-    except OSError:
-        return True
-    attrs = getattr(data, "st_file_attributes", 0)
-    marker = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-    return path.is_symlink() or bool(attrs & marker)
 
 
 def _safe_name(value: str) -> str:

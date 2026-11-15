@@ -433,3 +433,26 @@ def test_portable_goal_is_redacted_before_visible_bounded_clipping(kit):
     objective = saved["sharedProgress"]["scope"]["objective"]
     assert "[absolute-path]" in objective and "/department/" not in objective
     assert len(objective.encode("utf-16-le")) == 2000 and objective.endswith("…")
+
+
+def test_status_query_and_argument_errors_say_what_to_do_next(kit):
+    _, sid, _, _, _ = kit
+    code, empty = quick(kit)
+    assert code == 0 and empty["status"] == "not-recorded" and "--summary" in empty["hint"]
+    code, error = quick(kit, "--check", "화면:통과")
+    assert code == 1 and error["code"] == "finish_summary_required" and "--summary" in error["hint"]
+    code, error = quick(kit, "--session", sid)
+    assert code == 1 and error["code"] == "finish_invalid_arguments" and "--expected-revision" in error["hint"]
+    code, error = quick(kit, "--summary", "문구 수정", "--check", "상태 없음")
+    assert code == 1 and error["code"] == "finish_check_invalid" and "이름:상태" in error["hint"]
+
+
+def test_recovery_hints_never_carry_state_and_unknown_codes_stay_bare():
+    from vas_hints import HINTS
+    from vas_session import SessionError, session_error_response
+    assert session_error_response(SessionError("session_target_ambiguous")) == {
+        "status": "error", "code": "session_target_ambiguous"}
+    conflict = session_error_response(SessionError("revision_conflict"))
+    assert conflict["hint"] == HINTS["revision_conflict"] and "start" in conflict["hint"]
+    for text in HINTS.values():
+        assert "\\" not in text and len(text) <= 200

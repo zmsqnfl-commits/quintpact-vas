@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import re
 
-from vas_ai_contract import build_prompt, canonical, clean, finalize_handoff, validate_result
+from vas_ai_contract import build_prompt, canonical, clean, digest, finalize_handoff, validate_result
 from vas_design_reference import attach
 from vas_followup import build_followup
 from vas_result_assessment import evaluate_result
@@ -19,10 +19,6 @@ from vas_prompt_context import project_snapshot, snapshot_hash
 ROOT = Path(__file__).resolve().parents[1]
 RESOURCES = ROOT / ".agents/agent-resources.json"
 MAX_PROMPT = 32_000
-
-
-def digest(value):
-    return hashlib.sha256(canonical(value)).hexdigest()
 
 
 def _resources():

@@ -74,6 +74,7 @@ def outputs() -> dict[str, str]:
         ) + body(source)
         if role == "designer":
             instructions += "\n\n[DESIGN ANALYSIS]\n" + data["designAnalysis"]
+            instructions += "\n\n[DESIGN CRAFT]\n" + body(".agents/skills/design-craft/SKILL.md")
         name = "vas_" + role
         toml = f'name = "{name}"\ndescription = {json.dumps(description, ensure_ascii=False)}\n'
         if role == "reviewer":

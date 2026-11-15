@@ -195,6 +195,10 @@ def sanitize(value: Any, depth: int = 0, field: str = "") -> Any:
     return value
 
 
+def digest(value: Any) -> str:
+    return hashlib.sha256(canonical(value)).hexdigest()
+
+
 def canonical(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
