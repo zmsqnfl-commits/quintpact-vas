@@ -192,9 +192,12 @@ def test_release_build_moves_a_zip_left_by_another_version_aside(tmp_path):
 def test_a_new_screen_with_nothing_decided_asks_once_for_a_reference():
     skill = (ROOT / ".agents/skills/design-craft/SKILL.md").read_text(encoding="utf-8")
     assert "한 번만 묻는다" in skill and "참고할 사이트·이미지" in skill and "다시 묻지 않는다" in skill
-    assert "보지 않은 것을 본 것처럼 따라 하지 않는다" in skill
+    assert "보지 않은 것을 본 것처럼 따라 하지 않는다" in skill and "답을 기다린 뒤 진행한다" in skill
     for name in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules", ".agents/HANDOFF-WORKFLOW.md"):
-        assert "한 번만 묻고" in (ROOT / name).read_text(encoding="utf-8"), name
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert "한 번만 묻고" in text and "답을 기다" in text, name
+    # The question is a numbered step at the top of the entry instructions, not a remark further down.
+    assert "\n4. **화면이 있는 새 작업인데" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     # No sample artwork, font or proof app ships, and nothing still points at them.
     assert not (ROOT / "ui/assets").exists() and not (ROOT / "ui/proof-app").exists()
     for path in list((ROOT / "ui").glob("*.css")) + list((ROOT / "ui").glob("design-*.js")):
