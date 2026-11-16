@@ -154,7 +154,7 @@ When you use it, **Save to chat settings** commits the selection. The main agent
 <details>
 <summary>View design collections and interactive samples</summary>
 
-### Design directions with real previews
+### Design directions with colour-and-type previews
 
 The Design Studio combines distinct compositions, typography, colors, imagery, spacing, and interaction guidance. You can refine the selected style and carry those settings into a sample before copying the handoff.
 
@@ -164,18 +164,18 @@ The Design Studio combines distinct compositions, typography, colors, imagery, s
 | Aurora Glass | Dark atmosphere and translucent panels | Immersive product interfaces |
 | Clay Pop | Soft peach colors and rounded 3D objects | Learning and friendly consumer products |
 | Noir Luxe | Dark surfaces, champagne accents, editorial serif type | Premium brands and product showcases |
-| Botanical Atelier | Botanical photography, olive tones, warm ivory | Lifestyle and wellness |
+| Botanical Atelier | Botanical imagery, olive tones, warm ivory | Lifestyle and wellness |
 | Retro Sunset | Warm retro colors and record-inspired compositions | Music and independent brands |
 | Swiss Poster | Strong type, disciplined grids, exhibition-style hierarchy | Events, portfolios, and editorial pages |
 | Cyber Deck | Technical consoles and high-contrast information | Developer tools and operational interfaces |
 | Kinetic Type | Oversized typography with controllable motion | Creative campaigns and studio presentations |
-| Paper Collage | Layered photographs and tactile editorial compositions | Visual storytelling and publications |
+| Paper Collage | Layered image areas and tactile editorial compositions | Visual storytelling and publications |
 
-The main picker offers **14 curated choices**. The full set of 28 preset definitions remains available for compatibility with earlier saved selections. Fonts, artwork, and preview media are bundled locally, with font license files included.
+The main picker offers **14 curated choices**. The full set of 28 preset definitions remains available for compatibility with earlier saved selections. Since 2.15.0 the previews are drawn with colour and type only: no fonts, artwork or preview media are bundled, so each preview uses the fonts installed on the PC and a colour block stands where an image would sit.
 
 ### Four interactive sample websites
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.15.0). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.15.0). Each recommendation shows a colour strip in the catalog and opens as a working sample site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
