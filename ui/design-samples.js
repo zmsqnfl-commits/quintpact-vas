@@ -3,7 +3,7 @@
   'use strict';
   const profiles = { curatedEditorial: 'awwwards', curatedProduct: 'linear', curatedSaas: 'stripe', curatedKnowledge: 'notion' };
   const button = (text, target) => '<button type="button" class="p-btn" data-jump="' + target + '">' + text + ' <span aria-hidden="true">↗</span></button>';
-  const photo = (file, alt, cls) => '<img class="' + cls + '" src="assets/designs/' + file + '.png" alt="' + alt + '" decoding="async">';
+  const photo = (file, alt, cls) => '<span class="' + cls + ' ds-plain" data-art="' + file + '" role="img" aria-label="' + alt + '"></span>';
   function editorial() {
     return '<header class="ds-mast"><strong>FORM / FIELD</strong><nav aria-label="스튜디오 메뉴"><a href="#previewProjects">Projects</a><a href="#sampleStudio">Studio</a><a href="#sampleContact">Contact</a></nav></header>' +
       '<section class="ds-editorial-hero" id="sampleStudio"><h2>Spaces for<br>slower living.</h2><div><p>Architecture shaped by light, landscape, and everyday life.</p>' + button('Explore projects', 'previewProjects') + '</div></section>' +

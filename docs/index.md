@@ -1,4 +1,4 @@
-# VAS 2.14.0 시스템 지도
+# VAS 2.15.0 시스템 지도
 
 이 폴더에는 VAS 도구의 지침이 있습니다. 사용자 앱은 프로젝트 최상위 `src/`에서 구현하고 검사합니다.
 
@@ -18,9 +18,9 @@ Run-VAS-System.bat
   -> 코딩 도구에서 RBG 확인 후 실제 작업
 ```
 
-기존 웹 화면은 프롬프트와 선택 JSON을 만듭니다. 로컬 디자인 스튜디오에서는 저장한 채팅 작업을 선택해 디자인을 함께 사용할 수 있습니다. [2.14.0 릴리스 안내](releases/2.14.0.md)는 에이전트가 하나의 명령으로 처음 상태를 조회하고 실제 검사와 다음 행동을 저장하는 과정을 설명합니다. 이전 디자인 검사는 [2.11.0 검증 기록](verification/2.11.0-project-workflow.md)에 있습니다.
+기존 웹 화면은 프롬프트와 선택 JSON을 만듭니다. 로컬 디자인 스튜디오에서는 저장한 채팅 작업을 선택해 디자인을 함께 사용할 수 있습니다. [2.15.0 릴리스 안내](releases/2.15.0.md)는 에이전트가 하나의 명령으로 처음 상태를 조회하고 실제 검사와 다음 행동을 저장하는 과정을 설명합니다. 이전 디자인 검사는 [2.11.0 검증 기록](verification/2.11.0-project-workflow.md)에 있습니다.
 
-## 2.14.0 프로젝트와 작업 연결
+## 2.15.0 프로젝트와 작업 연결
 
 - [프로젝트 폴더](PROJECT-ROOT.md)는 GitHub 소스 ZIP·복제본과 Windows ZIP에서 같은 방식으로 시작합니다. 최상위 `src/`는 사용자 앱, `ui/`는 VAS 화면, `scripts/`는 명령, `docs/`는 안내입니다.
 - “이 폴더를 프로젝트로 지정하고 색인해줘”라고 하면 같은 채팅에서 새 앱·기존 앱을 구분하고 작업에 필요한 질문을 합니다. 구조만 요청하면 조사한 내용을 답합니다.
@@ -71,7 +71,6 @@ Windows 작업 기억은 서버에서 동의를 확인하고 누적 10,000건·U
 | 실행 기록 | 실제 역할 반환·작업 범위와 선택 파일 지문 연결 | `scripts/vas_session_work.py`, `CHAT-WORK.md` |
 | 평가 후속 행동 | 원래 조건에 따른 보완·근거 대조·부분 재검사 안내 | `scripts/vas_followup.py`, `CHAT-FOLLOWUP.md` |
 | 디자인 샘플 | 선택한 토큰으로 실제 샘플 사이트 확인 | `ui/design-sample.html` |
-| 검증 앱 | VAS 인계로 만든 별도 Morrow 작업 보드 | `ui/proof-app/index.html`, `docs/verification/README.md` |
 | 범위·완료조건 | 디자인 변경 권한과 조건별 확인 방법 | `ui/task-policy.js`, `ui/task-inputs.js`, `scripts/vas_task_policy.py` |
 | 완료 평가 | 자기보고와 별도 사용자 관찰에 따른 평가 | `ui/result-assessment.js`, `scripts/vas_result_assessment.py` |
 | 인계 계약 | 인계 v3 생성과 호환용 결과 v1 검증 | `ui/agent-contract.js`, `ui/handoff-workflow.js`, `scripts/vas_ai_contract.py` |

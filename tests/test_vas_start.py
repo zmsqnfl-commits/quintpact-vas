@@ -64,6 +64,7 @@ def test_first_index_is_read_only_and_does_not_assume_migration(kit):
     assert " plan --request" in data["nextAction"]["planCommand"]
     assert " done --summary" in data["nextAction"]["doneCommand"]
     assert "command" not in data["nextAction"] and ".agents/MEMORY.md" in data["nextAction"]["withoutPython"]
+    assert "한 번만" in data["nextAction"]["designQuestion"]
     assert data["projectPrompt"] == {"revision": 0, "prompt": ""}
     assert data["session"] == {"status": "none"}
     assert data["nextAction"]["code"] == "clarify-scope"

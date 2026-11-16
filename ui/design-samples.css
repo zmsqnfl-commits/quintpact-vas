@@ -1,11 +1,6 @@
 /* Curated samples share tokens, not a page template. */
 .preview-heading { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
 #openDesignSample { color: inherit; font: 11px/1.5 var(--vas-font-sans); text-underline-offset: 4px; padding: 8px 0; }
-.preset-palette[data-sample] { height: auto; aspect-ratio: 1.5; background: #161616; border-color: #666; }
-.preset-palette[data-sample] img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.btn-preset:has([data-sample]) { padding: 10px; }
-.btn-preset:has([data-sample]) strong { padding-right: 20px; }
-.preset-row:has([data-sample]) .favorite-toggle { top: auto; bottom: 40px; right: 7px; background: #242424; border-radius: 50%; }
 .adv-preview[data-sample] { display: block; max-width: none; font: var(--p-fs-body)/1.55 var(--p-font); background: var(--p-bg); color: var(--p-text); letter-spacing: var(--p-ls); }
 .adv-preview[data-sample] :where(h2,h3,h4,p,figure) { margin: 0; }
 .adv-preview[data-sample] :is(button,input,select,textarea) { font-family: var(--vas-font-sans, system-ui); }
@@ -22,7 +17,8 @@
 .ds-editorial-hero { display: grid; grid-template-columns: 3fr 1fr; gap: 36px; align-items: end; padding: 32px 0 40px; }
 .adv-preview .ds-editorial-hero h2 { font-size: clamp(40px, 9cqw, 126px); line-height: .99; font-weight: 650; letter-spacing: -.065em; }
 .ds-editorial-hero p { font-size: clamp(12px, 1.6cqw, 19px); line-height: 1.55; margin-bottom: 24px !important; }
-.ds-architecture-photo { display: block; width: 100%; aspect-ratio: 1.5; object-fit: cover; border-radius: var(--p-radius); }
+.ds-architecture-photo { display: block; width: 100%; aspect-ratio: 1.5; border-radius: var(--p-radius); }
+.ds-plain { background: linear-gradient(140deg, color-mix(in srgb, var(--p-primary) 70%, var(--p-bg)), color-mix(in srgb, var(--p-primary) 16%, var(--p-bg))); }
 .ds-architecture figcaption { display: flex; justify-content: space-between; gap: 14px; padding: 16px 0 26px; font: 11px var(--vas-font-sans,system-ui); letter-spacing: 0; }
 .ds-projects { scroll-margin-block: 24px; }
 .ds-projects details { border-top: max(1px, var(--p-border-width)) solid color-mix(in srgb,var(--p-border-color) 45%,transparent); }
@@ -145,7 +141,7 @@
 .ds-wiki-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 26px; font: 11px var(--vas-font-sans,system-ui); }
 .ds-wiki-bar b { font-weight: 400; }
 .ds-wiki-bar > span:last-child { color: var(--p-muted); }
-.ds-wiki-cover { display: block; width: 100%; height: clamp(110px, 16cqw, 220px); object-fit: cover; object-position: center 55%; }
+.ds-wiki-cover { display: block; width: 100%; height: clamp(110px, 16cqw, 220px); }
 .ds-document { max-width: 760px; padding: 32px 38px; margin: auto; }
 .adv-preview .ds-document h2 { font-size: clamp(28px, 3.8cqw, 48px); line-height: 1.1; letter-spacing: -.04em; font-weight: 650; }
 .ds-document .ds-doc-meta { font-size: 10px; color: var(--p-muted); margin: 16px 0 24px; }

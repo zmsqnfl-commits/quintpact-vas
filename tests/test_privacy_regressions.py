@@ -103,8 +103,8 @@ def runtime(tmp_path_factory):
     (root / "src/assets").mkdir(parents=True)
     (root / "docs").mkdir()
     (root / "src/vas-hub.html").write_text("<!doctype html><title>Fixture</title>", encoding="utf-8")
-    font = ROOT / "ui/proof-app/assets/BricolageGrotesque.ttf"
-    shutil.copy2(font, root / "src/assets/font.ttf")
+    font = root / "src/assets/font.ttf"
+    font.write_bytes(b"\x00\x01\x00\x00" + bytes(range(256)) * 64)
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]

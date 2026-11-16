@@ -5,16 +5,12 @@ const source = name => pathToFileURL(path.join(__dirname, '..', 'ui', name)).hre
 const sample = key => source('design-sample.html') + '?preset=' + key;
 const curated = ['awwwards', 'linear', 'stripe', 'notion'];
 
-test('catalog shows fourteen choices with real sample thumbnails and preserves legacy settings', async ({ page }) => {
+test('catalog shows fourteen choices without bundled images and preserves legacy settings', async ({ page }) => {
   await page.goto(source('design-controller.html'));
   await expect(page.locator('.btn-preset')).toHaveCount(14);
   await expect(page.getByRole('heading', { name: '추천 샘플 사이트 · 4가지' })).toBeVisible();
-  const thumbnails = page.locator('.preset-palette[data-sample] img');
-  await expect(thumbnails).toHaveCount(4);
-  for (const image of await thumbnails.all()) {
-    await image.scrollIntoViewIfNeeded();
-    await expect.poll(() => image.evaluate(el => el.complete && el.naturalWidth >= 1000)).toBe(true);
-  }
+  await expect(page.locator('.preset-palette')).toHaveCount(14);
+  await expect(page.locator('.preset-palette img')).toHaveCount(0);
   await page.evaluate(() => { localStorage.setItem('vasFavorites', JSON.stringify(['carbon','linear'])); applyPreset('carbon'); });
   await page.reload();
   await expect(page.locator('#colorPrimary')).toHaveValue('#2f5f9a');

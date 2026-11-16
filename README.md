@@ -1,4 +1,4 @@
-# VAS 2.14.0
+# VAS 2.15.0
 
 **Connecting a folder to your AI app? Select the entire project folder containing `Run-VAS-System.bat`, `src/` and `ui/`.** If the connection shows only `.claude/`, reselect its parent so the agent can read the project instructions and commands.
 
@@ -8,15 +8,15 @@ VAS (Vibecoding Agent System) is a local workflow tool that helps coding agents 
 
 The main agent uses VAS to save and resume settings and progress, prepare current instructions, coordinate scoped supporting work, and turn assessment into concrete next actions. Selected file observations help it distinguish checks that still apply from checks affected by later changes. Your coding host supplies the actual file, command, browser and delegation tools. Design choices are one part of that task context, used when the work needs them.
 
-**[Download the Windows project ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.14.0/VAS-2.14.0-windows.zip)** · [Get started](#get-started-on-windows) · [2.14.0 release notes](docs/releases/2.14.0.md)
+**[Download the Windows project ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.15.0/VAS-2.15.0-windows.zip)** · [Get started](#get-started-on-windows) · [2.15.0 release notes](docs/releases/2.15.0.md)
 
-## What’s new in VAS 2.14.0
+## What’s new in VAS 2.15.0
 
-**The project remembers its own work.** Requests, completion criteria, decisions and a record of each finished piece of work are kept as plain Markdown in the project’s `vas-state/` folder. A new conversation, a different coding host or a renamed or copied folder continues from the next step instead of asking again. The agent opens only the records that bear on the current request, and each record also notes what was tried and did not work. A host without Python reads and writes the same files by hand. [Project memory](docs/MEMORY.md)
+**A starter of about 1 MB.** The bundled sample artwork, six font files and the Morrow proof app are gone, which takes the Windows ZIP from about 26 MB to about 1 MB. The Design Studio keeps its ten compositions and four sample sites, now drawn with HTML and colour only.
 
-**Design is planned and inspected by default.** For any task with a screen the bundled design-craft skill has the agent plan before coding, settle the composition with real content and inspect the rendered result before delivery. [Design craft](docs/DESIGN-CRAFT.md)
+**One question about design.** When nothing has been decided for a new screen, the agent asks once whether you have a design or a reference site or image in mind. If you do, that is the starting point; if not, it plans the design itself and does not ask again. The answer is kept in the app’s `DESIGN.md` and in the project memory. [Design craft](docs/DESIGN-CRAFT.md)
 
-Error responses now say what happened and what to do next, and the release build moves ZIPs left by another version aside instead of deleting them. [2.14.0 release notes](docs/releases/2.14.0.md) · the previous release was [2.13.2](docs/releases/2.13.2.md).
+Project memory, introduced in 2.14.0, is unchanged: requests, criteria, decisions and work records live in the project’s `vas-state/` folder. [Project memory](docs/MEMORY.md) · [2.15.0 release notes](docs/releases/2.15.0.md) · previous release [2.14.0](docs/releases/2.14.0.md).
 
 ## Start a project
 
@@ -86,7 +86,7 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
-1. Clone the repository or download the project. [Source ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/archive/refs/tags/v2.14.0.zip) · [Windows starter](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.14.0/VAS-2.14.0-windows.zip)
+1. Clone the repository or download the project. [Source ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/archive/refs/tags/v2.15.0.zip) · [Windows starter](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.15.0/VAS-2.15.0-windows.zip)
 2. For a ZIP, extract the entire archive into a new folder. Rename the project folder before creating its first saved session.
 3. Open the folder containing `project-layout.json`, `src/` and `ui/` in Codex or start Claude Code there. Send “폴더 전체 색인해줘” to start setup, or describe a specific task.
 4. To edit shared project instructions on screen, double-click `Run-VAS-System.bat`, change **Project working instructions**, and save. Then say “Continue using the saved instructions” in the coding chat. The screen and agent use the same file, including before a private session exists.
@@ -115,9 +115,9 @@ Saved instructions travel with the project. Private chat sessions and target bin
 
 The host handles the session commands and result format. Users do not need to author a settings file, execution record or result JSON.
 
-For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.14.0.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
+For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.15.0.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
 
-**Moving an existing app.** Back up the app and extract 2.14.0 into a fresh folder. Transfer your own source, assets, configuration and saved instructions after checking conflicts. The 2.11.x Windows starter used its top-level `src/` for the app. In the 2.11.x GitHub source archive, `src/` contained VAS screens. Private sessions are specific to the installation and PC. [Upgrade guidance](docs/MIGRATION.md) · [Saved settings](docs/CHAT-STATE.md)
+**Moving an existing app.** Back up the app and extract 2.15.0 into a fresh folder. Transfer your own source, assets, configuration and saved instructions after checking conflicts. The 2.11.x Windows starter used its top-level `src/` for the app. In the 2.11.x GitHub source archive, `src/` contained VAS screens. Private sessions are specific to the installation and PC. [Upgrade guidance](docs/MIGRATION.md) · [Saved settings](docs/CHAT-STATE.md)
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -135,14 +135,6 @@ Agent reports, VAS assessment and user acceptance remain separate. When a task h
 
 See [progress and resume](docs/CHAT-PROGRESS.md), [work and file observations](docs/CHAT-WORK.md), [assessment follow-up](docs/CHAT-FOLLOWUP.md), and the [agent workflow](.agents/HANDOFF-WORKFLOW.md) for the host procedure and limits.
 
-## A working deliverable: Morrow
-
-[Morrow](https://zmsqnfl-commits.github.io/quintpact-vas/src/proof-app/index.html?v=2.10.0) is a task-board application built through an earlier VAS handoff workflow, with separate implementation and independent review. It demonstrates a concrete request becoming an application with testable behavior.
-
-You can create and edit tasks, search and filter them, manage due dates and status, archive and restore records, undo the latest deletion, and export JSON. Data persists in the browser. Verification covered keyboard interaction, responsive layouts at 1440, 768, 390 and 320 pixels, and persistence after a 5,001st task. Review found and corrected focus handling, small mobile controls and a save/reload limit mismatch.
-
-The [verification record](docs/verification/README.md) links the request, original handoff, specification and execution results. It is an earlier application example: its original handoff retains VAS 2.6.4 and does not demonstrate every later chat-session feature. Morrow has no accounts, backend, AI API connection, JSON import or cross-device synchronization.
-
 ## Design support when the task needs it
 
 The connected Design Studio helps users and agents agree on visual requirements and save them to the same task. It is optional in the conversational workflow. Existing applications preserve their design by default; partial changes name the affected screens or elements, while a redesign requires an explicit choice.
@@ -151,13 +143,13 @@ Samples provide **visual elements**, not a platform or a list of features to cop
 
 For your own reference image, attach the actual image in the coding chat and ask the agent to apply its relevant elements. The bundled **design-analysis** skill covers typography, color, layout, imagery and spacing; it distinguishes what was observed from implementation proposals and maps each choice to the app. No global skill installation, Obsidian connection or new API key is required. The form's attachment count alone does not deliver image pixels. VAS does not upload or analyze images itself; the host must be able to inspect them. See [reference image analysis](docs/DESIGN-ANALYSIS.md).
 
-The bundled **design-craft** skill applies to any task with a screen, even when the request never mentions design. The agent writes a short design plan before coding (the screen's one job, 4–6 named colors, type roles, wide and narrow layouts, one signature element), settles the composition with real content, and inspects the rendered result itself before delivery, fixing clipping, overlap, typos and stranded Korean line endings. Decisions are kept in the app's `DESIGN.md`, so a later conversation continues the same design without asking again. Existing designs are preserved unless the request changes them. See [design craft](docs/DESIGN-CRAFT.md).
+The bundled **design-craft** skill applies to any task with a screen, even when the request never mentions design. When nothing has been decided for a new screen the agent asks once whether you have a design or a reference site or image in mind, and plans the design itself if you do not. The agent writes a short design plan before coding (the screen's one job, 4–6 named colors, type roles, wide and narrow layouts, one signature element), settles the composition with real content, and inspects the rendered result itself before delivery, fixing clipping, overlap, typos and stranded Korean line endings. Decisions are kept in the app's `DESIGN.md`, so a later conversation continues the same design without asking again. Existing designs are preserved unless the request changes them. See [design craft](docs/DESIGN-CRAFT.md).
 
-Application checks include PC and mobile widths, 320 CSS px reflow, empty and long-data states, actual local font use, contrast, keyboard interaction and reload. Bundled font files can be copied into app-owned assets together with their OFL licenses; the app should not depend on a VAS runtime URL. Declaring a font name is not evidence that it loaded, and resizing a browser is not a physical-phone test.
+Application checks include PC and mobile widths, 320 CSS px reflow, empty and long-data states, actual local font use, contrast, keyboard interaction and reload. VAS bundles no fonts or sample artwork: an app keeps its own licensed fonts under its own assets, or uses a system font stack, and never depends on a VAS runtime URL. Declaring a font name is not evidence that it loaded, and resizing a browser is not a physical-phone test.
 
 When you use it, **Save to chat settings** commits the selection. The main agent reads the latest settings before continuing. Opening a sample or saving a design does not wake the AI or replace its active conversation context. GitHub Pages previews are separate from the PC's private task store.
 
-[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.14.0) · [Connect a local task](docs/CHAT-DESIGN.md)
+[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.15.0) · [Connect a local task](docs/CHAT-DESIGN.md)
 
 <details>
 <summary>View design collections and interactive samples</summary>
@@ -183,7 +175,7 @@ The main picker offers **14 curated choices**. The full set of 28 preset definit
 
 ### Four interactive sample websites
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.14.0). Each recommendation includes a screenshot of its rendered site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.15.0). Each recommendation includes a screenshot of its rendered site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -194,9 +186,6 @@ Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/q
 
 These are demonstrations: inquiry previews do not send messages, and subscription examples do not process payments. Exploring another sample preserves the design settings you started with. Fictional sample content is a visual reference, not your project's business data.
 
-![Earlier VAS 2.7.0 design showcase: Morrow and ORBIT interface mockups with Aurora artwork.](docs/assets/vas-2.7.0-cover.png)
-
-The image is an earlier promotional composition of the app and design samples.
 
 </details>
 
@@ -205,11 +194,11 @@ The image is an earlier promotional composition of the app and design samples.
 - Work memory is opt-in and uses confirmed design selections for recommendations. The Windows server enforces consent and the cumulative 10,000-event / 8 MiB limit. Raw work-memory records are not included in the handoff.
 - In the screen-based flow, the existing project path belongs in the copied prompt. Chat sessions additionally keep a private local binding for resume; the path is excluded from shared settings, handoff JSON, browser responses and work-memory records.
 - Preparing a handoff does not run, copy, or modify the existing target project.
-- Runtime pages use local assets and fonts without external font services or CDNs.
+- Runtime pages use no external font services or CDNs.
 
 ## Verification and development
 
-The [2.14.0 release notes](docs/releases/2.14.0.md) describe read-only intake, task preparation and saving a verified checkpoint. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs.
+The [2.15.0 release notes](docs/releases/2.15.0.md) describe read-only intake, task preparation and saving a verified checkpoint. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs.
 
 Application verification for 2.11.0 separately inspected Bento, Swiss and external-image examples in Windows Chrome at desktop and mobile widths. It found and corrected example-level font, contrast and long-data issues. Two fresh coding-host runs reached their time limit; the separate rendered checks are not presented as completed autonomous host runs. The [2.11.0 verification record](docs/verification/2.11.0-project-workflow.md) separates those observations from product regressions. The earlier [2.10.0 agent-flow record](docs/verification/2.10.0-agent-flow.md) remains available.
 
@@ -244,7 +233,7 @@ On Windows, use a local or mapped-drive path when npm cannot run from a UNC dire
 | `scripts/`, `tests/` | Session preparation and assessment, local runtime, builds and automated checks |
 | `dist/` | Generated distributions; excluded from Git |
 
-Further reading: [documentation index](docs/index.md) · [test guide](tests/README.md) · [asset notices](ui/assets/README.md).
+Further reading: [documentation index](docs/index.md) · [test guide](tests/README.md).
 
 ## License
 

@@ -12,11 +12,10 @@ The public catalog contains the ten new collections plus four curated sample sit
 
 ## Assets
 
-- Eight original images in `ui/assets/designs/` were generated for this collection: bento print, aurora background, clay object, perfume still life, botanical still life photo collage, wireframe globe and clay icon sheet. They are sample artwork, not screenshots used as interfaces. The collage pictures are synthetic; they do not document a real trip or location.
-- Local fonts come from the official [Google Fonts repository](https://github.com/google/fonts): Bricolage Grotesque, DM Serif Display, Space Grotesk, Anton, Caprasimo and Cormorant Garamond. Each binary is accompanied by its SIL Open Font License in `ui/assets/fonts/`.
-- Fonts and imagery are bundled for offline use. Target projects should provision suitable licensed assets and fonts in their own stack; VAS asset paths are not promised to exist in a user's project.
-- Reference screenshots were used to develop each composition. Type, controls, rows, forms, glass surfaces and geometric poster graphics are native HTML/CSS; motion has pause and reduced-motion support.
-- The courtyard and fieldnotes-cover images are original generated photographs for fictional sample sites. They do not document real architecture commissions or team workspaces. Four images under `ui/assets/designs/samples/` are actual rendered-site screenshots used only as selector thumbnails. Regenerate them with `node scripts/capture-design-samples.cjs` after changing sample layouts.
+- VAS 2.15.0 removed the bundled sample artwork, the six local fonts and the Morrow proof app to keep the starter small. The ten compositions and four sample sites remain as native HTML/CSS; where an image used to sit, a colour block drawn from the palette stands in.
+- The font names in `ui/design-collection.css` describe each composition’s direction. No font binary ships, so previews fall back to the generic family at the end of each stack.
+- Target projects provision their own licensed fonts and imagery. The agent asks once for a reference design or site and otherwise plans the design itself.
+- The removed artwork was original generated imagery and rendered-site screenshots captured for the samples; it remains in the 2.14.0 release and earlier.
 
 ## design-craft skill
 

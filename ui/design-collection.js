@@ -1,7 +1,7 @@
-/** Ten original compositions; all controls and typography remain native HTML. */
+/** Ten original compositions; all controls and typography remain native HTML. Artwork is drawn with colour only. */
 (function (global) {
   'use strict';
-  const image = (name, alt, cls = '') => `<img class="nc-image ${cls}" src="assets/designs/${name}.png" alt="${alt}" decoding="async">`;
+  const image = (name, alt, cls = '') => `<span class="nc-image nc-plain ${cls}" data-art="${name}" ${alt ? `role="img" aria-label="${alt}"` : 'aria-hidden="true"'}></span>`;
   const header = (brand, note) => `<header class="nc-header"><strong>${brand}</strong><span>${note}</span></header>`;
   const action = (label) => `<button type="button" class="p-btn nc-action" data-reveal aria-expanded="false" aria-controls="ncDetail">${label}<span aria-hidden="true">↗</span></button>`;
   const detail = (title, body) => `<section class="nc-detail" id="ncDetail" tabindex="-1" hidden><h3>${title}</h3><p>${body}</p></section>`;

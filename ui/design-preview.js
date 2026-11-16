@@ -139,15 +139,6 @@
     const strip = document.createElement('div');
     strip.className = 'preset-palette';
     strip.setAttribute('aria-hidden', 'true');
-    if (preset.sample) {
-      strip.dataset.sample = preset.sample;
-      const thumbnail = document.createElement('img');
-      thumbnail.src = 'assets/designs/samples/' + preset.sample + '.png';
-      thumbnail.alt = '';
-      thumbnail.loading = 'lazy';
-      strip.append(thumbnail);
-      return strip;
-    }
     if (global.VASDesignCollection?.has(preset.tasteProfile)) {
       strip.dataset.collection = key;
       strip.dataset.monogram = { bento: 'moyo', aurora: 'aura', clay: 'plūm', noir: 'NUIT', botanical: 'VERDANT', retro: 'GOOD DAYS', swiss: 'FORM / 26', cyber: 'NEXUS_', kinetic: 'OFFBEAT', collage: 'DAYBOOK' }[key];

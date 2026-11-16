@@ -20,16 +20,15 @@ for (const width of [1440, 390, 320]) {
       await page.evaluate(() => document.fonts.ready);
       const root = page.locator('#advPreview');
       const state = await root.evaluate(async element => {
-        await Promise.all([...element.querySelectorAll('img')].map(img => img.decode()));
-        const fonts = [...document.fonts].filter(font => font.status === 'loaded').map(font => font.family);
+        // No artwork or font file ships: every composition is drawn with HTML and colour only.
         return { identity: element.dataset.collection, heading: element.querySelector('h2').innerText,
-          family: getComputedStyle(element).fontFamily.split(',')[0].replaceAll('"', '').replaceAll("'", ''), fonts,
+          images: element.querySelectorAll('img').length, fontFaces: document.fonts.size,
           overflow: element.scrollWidth > element.clientWidth + 1 || document.documentElement.scrollWidth > innerWidth + 1 };
       });
       identities.push(state.identity + ':' + state.heading);
       expect(state.identity, key).toBeTruthy();
       expect(state.overflow, key).toBe(false);
-      if (key !== 'cyber') expect(state.fonts, key).toContain(state.family);
+      expect([state.images, state.fontFaces], key).toEqual([0, 0]);
       await expect(root.locator('.p-stat-card')).toHaveCount(0);
       const box = await root.boundingBox();
       await page.setViewportSize({ width, height: Math.max(1000, Math.ceil(box.height) + 300) });

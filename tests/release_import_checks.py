@@ -33,9 +33,8 @@ def verify_imported_entrypoint(starter_archive, prefix):
         for name, value in files.items():
             (old / name).write_bytes(value.encode("utf-8"))
         (old / "fonts").mkdir()
-        # Real licensed font above the text-file cap, under the binary asset cap.
-        font = app / "ui/assets/fonts/CormorantGaramond.ttf"
-        shutil.copyfile(font, old / "fonts/menu.ttf")
+        # A binary asset above the text-file cap and under the binary asset cap.
+        (old / "fonts/menu.ttf").write_bytes(b"\x00\x01\x00\x00" + bytes(range(256)) * 4600)
         env = {**os.environ, "PYTHONUTF8": "1", "LOCALAPPDATA": str(scratch / "state"),
                "XDG_STATE_HOME": str(scratch / "state")}
 

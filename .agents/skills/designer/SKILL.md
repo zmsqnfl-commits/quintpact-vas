@@ -28,6 +28,6 @@ description: 사용자 토큰과 참고 화면을 UI 명세로 바꾸고 구현 
 - VAS 프로젝트에서 새 화면이나 화면 변경에는 `.agents/skills/design-craft/SKILL.md`를 적용하고 계획과 결과를 앱의 `DESIGN.md`에 남긴다.
 - VAS 프로젝트에서 참고 이미지를 분석할 때에는 `.agents/skills/design-analysis/SKILL.md`를 적용한다.
 - VAS에서 선택 프로필의 정본을 확인할 때에는 `.agents/skills/designer/references/profiles/<프로필키>.md`를 읽는다.
-- VAS의 선택 글꼴은 `ui/assets/fonts/`의 파일·라이선스와 `ui/design-collection.css`의 선언을 확인한다. 필요한 자산과 라이선스만 앱으로 복사하고 앱의 실행 경로는 앱 자산을 가리키게 한다.
+- VAS는 글꼴 파일을 묶어 주지 않는다. `ui/design-collection.css`의 글꼴 이름은 견본의 방향을 보여 주는 값이다. 앱에 글꼴이 필요하면 사용자가 준 파일이나 라이선스를 확인한 글꼴을 앱 자산에 두고, 없으면 시스템 글꼴 스택으로 대체한다.
 - 세션 작업에서는 전달된 revision·인계 ID와 허용 범위를 유지한다. 세션을 직접 저장하지 않고 토큰 변경 제안·실제 확인 결과를 주 실행자에게 반환한다. 저장된 사용자 지정 값을 지원하지 못하면 다른 스타일로 대체하지 말고 차이를 알린다.
 - work 작업에서는 실제 변경 파일·확인 명령과 종료 코드·조건별 결과·미확인 화면을 반환한다. 호출 ID나 검증 성공을 추정하지 않으며, 지문 관찰과 기록 저장은 주 실행자가 `docs/CHAT-WORK.md`에 따라 수행한다.

@@ -34,7 +34,10 @@ def _initial_action(state, shared, memory=None):
                     if shared and not remembered else "") +
                    "대화·저장 지시에서 이미 정한 내용은 묻지 마세요. 이전 앱이 언급됐고 이전 여부만 "
                    "미정이면 새로 만들지 그 앱을 이어갈지만 물으세요.",
-        "questionIfNeeded": question, "planCommand": PLAN, "doneCommand": DONE,
+        "questionIfNeeded": question,
+        "designQuestion": "화면이 있는 새 작업이고 디자인이 정해지지 않았으면 한 번만 물으세요: 원하는 디자인이나 참고할 "
+                          "사이트·이미지가 있나요? 없으면 알아서 정하겠습니다.",
+        "planCommand": PLAN, "doneCommand": DONE,
         "when": "범위와 끝났다고 볼 조건이 정해지면 plan으로 적고, 작업을 마치거나 멈출 때 done으로 남기세요",
         "withoutPython": "Python을 쓸 수 없으면 .agents/MEMORY.md의 양식대로 vas-state의 파일을 직접 읽고 쓰세요.",
     }

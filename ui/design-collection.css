@@ -1,10 +1,4 @@
 /* Local display fonts: SIL Open Font License files accompany every family. */
-@font-face { font-family: 'Bricolage Grotesque'; src: url('assets/fonts/BricolageGrotesque.ttf') format('truetype'); font-weight: 200 800; font-display: swap; }
-@font-face { font-family: 'DM Serif Display'; src: url('assets/fonts/DMSerifDisplay.ttf') format('truetype'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Space Grotesk'; src: url('assets/fonts/SpaceGrotesk.ttf') format('truetype'); font-weight: 300 700; font-display: swap; }
-@font-face { font-family: Anton; src: url('assets/fonts/Anton-Regular.ttf') format('truetype'); font-display: swap; }
-@font-face { font-family: Caprasimo; src: url('assets/fonts/Caprasimo-Regular.ttf') format('truetype'); font-display: swap; }
-@font-face { font-family: 'Cormorant Garamond'; src: url('assets/fonts/CormorantGaramond.ttf') format('truetype'); font-weight: 300 700; font-display: swap; }
 .adv-preview[data-collection] { position: relative; isolation: isolate; display: block; background: var(--p-bg); font-size: var(--p-fs-body); line-height: 1.5; }
 .adv-preview[data-collection] h2, .adv-preview[data-collection] h3, .adv-preview[data-collection] p, .adv-preview[data-collection] figure { margin: 0; }
 .adv-preview[data-collection] h2 { font-weight: 600; font-size: clamp(38px, 7.6cqw, 100px); line-height: 1.02; letter-spacing: var(--p-ls); }
@@ -13,7 +7,8 @@
 .nc-header { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 20px 0 24px; }
 .nc-header > strong { font-size: 24px; letter-spacing: -.05em; }
 .nc-header > span { max-width: 44%; font: 8px/1.5 var(--vas-font-mono); letter-spacing: .04em; text-align: right; }
-.nc-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nc-image { display: block; width: 100%; height: 100%; }
+.nc-plain { background: linear-gradient(140deg, color-mix(in srgb, var(--p-primary) 78%, var(--p-bg)), color-mix(in srgb, var(--p-primary) 22%, var(--p-bg))); }
 .adv-preview[data-collection] .nc-action { margin-top: 22px; box-shadow: none; font-family: var(--vas-font-sans); }
 .nc-detail { margin: 24px 0 0; padding: var(--p-pad); border: 1px solid var(--p-border-color); border-radius: var(--p-radius); background: var(--p-surface); color: var(--p-text); }
 .nc-detail h3 { font-size: 22px; font-weight: 500; }
@@ -33,7 +28,7 @@
 .adv-preview .nc-bento-title h2 { margin: 20px 0 10px; font-weight: 800; font-size: clamp(42px, 8cqw, 100px); line-height: .92; }
 .nc-bento-title em { font-style: normal; }
 .nc-bento-art { background: #ff7257; display: flex; flex-direction: column; justify-content: space-between; }
-.nc-bento-art img { aspect-ratio: 1; height: auto; margin: auto 0; }
+.nc-bento-art .nc-image { aspect-ratio: 1; height: auto; margin: auto 0; }
 .nc-bento-art figcaption { padding-top: 20px; color: #17121f; font: 8px var(--vas-font-mono); }
 .nc-checklist { background: #c8ed47; color: #17121f; }
 .nc-checklist h3 { padding: 16px 0; font-size: 24px; line-height: 1.05; font-weight: 700; }
@@ -52,7 +47,7 @@
 .nc-bento-hello br { display: none; }
 
 /* Aurora: photographed light, translucent workspace and a floating dock. */
-.adv-preview[data-collection="auroraGlass"] { padding: 0 28px 28px; background: var(--p-bg) url('assets/designs/aurora.png') center / cover; border-radius: var(--p-radius); }
+.adv-preview[data-collection="auroraGlass"] { padding: 0 28px 28px; background: linear-gradient(150deg, #060e28, #1b2f78 42%, #6b3fb9 74%, #0b6f86); border-radius: var(--p-radius); }
 .nc-aurora-layout { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; align-items: center; padding: 76px 0 60px; }
 .nc-aurora-copy > small { display: block; max-width: 25ch; margin-bottom: 24px; }
 .adv-preview .nc-aurora-copy h2 { font-weight: 500; font-size: clamp(38px, 6.5cqw, 82px); }
@@ -75,11 +70,11 @@
 .nc-clay-hero > section { position: relative; z-index: 1; }
 .nc-clay-hero small { display: block; margin-bottom: 22px; }
 .adv-preview .nc-clay-hero h2 { font-weight: 800; font-size: clamp(38px, 6.8cqw, 84px); }
-.nc-clay-hero img { aspect-ratio: 1; height: auto; border-radius: 50%; }
+.nc-clay-hero .nc-image { aspect-ratio: 1; height: auto; border-radius: 50%; }
 .adv-preview .nc-clay-hero .nc-action { box-shadow: inset 0 3px 4px #fff4, 0 6px 0 #6c214c, 0 12px 16px #9e64354d; }
 .nc-clay-courses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 32px 0 12px; }
 .nc-clay-courses article { position: relative; padding: 24px 20px; border-radius: var(--p-radius); background: var(--p-surface); box-shadow: inset 3px 3px 4px #fff8, 7px 9px 20px #a66c3d26; }
-.nc-clay-symbol { display: block; width: 110px; max-width: 100%; aspect-ratio: 1; margin-bottom: 14px; background: url('assets/designs/clay-icons.png') left center / 300% 100% no-repeat; }
+.nc-clay-symbol { display: block; width: 110px; max-width: 100%; aspect-ratio: 1; margin-bottom: 14px; background: color-mix(in srgb, var(--p-primary) 70%, var(--p-bg)); border-radius: 46% 54% 50% 50% / 55% 48% 52% 45%; }
 .nc-clay-courses article:nth-child(2) .nc-clay-symbol { background-position: center; }
 .nc-clay-courses article:nth-child(3) .nc-clay-symbol { background-position: right center; }
 .nc-clay-courses h3 { margin-top: 12px !important; font-size: 22px; line-height: 1.05; }
@@ -93,7 +88,7 @@
 .nc-noir-hero h2 { margin-top: 26px !important; font-weight: 300 !important; color: var(--p-primary); font-size: clamp(46px, 8.6cqw, 108px) !important; }
 .nc-noir-hero em { color: var(--p-primary); font-weight: 400; }
 .nc-noir-hero figure { align-self: stretch; position: relative; min-height: 460px; }
-.nc-noir-hero img { position: absolute; inset: 0; }
+.nc-noir-hero .nc-image { position: absolute; inset: 0; }
 .nc-noir-hero figcaption { position: absolute; bottom: 16px; width: 100%; text-align: center; color: #f1e8d8; font: 8px var(--vas-font-mono); }
 .nc-noir-caption { display: block; margin-top: 36px; font: 8px var(--vas-font-mono); letter-spacing: .15em; }
 .nc-scent-notes { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 20px; align-items: center; border-top: 1px solid var(--p-border-color); padding: 26px 0; }
@@ -105,7 +100,7 @@
 [data-collection="botanicalAtelier"] .nc-header > strong { font-weight: 400; letter-spacing: .12em; font-size: 22px; }
 .nc-botanical-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 40px 0; align-items: center; }
 .nc-botanical-hero h2 { margin-top: 24px !important; font-weight: 400 !important; font-size: clamp(42px, 8.3cqw, 106px) !important; }
-.nc-botanical-hero figure img { height: 430px; border-radius: 48% 48% 2px 2px; }
+.nc-botanical-hero figure .nc-image { height: 430px; border-radius: 48% 48% 2px 2px; }
 .nc-botanical-hero figcaption { text-align: center; margin-top: 16px; font: 8px var(--vas-font-mono); }
 .nc-botanical-seal { display: flex; align-items: center; gap: 12px; margin-top: 36px; font-size: 46px; }
 .nc-botanical-seal > span { max-width: 10ch; font: 8px/1.6 var(--vas-font-mono); }
@@ -195,7 +190,7 @@
 [data-collection="paperCollage"] .nc-header > strong { font-weight: 400; letter-spacing: .12em; font-size: 26px; }
 .nc-collage-hero { display: grid; grid-template-columns: .9fr 1.35fr; align-items: center; padding: 45px 0; gap: 12px; }
 .nc-collage-hero h2 { margin-top: 24px !important; font-size: clamp(36px, 6.4cqw, 82px) !important; font-weight: 400 !important; }
-.nc-collage-hero img { height: auto; mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
+.nc-collage-hero .nc-image { height: auto; aspect-ratio: 1.3; mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
 .nc-journal-index { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; border-top: 1px solid var(--p-border-color); padding: 28px 0; }
 .nc-journal-index article + article { border-left: 1px solid var(--p-border-color); padding-left: 36px; }
 .nc-journal-index h3 { margin-top: 18px !important; font-size: 28px; line-height: 1.1; font-weight: 400; }
@@ -205,12 +200,12 @@
 .preset-palette[data-collection] { position: relative; height: 64px; border: 0; background: var(--thumb-bg); }
 .preset-palette[data-collection]::after { content: attr(data-monogram); position: absolute; inset: 0; display: grid; align-content: center; padding: 8px; color: var(--thumb-text); font: 900 21px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.06em; }
 .preset-palette[data-collection] i { display: none; }
-.preset-palette[data-collection="bento"] { background: #ff7257 url('assets/designs/bento.png') right / 64px no-repeat; }
-.preset-palette[data-collection="aurora"] { background: #060e28 url('assets/designs/aurora.png') center / cover; }
-.preset-palette[data-collection="clay"] { background: #ffcea5 url('assets/designs/clay.png') right / 76px no-repeat; }
-.preset-palette[data-collection="noir"] { background: #11100e url('assets/designs/noir.png') right / 48px no-repeat; }
-.preset-palette[data-collection="botanical"] { background: #f3f0e5 url('assets/designs/botanical.png') right / 48px no-repeat; }
-.preset-palette[data-collection="collage"] { background: #f2dcd7 url('assets/designs/collage.png') right / 90px no-repeat; }
+.preset-palette[data-collection="bento"] { background: #ff7257; }
+.preset-palette[data-collection="aurora"] { background: #060e28; }
+.preset-palette[data-collection="clay"] { background: #ffcea5; }
+.preset-palette[data-collection="noir"] { background: #11100e; }
+.preset-palette[data-collection="botanical"] { background: #f3f0e5; }
+.preset-palette[data-collection="collage"] { background: #f2dcd7; }
 .preset-palette[data-collection="retro"] { background: radial-gradient(circle at 85% 50%, #f3a948 0 8%, #64251f 9% 30%, transparent 31%), #fff0c9; }
 .preset-palette[data-collection="swiss"] { background: radial-gradient(circle at 95% 30%, #f13813 0 30%, transparent 31%), #1847e8; }
 .preset-palette[data-collection="cyber"] { background: repeating-linear-gradient(90deg, #080e0a 0 12px, #244a22 13px 14px); }
@@ -239,7 +234,7 @@
   .nc-clay-courses { gap: 10px; }
   .nc-clay-courses article { padding: 18px 14px; }
   .nc-clay-courses h3 { font-size: 19px; }
-  .nc-botanical-hero figure img { height: 350px; }
+  .nc-botanical-hero figure .nc-image { height: 350px; }
   .nc-scent-notes { gap: 12px; }
   .nc-scent-notes strong { font-size: 25px; }
   .nc-swiss-programme .nc-row > strong { font-size: 19px; }
