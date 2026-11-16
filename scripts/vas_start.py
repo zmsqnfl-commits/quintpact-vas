@@ -18,7 +18,7 @@ def _brief(text, limit=240):
 
 
 PLAN = 'python -B scripts/vas.py plan --request "요청" --criterion "끝났다고 볼 조건 (확인 방법)"'
-DONE = 'python -B scripts/vas.py done --summary "한 일" --check "확인한 것:통과" --file src/바뀐파일 --next-step "다음 할 일"'
+DONE = 'python -B scripts/vas.py done --summary "한 일" --check "확인한 것:통과" --file src/바뀐파일 --tag 화면이나기능 --next-step "다음 할 일"'
 
 
 def _initial_action(state, shared, memory=None):
@@ -126,6 +126,16 @@ def memory_brief(root):
         brief["recent"] = [f"{item['number']:04d} {item['date']} {item['title']}: {_brief(item['summary'], 120)}"
                            for item in view["records"]]
         brief["indexPath"] = view["indexPath"]
+    check = view.get("fileCheck") or {}
+    if check.get("changed"):
+        # The record's checks described the file as it was then, not as it is now.
+        brief["changedSinceRecord"] = [
+            f"{item['file']} (기록 {item['record']:04d} 뒤 {'바뀜' if item['state'] == 'changed' else '없어짐'})"
+            for item in check["changed"][:20]]
+        brief["message"] += (" 기록 뒤에 바뀐 파일이 있습니다. 그 기록의 확인 결과를 지금 결과로 쓰지 말고, "
+                             "그 파일에 걸린 확인만 다시 하세요.")
+    if check.get("notCompared"):
+        brief["notCompared"] = len(check["notCompared"])
     return brief
 
 

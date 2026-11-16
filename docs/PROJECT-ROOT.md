@@ -40,10 +40,10 @@ Claude Code의 [시작 훅](CLAUDE-START-HOOK.md)은 선택 사항입니다. 훅
 python -B scripts/vas.py plan --request "메뉴판 앱을 만들어줘" --target "새 앱, src" --criterion "메뉴 세 항목이 보인다 (화면에서 확인)" --decision "가격은 원 단위로 쓴다 (사용자)"
 ```
 
-작업을 마치거나 멈출 때 기록 한 건을 남깁니다. `--check`는 실제 결과에 따라 `통과`, `실패`, `미실행`, `건너뜀`을 구분하고 여러 번 쓸 수 있습니다. `--criterion C1`은 확인을 마친 완료조건에 표시합니다. `--failed`에는 해 봤는데 안 된 방법을 적어 다음 대화가 같은 길로 가지 않게 합니다.
+작업을 마치거나 멈출 때 기록 한 건을 남깁니다. `--check`는 실제 결과에 따라 `통과`, `실패`, `미실행`, `건너뜀`을 구분하고 여러 번 쓸 수 있습니다. `--criterion C1`은 확인을 마친 완료조건에 표시합니다. `--failed`에는 해 봤는데 안 된 방법을 적어 다음 대화가 같은 길로 가지 않게 합니다. `--file`로 적은 파일은 그때의 모습이 함께 남아서, 다음 `start`가 그 뒤에 바뀐 파일을 알려 줍니다. `--tag`에는 화면이나 기능 이름을 적어 나중에 찾기 쉽게 합니다.
 
 ```text
-python -B scripts/vas.py done --summary "메뉴판 화면을 만들고 좁은 화면에서 확인" --title "메뉴판 화면" --check "390px 화면:통과" --check "결제 연동:미실행" --file src/index.html --failed "표 배치는 글이 잘려서 버림" --criterion C1 --next-step "가격 수정 화면 만들기"
+python -B scripts/vas.py done --summary "메뉴판 화면을 만들고 좁은 화면에서 확인" --title "메뉴판 화면" --check "390px 화면:통과" --check "결제 연동:미실행" --file src/index.html --tag 메뉴판 --failed "표 배치는 글이 잘려서 버림" --criterion C1 --next-step "가격 수정 화면 만들기"
 ```
 
 지난 기록은 요청과 관련 있는 것만 찾아 엽니다.

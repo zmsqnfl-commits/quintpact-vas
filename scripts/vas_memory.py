@@ -11,6 +11,7 @@ folder is read or written, and no absolute path, credential or host call id is s
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -20,7 +21,7 @@ from datetime import date
 from pathlib import Path
 
 from vas_ai_contract import clean, safe_relative
-from vas_paths import is_reparse
+from vas_paths import is_relative_to, is_reparse
 
 # The names live here only, so they can be changed in one place.
 STATE = "vas-state"
@@ -35,6 +36,9 @@ MAX_FILE = 256 * 1024
 MAX_SECTION = 4_000
 MAX_RECORDS = 5_000
 INDEX_LINES = 200
+MAX_PRINT_FILE = 4 * 1024 * 1024
+MAX_PRINTS = 64
+PRINT = re.compile(r"[0-9a-f]{16}")
 RECORD_NAME = re.compile(r"([0-9]{4,})(?:-[^/\\]*)?\.md$")
 HEADER = re.compile(r"^판:\s*([0-9]+)")
 HEADING = re.compile(r"^##\s+(.+?)\s*$")
@@ -225,6 +229,7 @@ def read_memory(root, limit=20):
             "records": records, "recordCount": len(names)}
     if names:
         view["indexPath"] = f"{STATE}/{INDEX}"
+        view["fileCheck"] = changed_since_records(root)
     return view
 
 
@@ -264,6 +269,56 @@ def update_now(root, sections, by, expected_revision=None, tick=()):
     return {"revision": revision + 1, "path": f"{STATE}/{NOW}"}
 
 
+def _fingerprint(root, relative):
+    """A short hash of one project file as it is now, or None when it cannot be read safely."""
+    root = Path(root)
+    path = root / relative
+    try:
+        if is_reparse(path) or not path.is_file() or path.stat().st_size > MAX_PRINT_FILE:
+            return None
+        if not is_relative_to(path.resolve(), root.resolve()):
+            return None
+        # Line endings are evened out so a checkout on another system reads as the same file.
+        return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()[:16]
+    except OSError:
+        return None
+
+
+def changed_since_records(root, limit=20):
+    """Compare the files named by recent records with the files as they are now.
+
+    A record says what was checked at the time. When a file it names has changed since, its
+    checks no longer describe the current file. The newest record that names a file is the
+    one that counts. A record written by hand carries no fingerprint and is reported as not
+    compared, never as unchanged.
+    """
+    state = state_directory(root)
+    result = {"compared": 0, "changed": [], "notCompared": []}
+    if state is None:
+        return result
+    seen = set()
+    for number, name in reversed(_records(state)[-limit:]):
+        front, _ = _front(_read(state / LOG / name) or "")
+        files = front.get("files") if isinstance(front.get("files"), list) else []
+        prints = front.get("fingerprints") if isinstance(front.get("fingerprints"), dict) else {}
+        for item in files[:40]:
+            relative = safe_relative(item) if isinstance(item, str) else None
+            if not relative or relative in seen or len(seen) >= MAX_PRINTS:
+                continue
+            seen.add(relative)
+            recorded = prints.get(item)
+            if not (isinstance(recorded, str) and PRINT.fullmatch(recorded)):
+                result["notCompared"].append({"file": relative, "record": number})
+                continue
+            result["compared"] += 1
+            current = _fingerprint(root, relative)
+            if current != recorded:
+                exists = (Path(root) / relative).exists()
+                result["changed"].append({"file": relative, "record": number,
+                                          "state": "changed" if exists else "missing"})
+    return result
+
+
 def write_record(root, title, summary, by, sections, files=(), tags=()):
     """Create one record file. Records are only ever added, never rewritten."""
     title, summary = _line(title, 120), _line(summary, 200)
@@ -276,6 +331,11 @@ def write_record(root, title, summary, by, sections, files=(), tags=()):
         paths.append(relative)
     front = {"date": date.today().isoformat(), "title": title, "summary": summary,
              "by": _line(by, 40) or "unknown", "tags": [_line(tag, 40) for tag in tags], "files": paths}
+    # What each file looked like when this record was written, so a later start can tell
+    # whether the checks below still describe the file. A deleted or oversized file has none.
+    prints = {path: mark for path in paths[:MAX_PRINTS] if (mark := _fingerprint(root, path))}
+    if prints:
+        front["fingerprints"] = prints
     body = ["---"] + [f"{key}: {json.dumps(value, ensure_ascii=False)}" for key, value in front.items()]
     body += ["---", ""]
     for name in RECORD_SECTIONS:
@@ -295,7 +355,8 @@ def write_record(root, title, summary, by, sections, files=(), tags=()):
             continue
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
             stream.write("\n".join(body))
-        result = {"number": number, "path": f"{STATE}/{LOG}/{name}", "files": paths}
+        result = {"number": number, "path": f"{STATE}/{LOG}/{name}", "files": paths,
+                  "fingerprinted": len(prints)}
         try:
             rebuild_index(root)
         except OSError:

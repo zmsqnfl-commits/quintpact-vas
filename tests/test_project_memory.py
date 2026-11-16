@@ -45,7 +45,8 @@ def test_plan_and_done_write_one_place_and_start_reads_it_back(kit):
                      "--file", "src/index.html", "--failed", "카드 배치는 글이 잘려서 버림",
                      "--criterion", "C1", "--tag", "화면", "--next-step", "추가 버튼 만들기", "--by", "claude")
     assert code == 0 and done["status"] == "recorded" and done["record"] == {
-        "number": 1, "path": "vas-state/log/0001.md", "files": ["src/index.html"]}
+        "number": 1, "path": "vas-state/log/0001.md", "files": ["src/index.html"],
+        "fingerprinted": 0}
     # One call is one write of the page, and a file that is not there is pointed out.
     assert done["unverified"] == ["키보드 조작"] and done["now"]["revision"] == 2
     assert done["missingFiles"] == ["src/index.html"]
@@ -207,3 +208,55 @@ def test_recall_finds_the_records_that_bear_on_a_request_and_start_continues_fro
     code, view = cli(kit, "start")
     assert view["nextAction"]["code"] == "continue" and "다음 할 일" in view["nextAction"]["message"]
     assert view["memory"]["now"]["sections"]["다음 할 일"] == "가격표 고치기"
+
+
+def test_a_file_changed_after_its_record_is_reported_at_the_next_start(kit):
+    app, _ = kit
+    (app / "src/list.html").write_bytes(b"<ul>\n<li>one</li>\n</ul>\n")
+    (app / "src/sum.js").write_text("total = 1")
+    _, done = cli(kit, "done", "--summary", "목록과 합계", "--check", "목록 표시:통과", "--check", "합계:통과",
+               "--file", "src/list.html", "--file", "src/sum.js", "--file", "src/gone.css", "--tag", "목록")
+    assert done["record"]["fingerprinted"] == 2 and done["missingFiles"] == ["src/gone.css"]
+    record = (app / "vas-state/log/0001.md").read_text(encoding="utf-8")
+    assert 'fingerprints: {"src/list.html": "' in record and "gone.css\": \"" not in record
+    assert str(app) not in record  # a fingerprint is a short hash, never a path on this machine
+
+    # Nothing changed, and a different line ending is the same file.
+    memory = cli(kit, "start")[1]["memory"]
+    assert "changedSinceRecord" not in memory
+    (app / "src/list.html").write_bytes(b"<ul>\r\n<li>one</li>\r\n</ul>\r\n")
+    assert "changedSinceRecord" not in cli(kit, "start")[1]["memory"]
+
+    (app / "src/sum.js").write_text("total = 2")
+    memory = cli(kit, "start")[1]["memory"]
+    assert memory["changedSinceRecord"] == ["src/sum.js (기록 0001 뒤 바뀜)"]
+    assert "지금 결과로 쓰지 말고" in memory["message"] and "그 파일에 걸린 확인만" in memory["message"]
+    (app / "src/list.html").unlink()
+    assert "src/list.html (기록 0001 뒤 없어짐)" in cli(kit, "start")[1]["memory"]["changedSinceRecord"]
+
+    # The newest record that names a file is the one that counts.
+    cli(kit, "done", "--summary", "합계 수정", "--check", "합계:통과", "--file", "src/sum.js")
+    assert cli(kit, "start")[1]["memory"]["changedSinceRecord"] == ["src/list.html (기록 0001 뒤 없어짐)"]
+
+
+def test_a_hand_written_record_is_counted_as_not_compared_and_odd_files_get_no_fingerprint(kit):
+    app, _ = kit
+    log = app / "vas-state/log"
+    log.mkdir(parents=True)
+    (app / "src/a.txt").write_text("a")
+    (log / "0001.md").write_text('---\ntitle: 손으로 쓴 기록\nfiles: [src/a.txt]\nfingerprints: 지어낸 값\n---\n\n## 한 일\n\n직접 씀\n',
+                                 encoding="utf-8")
+    memory = cli(kit, "start")[1]["memory"]
+    assert memory["notCompared"] == 1 and "changedSinceRecord" not in memory
+    check = vas_memory.changed_since_records(app)
+    assert check == {"compared": 0, "changed": [], "notCompared": [{"file": "src/a.txt", "record": 1}]}
+
+    (app / "src/big.bin").write_bytes(b"0" * (vas_memory.MAX_PRINT_FILE + 1))
+    assert vas_memory._fingerprint(app, "src/big.bin") is None and vas_memory._fingerprint(app, "src") is None
+    outside = app.parent / "outside.txt"
+    outside.write_text("secret")
+    try:
+        os.symlink(outside, app / "src/link.txt")
+    except OSError:
+        return
+    assert vas_memory._fingerprint(app, "src/link.txt") is None
