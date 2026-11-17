@@ -52,6 +52,17 @@ def settings(name="Menu"):
             "nextStep": "Build list"}
 
 
+def test_a_recorded_design_replaces_the_design_question(kit):
+    app, _ = kit
+    code, data = cli(kit)
+    assert code == 0 and "docs/STYLES.md" in data["nextAction"]["designQuestion"]
+    assert "ui/style-preview.html" in data["nextAction"]["designQuestion"]
+    (app / "src/DESIGN.md").write_text("# 디자인 기록\n- 스타일: `bento`, VAS 스타일 1번, 사용자가 고름\n", encoding="utf-8")
+    code, data = cli(kit)
+    assert code == 0 and "designQuestion" not in data["nextAction"]
+    assert "다시 묻지 마세요" in data["nextAction"]["designRecorded"]
+
+
 def test_first_index_is_read_only_and_does_not_assume_migration(kit):
     app, state = kit
     before = snapshot(app)

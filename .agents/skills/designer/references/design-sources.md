@@ -13,7 +13,7 @@ The public catalog contains the ten new collections plus four curated sample sit
 ## Assets
 
 - VAS 2.15.0 removed the bundled sample artwork, the six local fonts and the Morrow proof app to keep the starter small. The ten compositions and four sample sites remain as native HTML/CSS; where an image used to sit, a colour block drawn from the palette stands in.
-- The font names in `ui/design-collection.css` describe each composition’s direction. No font binary ships, so previews fall back to the generic family at the end of each stack.
+- VAS 2.16.0 brought the six display fonts back (about 0.8 MB in the ZIP) with their OFL licence files. They are declared once in `ui/design-fonts.css`; an app copies the font it uses and its licence into its own assets.
 - Target projects provision their own licensed fonts and imagery. The agent asks once for a reference design or site and otherwise plans the design itself.
 - The removed artwork was original generated imagery and rendered-site screenshots captured for the samples; it remains in the 2.14.0 release and earlier.
 

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAS 2.16.0 — 디자인 스타일 미리보기 (초안)</title>
+  <!-- 2.16.0에서 로컬 OFL 글꼴 6종(@font-face)이 복원될 시트 연결 (클래스 충돌 없음) -->
+  <link rel="stylesheet" href="design-fonts.css">
+  <style>
+    :root {
+      --shell-bg: #f4f3ef;
+      --shell-card: #ffffff;
+      --shell-ink: #161615;
+      --shell-muted: #5f5e5a;
+      --shell-line: #dedcd4;
+      --shell-accent: #161615;
+      --ui-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+      --ui-mono: ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--shell-bg);
+      color: var(--shell-ink);
+      font-family: var(--ui-sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 28px 32px 64px; }
+    .page-head {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+      gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--shell-line);
+    }
+    .eyebrow { margin: 0 0 6px; font: 600 11px/1.4 var(--ui-mono); letter-spacing: .08em; color: var(--shell-muted); }
+    .page-head h1 { margin: 0; font-size: clamp(22px, 2.4vw, 30px); letter-spacing: -.03em; }
+    .page-sub { margin: 6px 0 0; font-size: 14px; color: var(--shell-muted); }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 22px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+    .filter-btn {
+      padding: 7px 12px; border: 1px solid var(--shell-line); border-radius: 999px;
+      background: var(--shell-card); color: var(--shell-ink); font: 500 13px/1.2 var(--ui-sans); cursor: pointer;
+    }
+    .filter-btn[aria-pressed="true"] { background: var(--shell-accent); border-color: var(--shell-accent); color: #fff; }
+    .filter-btn:focus-visible, .tile:focus-visible { outline: 2px solid var(--shell-ink); outline-offset: 3px; }
+    .picked-bar {
+      font-size: 13px; color: var(--shell-muted); background: var(--shell-card);
+      border: 1px solid var(--shell-line); border-radius: 8px; padding: 7px 12px;
+    }
+    .picked-bar strong { color: var(--shell-ink); }
+    .notice {
+      padding: 20px; border: 1px solid #d97706; border-radius: 12px;
+      background: #fffbeb; color: #78350f; font-size: 14px; margin-bottom: 20px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+    .tile {
+      display: flex; flex-direction: column; gap: 12px; padding: 16px;
+      background: var(--shell-card); border: 1px solid var(--shell-line); border-radius: 14px;
+      cursor: pointer; transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+    }
+    .tile:hover { transform: translateY(-2px); border-color: #9e9b90; box-shadow: 0 8px 20px rgba(0,0,0,.06); }
+    .tile[data-selected="true"] { border-color: var(--shell-ink); box-shadow: 0 0 0 2px var(--shell-ink); }
+    .tile-head { display: flex; align-items: baseline; gap: 10px; }
+    .tile-num {
+      font: 800 30px/1 var(--ui-sans); letter-spacing: -.04em;
+      font-variant-numeric: tabular-nums; color: var(--shell-ink);
+    }
+    .tile-titles { min-width: 0; flex: 1; }
+    .tile-name { display: block; font-size: 16px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile-meta { display: block; font: 11px/1.3 var(--ui-mono); color: var(--shell-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stage {
+      position: relative; overflow: hidden; padding: 16px; min-height: 124px;
+      display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+      background: var(--t-bg); color: var(--t-text);
+      border: var(--t-bw) solid var(--t-border); border-radius: var(--t-rad);
+    }
+    /* 컬렉션 10종 대표 물성 힌트 (design-collection.css 참고) */
+    .stage[data-key="aurora"] { background: linear-gradient(145deg, #060e28, #1b2f78 48%, #6b3fb9 82%, #0b6f86); }
+    .stage[data-key="retro"] { background: radial-gradient(circle at 92% 24%, #f3a948 0 11%, #64251f 12% 28%, transparent 29%), #fff0c9; }
+    .stage[data-key="swiss"] { background: radial-gradient(circle at 96% 20%, #f13813 0 24%, transparent 25%), #1847e8; }
+    .stage[data-key="cyber"] { background: repeating-linear-gradient(90deg, #080e0a 0 14px, #193318 15px 16px); }
+    .stage[data-key="collage"] { background-image: radial-gradient(#4c302d18 .8px, transparent .9px); background-size: 6px 6px; }
+    .stage-surface {
+      padding: 11px 12px; background: var(--t-surface); color: var(--t-text);
+      border: 1px solid color-mix(in srgb, var(--t-border) 70%, transparent); border-radius: calc(var(--t-rad) * .7);
+    }
+    .stage[data-key="aurora"] .stage-surface { background: rgba(20, 36, 69, .78); border-color: rgba(255,255,255,.26); }
+    .sample-en {
+      margin: 0; font-size: 24px; font-weight: 700; line-height: 1.08;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .stage[data-key="noir"] .sample-en, .stage[data-key="botanical"] .sample-en,
+    .stage[data-key="retro"] .sample-en, .stage[data-key="swiss"] .sample-en,
+    .stage[data-key="kinetic"] .sample-en, .stage[data-key="collage"] .sample-en { font-weight: 400; }
+    .stage[data-key="kinetic"] .sample-en { font-style: italic; }
+    .sample-ko-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+    .sample-ko { margin: 0; font-family: var(--ui-sans); font-size: 12.5px; line-height: 1.4; opacity: .92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .accent-pill { flex: 0 0 auto; width: 18px; height: 8px; border-radius: 99px; background: var(--t-primary); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+    .tile-desc { margin: 0; font-size: 13px; line-height: 1.45; color: #2f2e2b; min-height: 38px; }
+    .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: auto; padding-top: 4px; }
+    .swatch { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .swatch-chip { height: 20px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.14); }
+    .swatch-role { font-size: 10px; color: var(--shell-muted); line-height: 1.1; }
+    .swatch-hex { font: 10px/1.2 var(--ui-mono); color: var(--shell-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 1180px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 860px) { .wrap { padding: 22px 20px 48px; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+    @media (max-width: 520px) { .wrap { padding: 18px 16px 40px; } .grid { grid-template-columns: 1fr; gap: 14px; } }
+    @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">VAS 2.16.0 · STYLE TILE PREVIEW</p>
+        <h1>디자인 스타일 미리보기</h1>
+        <p class="page-sub">원하는 타일을 눌러 번호를 확인하고 채팅에 번호(예: “1번”)나 스타일 이름을 알려 주세요.</p>
+      </div>
+      <div class="picked-bar" id="pickedStatus" role="status" aria-live="polite">타일을 클릭하면 선택한 번호와 이름을 복사합니다.</div>
+    </header>
+
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="스타일 목록 범위" id="filterBar">
+        <button type="button" class="filter-btn" data-mode="public" aria-pressed="true">공개 스타일 (14)</button>
+        <button type="button" class="filter-btn" data-mode="collection" aria-pressed="false">컬렉션 (10)</button>
+        <button type="button" class="filter-btn" data-mode="core" aria-pressed="false">추천 샘플 (4)</button>
+        <button type="button" class="filter-btn" data-mode="all" aria-pressed="false">호환 포함 전체 (28)</button>
+      </div>
+    </div>
+
+    <div id="loadNotice" class="notice" hidden></div>
+    <main class="grid" id="tileGrid" aria-label="스타일 바둑판 목록"></main>
+  </div>
+
+  <!-- ui/ 폴더 기준 선행 스크립트 로드 + 단독/file:// 예외 시 VASStorage 폴백 -->
+  <script src="vas-config.js"></script>
+  <script src="storage-utils.js"></script>
+  <script>
+    if (typeof VASStorage === 'undefined') {
+      window.VASStorage = {
+        SYSTEM_SANS: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif",
+        SYSTEM_MONO: "ui-monospace, 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace"
+      };
+    }
+  </script>
+  <script src="design-presets.js"></script>
+  <script>
+    (function () {
+      var grid = document.getElementById('tileGrid');
+      var notice = document.getElementById('loadNotice');
+      var pickedStatus = document.getElementById('pickedStatus');
+
+      if (typeof PRESETS === 'undefined') {
+        notice.hidden = false;
+        notice.textContent = 'design-presets.js를 찾지 못했습니다. 이 HTML 파일을 ui/ 폴더에 두고 열면 스타일 타일이 표시됩니다.';
+        return;
+      }
+
+      function getDisplayName(key, preset) {
+        if (preset.label) return preset.label;
+        if (key === 'ant') return 'Ant Design';
+        var m = preset.prompt && preset.prompt.match(/^\[([^\]]+)\]/);
+        return m ? m[1].replace(/ Design( System)? Reference$/i, '') : key;
+      }
+
+      function getFontName(fontStack) {
+        var first = String(fontStack || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+        if (!first || first === 'system-ui') return '시스템 Sans';
+        if (first === 'ui-monospace') return '시스템 Mono';
+        return first;
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).catch(function () {});
+          return;
+        }
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      function getKeys(mode) {
+        if (mode === 'collection' && typeof PRESET_CATEGORIES !== 'undefined') return PRESET_CATEGORIES.collection.presets;
+        if (mode === 'core' && typeof PRESET_CATEGORIES !== 'undefined') return PRESET_CATEGORIES.core.presets;
+        if (mode === 'all') return typeof VAS_STYLE_ORDER !== 'undefined' ? VAS_STYLE_ORDER : Object.keys(PRESETS);
+        return typeof VAS_PRESET_KEYS !== 'undefined' ? VAS_PRESET_KEYS : Object.keys(PRESETS);
+      }
+
+      function render(mode) {
+        grid.textContent = '';
+        var keys = getKeys(mode);
+        keys.forEach(function (key, idx) {
+          var p = PRESETS[key];
+          if (!p) return;
+          var num = String(typeof vasStyleNumber === 'function' ? vasStyleNumber(key) : idx + 1).padStart(2, '0');
+          var name = getDisplayName(key, p);
+          var fontName = getFontName(p.font);
+          var desc = (typeof PRESET_DESCRIPTIONS !== 'undefined' && PRESET_DESCRIPTIONS[key]) || '한 줄 설명 자리';
+          var rad = Math.min(Number(p.rad) || 0, 18);
+          var bw = Math.max(Number(p.bw) || 1, 1);
+
+          var card = document.createElement('article');
+          card.className = 'tile';
+          card.tabIndex = 0;
+          card.setAttribute('role', 'button');
+          card.setAttribute('aria-label', num + '번 ' + name + ' (' + key + ')');
+
+          var head = document.createElement('div');
+          head.className = 'tile-head';
+          var numEl = document.createElement('span');
+          numEl.className = 'tile-num';
+          numEl.textContent = num;
+          var titles = document.createElement('div');
+          titles.className = 'tile-titles';
+          var nameEl = document.createElement('strong');
+          nameEl.className = 'tile-name';
+          nameEl.textContent = name;
+          var metaEl = document.createElement('span');
+          metaEl.className = 'tile-meta';
+          metaEl.textContent = key + ' · ' + fontName;
+          titles.append(nameEl, metaEl);
+          head.append(numEl, titles);
+
+          var stage = document.createElement('div');
+          stage.className = 'stage';
+          stage.dataset.key = key;
+          stage.style.setProperty('--t-bg', p.bg);
+          stage.style.setProperty('--t-surface', p.surface);
+          stage.style.setProperty('--t-text', p.text);
+          stage.style.setProperty('--t-primary', p.primary);
+          stage.style.setProperty('--t-border', p.border);
+          stage.style.setProperty('--t-rad', rad + 'px');
+          stage.style.setProperty('--t-bw', bw + 'px');
+
+          var surf = document.createElement('div');
+          surf.className = 'stage-surface';
+          var en = document.createElement('p');
+          en.className = 'sample-en';
+          en.style.fontFamily = p.font;
+          en.style.letterSpacing = (p.ls || 0) + 'em';
+          en.textContent = 'Design Craft';
+          var koRow = document.createElement('div');
+          koRow.className = 'sample-ko-row';
+          var ko = document.createElement('p');
+          ko.className = 'sample-ko';
+          ko.textContent = '한글과 영문이 어우러지는 화면 인상';
+          var pill = document.createElement('span');
+          pill.className = 'accent-pill';
+          pill.title = '주색 ' + p.primary;
+          koRow.append(ko, pill);
+          surf.append(en, koRow);
+          stage.appendChild(surf);
+
+          var descEl = document.createElement('p');
+          descEl.className = 'tile-desc';
+          descEl.textContent = desc;
+
+          var swatches = document.createElement('div');
+          swatches.className = 'swatches';
+          [['배경', p.bg], ['표면', p.surface], ['주색', p.primary], ['글자', p.text]].forEach(function (pair) {
+            var sw = document.createElement('div');
+            sw.className = 'swatch';
+            var chip = document.createElement('span');
+            chip.className = 'swatch-chip';
+            chip.style.background = pair[1];
+            var role = document.createElement('span');
+            role.className = 'swatch-role';
+            role.textContent = pair[0];
+            var hex = document.createElement('span');
+            hex.className = 'swatch-hex';
+            hex.textContent = String(pair[1]).toUpperCase();
+            sw.append(chip, role, hex);
+            swatches.appendChild(sw);
+          });
+
+          function selectTile() {
+            grid.querySelectorAll('.tile[data-selected="true"]').forEach(function (el) { el.dataset.selected = 'false'; });
+            card.dataset.selected = 'true';
+            var summary = Number(num) + '번 ' + name + ' (' + key + ')';
+            copyText(summary);
+            pickedStatus.textContent = '선택됨: ' + summary + ' — 채팅에 번호나 이름을 붙여 넣으세요.';
+          }
+          card.addEventListener('click', selectTile);
+          card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTile(); }
+          });
+
+          card.append(head, stage, descEl, swatches);
+          grid.appendChild(card);
+        });
+      }
+
+      document.getElementById('filterBar').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-mode]');
+        if (!btn) return;
+        this.querySelectorAll('.filter-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+        render(btn.dataset.mode);
+      });
+
+      render('public');
+    })();
+  </script>
+</body>
+</html>

@@ -203,3 +203,13 @@ const PRESETS = {
     prompt: "[Figma Design System Reference]\n- Goal: Compact visual hierarchy and precise panel alignment for the requested app; no design-editor features are implied.\n- Colors: Neutral dark grays with a muted tool-blue accent.\n- Borders: Strict 1px panel borders.\n- Radii: Tiny 2px corners to maximize workspace area.\n- Focus: UI that gets out of the way of content, with compact toolbars and clear panels."
   }
 };
+
+// Fixed style numbers shared by the tile preview (ui/style-preview.html) and docs/STYLES.md.
+// The list is written out so numbers never move when presets are reordered. Append new styles at the end only.
+const VAS_STYLE_ORDER = Object.freeze([
+  'bento', 'aurora', 'clay', 'noir', 'botanical', 'retro', 'swiss', 'cyber', 'kinetic', 'collage',
+  'awwwards', 'linear', 'stripe', 'notion',
+  'vercel', 'apple', 'neobrutal', 'untitled', 'shadcn', 'glow', 'google', 'ant', 'carbon', 'spotify',
+  'discord', 'airbnb', 'github', 'figma'
+]);
+function vasStyleNumber(key) { const index = VAS_STYLE_ORDER.indexOf(key); return index < 0 ? 0 : index + 1; }

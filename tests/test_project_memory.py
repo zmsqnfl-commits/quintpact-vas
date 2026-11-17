@@ -260,3 +260,12 @@ def test_a_hand_written_record_is_counted_as_not_compared_and_odd_files_get_no_f
     except OSError:
         return
     assert vas_memory._fingerprint(app, "src/link.txt") is None
+
+
+def test_multi_ai_guide_keeps_one_writer_and_does_not_promise_vas_calls_other_ais():
+    root = Path(__file__).resolve().parents[1]
+    guide = (root / "docs/MULTI-AI.md").read_text(encoding="utf-8")
+    assert "주 작업자 하나만" in guide and "그대로 쓰지 않습니다" in guide
+    assert "VAS가 다른 AI를 대신 부르지는 않습니다" in guide
+    assert "꼭 따라야 하는 절차는 아닙니다" in guide
+    assert "(MULTI-AI.md)" in (root / "docs/index.md").read_text(encoding="utf-8")

@@ -1,6 +1,8 @@
 """The bundled design-craft skill reaches every host entry point without adding scope or approvals."""
 import importlib.util
 import json
+import shutil
+import subprocess
 from pathlib import Path
 import re
 import sys
@@ -198,8 +200,62 @@ def test_a_new_screen_with_nothing_decided_asks_once_for_a_reference():
         assert "한 번만 묻고" in text and "답을 기다" in text, name
     # The question is a numbered step at the top of the entry instructions, not a remark further down.
     assert "\n4. **화면이 있는 새 작업인데" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    # No sample artwork, font or proof app ships, and nothing still points at them.
-    assert not (ROOT / "ui/assets").exists() and not (ROOT / "ui/proof-app").exists()
+    # No sample artwork or proof app ships. The six display fonts came back in 2.16.0 with their licences.
+    assert not (ROOT / "ui/assets/designs").exists() and not (ROOT / "ui/proof-app").exists()
+    assert sorted(path.name for path in (ROOT / "ui/assets").iterdir()) == ["fonts"]
     for path in list((ROOT / "ui").glob("*.css")) + list((ROOT / "ui").glob("design-*.js")):
         text = path.read_text(encoding="utf-8")
-        assert "assets/" not in text and "@font-face" not in text, path.name
+        assert "assets/designs" not in text, path.name
+        assert ("@font-face {" in text) == (path.name == "design-fonts.css"), path.name
+
+
+def test_bundled_display_fonts_are_local_files_with_their_licences():
+    fonts = ROOT / "ui/assets/fonts"
+    declared = re.findall(r"url\('assets/fonts/([^']+)'\)", (ROOT / "ui/design-fonts.css").read_text(encoding="utf-8"))
+    assert len(declared) == 6
+    for name in declared:
+        assert (fonts / name).is_file() and not (fonts / name).is_symlink(), name
+    files = sorted(path.name for path in fonts.iterdir())
+    assert sorted(declared) == sorted(name for name in files if name.endswith(".ttf"))
+    licences = [name for name in files if name.endswith("-OFL.txt")]
+    assert len(licences) == 6
+    for name in declared:
+        # Every font sits next to its own licence: Anton-Regular.ttf pairs with anton-OFL.txt.
+        licence = fonts / (name.split("-")[0].removesuffix(".ttf").lower() + "-OFL.txt")
+        assert licence.is_file(), name
+        assert "SIL OPEN FONT LICENSE" in licence.read_text(encoding="utf-8").upper(), licence.name
+    for page in ("design-controller.html", "design-sample.html"):
+        assert 'href="design-fonts.css"' in (ROOT / "ui" / page).read_text(encoding="utf-8"), page
+
+
+def test_review_widths_add_the_middle_width_only_when_the_layout_changes_there():
+    # Earlier VAS work checked 1440, 768, 390 and 320 px; the middle width matters where columns switch.
+    for path in (SKILL / "SKILL.md", SKILL / "references/review.md"):
+        text = (ROOT / path).read_text(encoding="utf-8")
+        assert "320" in text and "768px" in text, path
+        assert "단 수나 배치가 바뀌" in text, path
+
+
+def test_style_numbers_are_shared_by_the_tile_preview_and_the_chat_list():
+    preview = (ROOT / "ui/style-preview.html").read_text(encoding="utf-8")
+    assert 'href="design-fonts.css"' in preview and 'src="design-presets.js"' in preview
+    assert "vasStyleNumber(key)" in preview and "VAS_STYLE_ORDER" in preview
+    assert "http://" not in preview and "https://" not in preview
+    styles = (ROOT / "docs/STYLES.md").read_text(encoding="utf-8")
+    assert "| 1 | `bento` |" in styles and "| 14 | `notion` |" in styles
+    assert "번호가 아니라 **키**" in styles
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is needed to rebuild docs/STYLES.md")
+    result = subprocess.run([node, str(ROOT / "scripts/build-style-list.cjs"), "--check"], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    probe = ("const vm=require('vm');const fs=require('fs');const c={VASStorage:{SYSTEM_SANS:'s',SYSTEM_MONO:'m'}};"
+             "vm.createContext(c);vm.runInContext(fs.readFileSync(process.argv[1],'utf8')+"
+             "';this.r={order:VAS_STYLE_ORDER,keys:Object.keys(PRESETS),pub:VAS_PRESET_KEYS}',c);"
+             "console.log(JSON.stringify(c.r))")
+    data = json.loads(subprocess.run([node, "-e", probe, str(ROOT / "ui/design-presets.js")],
+                                     capture_output=True, text=True, check=True).stdout)
+    # The order is written out by hand, covers every preset once and keeps the public styles at 1-14.
+    assert sorted(data["order"]) == sorted(data["keys"]) and len(set(data["order"])) == len(data["order"])
+    assert data["order"][:14] == data["pub"]
+    assert "VAS_STYLE_ORDER = Object.freeze([" in (ROOT / "ui/design-presets.js").read_text(encoding="utf-8")

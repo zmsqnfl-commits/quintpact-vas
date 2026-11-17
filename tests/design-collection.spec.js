@@ -20,7 +20,7 @@ for (const width of [1440, 390, 320]) {
       await page.evaluate(() => document.fonts.ready);
       const root = page.locator('#advPreview');
       const state = await root.evaluate(async element => {
-        // No artwork or font file ships: every composition is drawn with HTML and colour only.
+        // No artwork ships: compositions are drawn with HTML and colour. The six local display fonts are declared once.
         return { identity: element.dataset.collection, heading: element.querySelector('h2').innerText,
           images: element.querySelectorAll('img').length, fontFaces: document.fonts.size,
           overflow: element.scrollWidth > element.clientWidth + 1 || document.documentElement.scrollWidth > innerWidth + 1 };
@@ -28,7 +28,7 @@ for (const width of [1440, 390, 320]) {
       identities.push(state.identity + ':' + state.heading);
       expect(state.identity, key).toBeTruthy();
       expect(state.overflow, key).toBe(false);
-      expect([state.images, state.fontFaces], key).toEqual([0, 0]);
+      expect([state.images, state.fontFaces], key).toEqual([0, 6]);
       await expect(root.locator('.p-stat-card')).toHaveCount(0);
       const box = await root.boundingBox();
       await page.setViewportSize({ width, height: Math.max(1000, Math.ceil(box.height) + 300) });

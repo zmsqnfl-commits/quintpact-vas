@@ -1,4 +1,4 @@
-/* Local display fonts: SIL Open Font License files accompany every family. */
+/* Display fonts are declared in design-fonts.css (local files with their SIL OFL licences). */
 .adv-preview[data-collection] { position: relative; isolation: isolate; display: block; background: var(--p-bg); font-size: var(--p-fs-body); line-height: 1.5; }
 .adv-preview[data-collection] h2, .adv-preview[data-collection] h3, .adv-preview[data-collection] p, .adv-preview[data-collection] figure { margin: 0; }
 .adv-preview[data-collection] h2 { font-weight: 600; font-size: clamp(38px, 7.6cqw, 100px); line-height: 1.02; letter-spacing: var(--p-ls); }

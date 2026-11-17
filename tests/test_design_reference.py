@@ -123,3 +123,13 @@ def test_versioned_reference_tracks_tag_layout_without_changing_live_pages(versi
     ref = reference({"included": True, "preset": "swiss"}, {"mode": "new"}, version)
     assert ref["versionedSourceUrl"].endswith(f"/blob/v{version}/{directory}/design-sample.html")
     assert "/src/design-sample.html?" in ref["liveSampleUrl"]
+
+
+def test_font_names_point_to_the_bundled_files_and_their_licences(tmp_path):
+    # 2.16.0 ships the six display fonts again; the handoff says where they are and how to take them.
+    text = build_preview(request(tmp_path, 'bento'))['document']['assistantGuide']['pasteText']
+    assert '버전 소스에서 직접 확인' not in text
+    assert 'docs/STYLES.md' in text and '-OFL.txt' in text and 'src/ 안으로 복사' in text
+    assert 'ui/assets/fonts/' not in text  # handoff text never points into VAS internals
+    assert '시스템 글꼴 스택으로 대체' in text
+    assert '로딩되지 않은 글꼴은 적용했다고 보고하지 마세요' in text

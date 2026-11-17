@@ -21,7 +21,7 @@ PLAN = 'python -B scripts/vas.py plan --request "요청" --criterion "끝났다�
 DONE = 'python -B scripts/vas.py done --summary "한 일" --check "확인한 것:통과" --file src/바뀐파일 --tag 화면이나기능 --next-step "다음 할 일"'
 
 
-def _initial_action(state, shared, memory=None):
+def _initial_action(state, shared, memory=None, design_recorded=False):
     question = ("누가 어떤 일에 쓸 새 앱이고 첫 기능은 무엇인가요?" if state == "empty" else
                 "현재 앱에서 어떤 동작을 바꾸고 싶나요?")
     remembered = bool(memory and memory.get("status") == "available")
@@ -36,11 +36,16 @@ def _initial_action(state, shared, memory=None):
                    "미정이면 새로 만들지 그 앱을 이어갈지만 물으세요.",
         "questionIfNeeded": question,
         "designQuestion": "화면이 있는 새 작업이고 디자인이 정해지지 않았으면 만들기 전에 한 번만 묻고 답을 기다리세요: "
-                          "원하는 디자인이나 참고할 사이트·이미지가 있으면 알려 주세요. 없으면 제가 정해서 진행하겠습니다.",
+                          "원하는 디자인이나 참고할 사이트·이미지가 있으면 알려 주세요. 아래 스타일 중 번호로 골라도 됩니다"
+                          "(전체는 ui/style-preview.html). 없으면 제가 정해서 진행하겠습니다. "
+                          "번호 목록은 docs/STYLES.md에서 앱 종류에 맞는 6~8개를 붙이세요.",
         "planCommand": PLAN, "doneCommand": DONE,
         "when": "범위와 끝났다고 볼 조건이 정해지면 plan으로 적고, 작업을 마치거나 멈출 때 done으로 남기세요",
         "withoutPython": "Python을 쓸 수 없으면 .agents/MEMORY.md의 양식대로 vas-state의 파일을 직접 읽고 쓰세요.",
     }
+    if design_recorded:
+        action.pop("designQuestion")
+        action["designRecorded"] = "src/DESIGN.md에 정해진 디자인이 있습니다. 읽고 그대로 이어가며 디자인을 다시 묻지 마세요."
     return action
 
 
@@ -164,7 +169,7 @@ def start(root, state_home=None):
                                 "message": "PC 세션 조회가 막혔습니다. 프로젝트 기억(vas-state)과 현재 앱·대화를 대조해 "
                                            "진행하고 작업은 done으로 남기세요. PC 저장소를 복구하면 다시 조회하세요."})
     if view["status"] == "empty":
-        result.update(session={"status": "none"}, nextAction=_initial_action(state, shared, result["memory"]))
+        result.update(session={"status": "none"}, nextAction=_initial_action(state, shared, result["memory"], (root / "src" / "DESIGN.md").is_file()))
     else:
         session, action = _resume_action(view, prompt["revision"], shared["revision"] if shared else 0)
         result.update(session=session, nextAction=action)
