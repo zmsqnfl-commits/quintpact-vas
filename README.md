@@ -1,4 +1,4 @@
-# VAS 2.16.0
+# VAS 2.16.1
 
 **Connecting a folder to your AI app? Select the entire project folder containing `Run-VAS-System.bat`, `src/` and `ui/`.** If the connection shows only `.claude/`, reselect its parent so the agent can read the project instructions and commands.
 
@@ -8,7 +8,11 @@ VAS (Vibecoding Agent System) is a local workflow tool that helps coding agents 
 
 The main agent uses VAS to save and resume settings and progress, prepare current instructions, coordinate scoped supporting work, and turn assessment into concrete next actions. Selected file observations help it distinguish checks that still apply from checks affected by later changes. Your coding host supplies the actual file, command, browser and delegation tools. Design choices are one part of that task context, used when the work needs them.
 
-**[Download the Windows project ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.16.0/VAS-2.16.0-windows.zip)** · [Get started](#get-started-on-windows) · [2.16.0 release notes](docs/releases/2.16.0.md)
+**[Download the Windows project ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.16.1/VAS-2.16.1-windows.zip)** · [Get started](#get-started-on-windows) · [2.16.1 release notes](docs/releases/2.16.1.md)
+
+## What’s new in VAS 2.16.1
+
+**A smoother first conversation.** Claude Code no longer stops for approval each time the agent reads or records project memory: `.claude/settings.json` allows `scripts/vas.py` and nothing else. Passed criteria are now ticked in `vas-state/now.md`, criteria are no longer labelled twice, and `00-처음-사용하기.txt` is rewritten around the current flow in about 60 lines. [2.16.1 release notes](docs/releases/2.16.1.md)
 
 ## What’s new in VAS 2.16.0
 
@@ -26,7 +30,7 @@ From 2.15.1:
 
 From 2.15.0: a starter without the sample artwork or the Morrow proof app, and one question about design before a new screen. [2.15.0 release notes](docs/releases/2.15.0.md)
 
-Project memory, introduced in 2.14.0, keeps everything in one place: requests, criteria, decisions and work records live in the project’s `vas-state/` folder. [Project memory](docs/MEMORY.md) · [2.16.0 release notes](docs/releases/2.16.0.md) · previous releases [2.15.1](docs/releases/2.15.1.md), [2.15.0](docs/releases/2.15.0.md) and [2.14.0](docs/releases/2.14.0.md).
+Project memory, introduced in 2.14.0, keeps everything in one place: requests, criteria, decisions and work records live in the project’s `vas-state/` folder. [Project memory](docs/MEMORY.md) · [2.16.1 release notes](docs/releases/2.16.1.md) · previous releases [2.15.1](docs/releases/2.15.1.md), [2.15.0](docs/releases/2.15.0.md) and [2.14.0](docs/releases/2.14.0.md).
 
 ## Start a project
 
@@ -96,7 +100,7 @@ These capabilities support feature work, bug fixes and existing-project changes 
 
 **Requirements:** Windows 10 or 11 with PowerShell 5.1 or later. Chat-session commands also need Python 3.10+ available to the coding host. VAS does not bundle a Python interpreter or a coding AI.
 
-1. Clone the repository or download the project. [Source ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/archive/refs/tags/v2.16.0.zip) · [Windows starter](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.16.0/VAS-2.16.0-windows.zip)
+1. Clone the repository or download the project. [Source ZIP](https://github.com/zmsqnfl-commits/quintpact-vas/archive/refs/tags/v2.16.1.zip) · [Windows starter](https://github.com/zmsqnfl-commits/quintpact-vas/releases/download/v2.16.1/VAS-2.16.1-windows.zip)
 2. For a ZIP, extract the entire archive into a new folder. Rename the project folder before creating its first saved session.
 3. Open the folder containing `project-layout.json`, `src/` and `ui/` in Codex or start Claude Code there. Send “폴더 전체 색인해줘” to start setup, or describe a specific task.
 4. To edit shared project instructions on screen, double-click `Run-VAS-System.bat`, change **Project working instructions**, and save. Then say “Continue using the saved instructions” in the coding chat. The screen and agent use the same file, including before a private session exists.
@@ -125,9 +129,9 @@ Saved instructions travel with the project. Private chat sessions and target bin
 
 The host handles the session commands and result format. Users do not need to author a settings file, execution record or result JSON.
 
-For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.16.0.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
+For the screen-based handoff alternative, double-click `Run-VAS-System.bat`, choose a new or existing project, fill in the brief and design scope, then copy the prompt into your coding tool with the real application folder open. The separate `VAS-Client-Form-2.16.1.zip` contains a standalone request form for sharing. Downloads include `SHA256SUMS.txt` and `release-manifest.json` for artifact verification. Opening VAS settings does not start your application; use the application's own run command to inspect it.
 
-**Moving an existing app.** Back up the app and extract 2.16.0 into a fresh folder. Transfer your own source, assets, configuration and saved instructions after checking conflicts. The 2.11.x Windows starter used its top-level `src/` for the app. In the 2.11.x GitHub source archive, `src/` contained VAS screens. Private sessions are specific to the installation and PC. [Upgrade guidance](docs/MIGRATION.md) · [Saved settings](docs/CHAT-STATE.md)
+**Moving an existing app.** Back up the app and extract 2.16.1 into a fresh folder. Transfer your own source, assets, configuration and saved instructions after checking conflicts. The 2.11.x Windows starter used its top-level `src/` for the app. In the 2.11.x GitHub source archive, `src/` contained VAS screens. Private sessions are specific to the installation and PC. [Upgrade guidance](docs/MIGRATION.md) · [Saved settings](docs/CHAT-STATE.md)
 
 For the Korean quick-start guide, see [00-처음-사용하기.txt](00-처음-사용하기.txt).
 
@@ -159,7 +163,7 @@ Application checks include PC and mobile widths, 320 CSS px reflow, empty and lo
 
 When you use it, **Save to chat settings** commits the selection. The main agent reads the latest settings before continuing. Opening a sample or saving a design does not wake the AI or replace its active conversation context. GitHub Pages previews are separate from the PC's private task store.
 
-[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.16.0) · [Connect a local task](docs/CHAT-DESIGN.md)
+[Explore the Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.16.1) · [Connect a local task](docs/CHAT-DESIGN.md)
 
 <details>
 <summary>View design collections and interactive samples</summary>
@@ -181,11 +185,11 @@ The Design Studio combines distinct compositions, typography, colors, imagery, s
 | Kinetic Type | Oversized typography with controllable motion | Creative campaigns and studio presentations |
 | Paper Collage | Layered image areas and tactile editorial compositions | Visual storytelling and publications |
 
-The main picker offers **14 curated choices**. The full set of 28 preset definitions remains available for compatibility with earlier saved selections. Since 2.15.0 no artwork or preview media is bundled, so a colour block stands where an image would sit. Since 2.16.0 the six display fonts are bundled again with their OFL licences, and every style has a fixed number shown in `ui/style-preview.html` and [docs/STYLES.md](docs/STYLES.md).
+The main picker offers **14 curated choices**. The full set of 28 preset definitions remains available for compatibility with earlier saved selections. Since 2.15.0 no artwork or preview media is bundled, so a colour block stands where an image would sit. Since 2.16.1 the six display fonts are bundled again with their OFL licences, and every style has a fixed number shown in `ui/style-preview.html` and [docs/STYLES.md](docs/STYLES.md).
 
 ### Four interactive sample websites
 
-Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.16.0). Each recommendation shows a colour strip in the catalog and opens as a working sample site.
+Open these examples from the [Design Studio](https://zmsqnfl-commits.github.io/quintpact-vas/src/design-controller.html?v=2.16.1). Each recommendation shows a colour strip in the catalog and opens as a working sample site.
 
 | Style | Sample | Working interactions |
 | --- | --- | --- |
@@ -208,7 +212,7 @@ These are demonstrations: inquiry previews do not send messages, and subscriptio
 
 ## Verification and development
 
-The [2.16.0 release notes](docs/releases/2.16.0.md) list what changed, what was checked and what was not. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs.
+The [2.16.1 release notes](docs/releases/2.16.1.md) and [2.16.0 release notes](docs/releases/2.16.0.md) list what changed, what was checked and what was not. [GitHub Actions](https://github.com/zmsqnfl-commits/quintpact-vas/actions) records published workflow runs.
 
 Application verification for 2.11.0 separately inspected Bento, Swiss and external-image examples in Windows Chrome at desktop and mobile widths. It found and corrected example-level font, contrast and long-data issues. Two fresh coding-host runs reached their time limit; the separate rendered checks are not presented as completed autonomous host runs. The [2.11.0 verification record](docs/verification/2.11.0-project-workflow.md) separates those observations from product regressions. The earlier [2.10.0 agent-flow record](docs/verification/2.10.0-agent-flow.md) remains available.
 

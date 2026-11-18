@@ -224,7 +224,7 @@ class ReleasePackageTests(unittest.TestCase):
         _, payload = self.read_and_verify_zip(WINDOWS_ZIP, WINDOWS_NAME, "windows", ["Run-VAS-System.bat"])
         for relative in ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".cursorrules", ".windsurfrules",
                          "Run-VAS-System.bat", "project-layout.json", ".agents/skills/design-analysis/SKILL.md",
-                         ".claude/skills/design-analysis/SKILL.md", *BUILD.HOST_FILES]:
+                         ".claude/skills/design-analysis/SKILL.md", ".claude/settings.json", *BUILD.HOST_FILES]:
             self.assertEqual(payload[relative], (ROOT / relative).read_bytes(), relative)
 
     def test_extracted_windows_zip_can_prepare_and_assess_session(self) -> None:

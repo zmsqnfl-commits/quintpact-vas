@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -B scripts/vas.py:*)",
+      "Bash(python3 -B scripts/vas.py:*)",
+      "Bash(py -B scripts/vas.py:*)",
+      "PowerShell(python -B scripts/vas.py:*)",
+      "PowerShell(python -B scripts\\vas.py:*)",
+      "PowerShell(py -B scripts/vas.py:*)",
+      "PowerShell(py -B scripts\\vas.py:*)"
+    ]
+  }
+}

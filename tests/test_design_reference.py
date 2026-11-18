@@ -126,7 +126,7 @@ def test_versioned_reference_tracks_tag_layout_without_changing_live_pages(versi
 
 
 def test_font_names_point_to_the_bundled_files_and_their_licences(tmp_path):
-    # 2.16.0 ships the six display fonts again; the handoff says where they are and how to take them.
+    # 2.16.1 ships the six display fonts again; the handoff says where they are and how to take them.
     text = build_preview(request(tmp_path, 'bento'))['document']['assistantGuide']['pasteText']
     assert '버전 소스에서 직접 확인' not in text
     assert 'docs/STYLES.md' in text and '-OFL.txt' in text and 'src/ 안으로 복사' in text

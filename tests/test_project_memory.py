@@ -269,3 +269,15 @@ def test_multi_ai_guide_keeps_one_writer_and_does_not_promise_vas_calls_other_ai
     assert "VAS가 다른 AI를 대신 부르지는 않습니다" in guide
     assert "꼭 따라야 하는 절차는 아닙니다" in guide
     assert "(MULTI-AI.md)" in (root / "docs/index.md").read_text(encoding="utf-8")
+
+
+def test_a_label_the_host_already_wrote_is_not_doubled(kit):
+    app, _ = kit
+    code, _ = cli(kit, "plan", "--request", "탭", "--criterion", "C1 탭으로 오간다 (확인)",
+                  "--criterion", "C2. 새로고침해도 남는다 (확인)", "--criterion", "3개 이상 보인다 (확인)",
+                  "--criterion", "A4 용지로 인쇄된다 (확인)", "--criterion", "H1 제목이 보인다 (확인)")
+    assert code == 0
+    now = (app / "vas-state/now.md").read_text(encoding="utf-8")
+    assert "- [ ] C1 탭으로 오간다" in now and "- [ ] C2 새로고침해도 남는다" in now
+    assert "- [ ] C3 3개 이상 보인다" in now and "- [ ] C4 A4 용지로 인쇄된다" in now
+    assert "- [ ] C5 H1 제목이 보인다" in now and "C1 C1" not in now and "C2." not in now

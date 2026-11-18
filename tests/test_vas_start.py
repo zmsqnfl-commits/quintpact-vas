@@ -284,3 +284,19 @@ def test_shared_summary_without_a_local_session_names_every_likely_cause(kit):
     message = data["nextAction"]["message"]
     assert code == 0 and data["session"] == {"status": "none"} and data["nextAction"]["code"] == "review-shared"
     assert "폴더 이름" in message and "간단 마감" in message and "다른 PC" in message
+
+
+def test_the_done_example_ticks_only_criteria_that_passed():
+    import vas_start
+    assert "--criterion C1" in vas_start.DONE
+    guide = (ROOT / ".agents/PROJECT-ROOT.md").read_text(encoding="utf-8")
+    assert "--criterion C1" in guide and "통과한 완료조건 번호만" in guide
+
+
+def test_claude_settings_allow_only_the_vas_command():
+    settings = json.loads((ROOT / ".claude/settings.json").read_text(encoding="utf-8"))
+    assert set(settings) == {"permissions"} and set(settings["permissions"]) == {"allow"}
+    rules = settings["permissions"]["allow"]
+    assert rules and all(rule.split("(", 1)[0] in {"Bash", "PowerShell"} for rule in rules)
+    assert all(rule.endswith(":*)") and "scripts" in rule and "vas.py" in rule for rule in rules)
+    assert all(rule.split("(", 1)[1].split(" ", 1)[0] in {"python", "python3", "py"} for rule in rules)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -52,8 +53,13 @@ def _project_root(args):
     return root
 
 
+# The host sometimes writes our own label ("C1 ", "C2.") in front of a criterion; numbering would double it.
+# Only the C label is removed: "A4 용지" or "H1 제목" are words of the criterion itself.
+OWN_LABEL = re.compile(r"^\s*C\d{1,3}[.):]?\s+")
+
+
 def _bullets(values, numbered=False):
-    return "\n".join((f"- [ ] C{number} {value}" if numbered else f"- {value}")
+    return "\n".join((f"- [ ] C{number} {OWN_LABEL.sub('', value, count=1)}" if numbered else f"- {value}")
                      for number, value in enumerate(values, 1))
 
 

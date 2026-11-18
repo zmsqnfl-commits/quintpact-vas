@@ -200,7 +200,7 @@ def test_a_new_screen_with_nothing_decided_asks_once_for_a_reference():
         assert "한 번만 묻고" in text and "답을 기다" in text, name
     # The question is a numbered step at the top of the entry instructions, not a remark further down.
     assert "\n4. **화면이 있는 새 작업인데" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    # No sample artwork or proof app ships. The six display fonts came back in 2.16.0 with their licences.
+    # No sample artwork or proof app ships. The six display fonts came back in 2.16.1 with their licences.
     assert not (ROOT / "ui/assets/designs").exists() and not (ROOT / "ui/proof-app").exists()
     assert sorted(path.name for path in (ROOT / "ui/assets").iterdir()) == ["fonts"]
     for path in list((ROOT / "ui").glob("*.css")) + list((ROOT / "ui").glob("design-*.js")):

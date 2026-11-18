@@ -18,7 +18,7 @@ def _brief(text, limit=240):
 
 
 PLAN = 'python -B scripts/vas.py plan --request "요청" --criterion "끝났다고 볼 조건 (확인 방법)"'
-DONE = 'python -B scripts/vas.py done --summary "한 일" --check "확인한 것:통과" --file src/바뀐파일 --tag 화면이나기능 --next-step "다음 할 일"'
+DONE = 'python -B scripts/vas.py done --summary "한 일" --check "확인한 것:통과" --file src/바뀐파일 --criterion C1 --tag 화면이나기능 --next-step "다음 할 일"'
 
 
 def _initial_action(state, shared, memory=None, design_recorded=False):
